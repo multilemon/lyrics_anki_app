@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
@@ -51,10 +52,11 @@ class LyricsNotifier extends _$LyricsNotifier {
     try {
       if (title.isEmpty) return;
 
-      ref.read(historyNotifierProvider.notifier)
-        ..addHistoryItem(title, artist, snippet, language);
+      await ref
+          .read(historyNotifierProvider.notifier)
+          .addHistoryItem(title, artist, snippet, language);
     } catch (e) {
-      print('Failed to save history: $e');
+      debugPrint('Failed to save history: $e');
     }
   }
 
@@ -113,9 +115,9 @@ class SelectionManager extends _$SelectionManager {
   }
 
   Set<int> _toggleSet(Set<int> current, int index, {bool? force}) {
-    if (force == true) {
+    if (force ?? false) {
       return {...current, index};
-    } else if (force == false) {
+    } else if (force != null) {
       return {...current}..remove(index);
     }
 

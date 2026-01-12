@@ -55,7 +55,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                     final selected = ref.watch(selectionManagerProvider);
 
                     bool isLevelSelected(String level) {
-                      // Check if at least one item of this level exists and is selected
+                      // Check if at least one item of this level exists
+                      // and is selected
                       final vocabIndices = <int>[];
                       for (var i = 0; i < analysis.vocabs.length; i++) {
                         if (analysis.vocabs[i].jlptV.toUpperCase() ==
@@ -66,14 +67,15 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
 
                       if (vocabIndices.isEmpty) return false;
                       // Simple check: are all vocabs of this level selected?
-                      return vocabIndices.every(
-                          (index) => selected.vocabIndices.contains(index));
+                      return vocabIndices.every(selected.vocabIndices.contains);
                     }
 
                     bool isAllSelected() {
                       if (analysis.vocabs.isEmpty &&
                           analysis.grammar.isEmpty &&
-                          analysis.kanji.isEmpty) return false;
+                          analysis.kanji.isEmpty) {
+                        return false;
+                      }
 
                       final vocabAll = selected.vocabIndices.length ==
                           analysis.vocabs.length;
@@ -106,8 +108,11 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                             onChanged: (val) {
                               ref
                                   .read(selectionManagerProvider.notifier)
-                                  .toggleLevel(analysis, level,
-                                      select: val ?? false);
+                                  .toggleLevel(
+                                    analysis,
+                                    level,
+                                    select: val ?? false,
+                                  );
                             },
                           ),
                         _FilterCheckbox(
@@ -123,14 +128,17 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                               }
                             }
                             if (nonLevels.isEmpty) return false;
-                            return nonLevels.every((index) =>
-                                selected.vocabIndices.contains(index));
+                            return nonLevels
+                                .every(selected.vocabIndices.contains);
                           })(),
                           onChanged: (val) {
                             // Select all non-standard levels
-                            // This logic should ideally be in the notifier, but implementing here for now
-                            // Or better, update notifier to handle a filter predicate?
-                            // For simplicity/speed, I'll manually iterate here and toggle.
+                            // This logic should ideally be in the notifier,
+                            // but implementing here for now
+                            // Or better, update notifier to handle a filter
+                            // predicate?
+                            // For simplicity/speed, I'll manually iterate here
+                            // and toggle.
                             final targetIndices = <int>[];
                             for (var i = 0; i < analysis.vocabs.length; i++) {
                               final lvl =
@@ -146,8 +154,10 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                   .read(selectionManagerProvider.notifier)
                                   .toggle(SelectionType.vocab, idx, force: val);
                             }
-                            // Note: Logic for 'Other' currently only targets Vocab based on typical usage.
-                            // Grammar usually has strict levels. Kanji might have levels too.
+                            // Note: Logic for 'Other' currently only targets
+                            // Vocab based on typical usage.
+                            // Grammar usually has strict levels. Kanji might
+                            // have levels too.
                             // If we want 'Other' to apply to Kanji too:
                             for (var i = 0; i < analysis.kanji.length; i++) {
                               final lvl = analysis.kanji[i].level.toUpperCase();
@@ -167,25 +177,27 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                 const SizedBox(height: 16),
 
                 // Tabs
-                Consumer(builder: (context, ref, _) {
-                  final analysis =
-                      ref.watch(lyricsNotifierProvider).asData?.value;
-                  final vocabCount = analysis?.vocabs.length ?? 0;
-                  final grammarCount = analysis?.grammar.length ?? 0;
-                  final kanjiCount = analysis?.kanji.length ?? 0;
+                Consumer(
+                  builder: (context, ref, _) {
+                    final analysis =
+                        ref.watch(lyricsNotifierProvider).asData?.value;
+                    final vocabCount = analysis?.vocabs.length ?? 0;
+                    final grammarCount = analysis?.grammar.length ?? 0;
+                    final kanjiCount = analysis?.kanji.length ?? 0;
 
-                  return TabBar(
-                    controller: _tabController,
-                    labelColor: const Color(0xFFD4A5A5),
-                    unselectedLabelColor: const Color(0xFF8E7F7F),
-                    indicatorColor: const Color(0xFFD4A5A5),
-                    tabs: [
-                      Tab(text: 'Vocab ($vocabCount)'),
-                      Tab(text: 'Grammar ($grammarCount)'),
-                      Tab(text: 'Kanji ($kanjiCount)'),
-                    ],
-                  );
-                }),
+                    return TabBar(
+                      controller: _tabController,
+                      labelColor: const Color(0xFFD4A5A5),
+                      unselectedLabelColor: const Color(0xFF8E7F7F),
+                      indicatorColor: const Color(0xFFD4A5A5),
+                      tabs: [
+                        Tab(text: 'Vocab ($vocabCount)'),
+                        Tab(text: 'Grammar ($grammarCount)'),
+                        Tab(text: 'Kanji ($kanjiCount)'),
+                      ],
+                    );
+                  },
+                ),
                 const SizedBox(height: 16),
 
                 // Results Area
@@ -200,8 +212,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                               child: Text(
                                 'No analysis data available.',
                                 style: TextStyle(
-                                  color:
-                                      const Color(0xFF8E7F7F).withOpacity(0.5),
+                                  color: const Color(0xFF8E7F7F)
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
                             );
@@ -225,18 +237,20 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Analysis in progress...\nThis could take a few minutes.',
+                                'Analysis in progress...\n'
+                                'This could take a few minutes.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color:
-                                      const Color(0xFF8E7F7F).withOpacity(0.7),
+                                  color: const Color(0xFF8E7F7F)
+                                      .withValues(alpha: 0.7),
                                   fontSize: 14,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        error: (e, s) => Center(child: Text('Error: $e')),
+                        error: (Object e, StackTrace s) =>
+                            Center(child: Text('Error: $e')),
                       );
                     },
                   ),
@@ -269,20 +283,23 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
 
               final selectedVocabs = <Vocab>[];
               for (final i in selectedState.vocabIndices) {
-                if (i < analysis.vocabs.length)
+                if (i < analysis.vocabs.length) {
                   selectedVocabs.add(analysis.vocabs[i]);
+                }
               }
 
               final selectedGrammar = <Grammar>[];
               for (final i in selectedState.grammarIndices) {
-                if (i < analysis.grammar.length)
+                if (i < analysis.grammar.length) {
                   selectedGrammar.add(analysis.grammar[i]);
+                }
               }
 
               final selectedKanji = <Kanji>[];
               for (final i in selectedState.kanjiIndices) {
-                if (i < analysis.kanji.length)
+                if (i < analysis.kanji.length) {
                   selectedKanji.add(analysis.kanji[i]);
+                }
               }
 
               if (selectedVocabs.isEmpty &&
@@ -294,7 +311,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                 return;
               }
 
-              showDialog(
+              showDialog<void>(
                 context: context,
                 builder: (context) => _ExportDialog(
                   onExport: (userLevel) {
@@ -307,12 +324,15 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                       userLevel: userLevel,
                     )
                         .then((tsvContent) {
+                      if (!context.mounted) return;
                       saveContentToFile(tsvContent, 'anki_export').then((path) {
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Exported to $path')),
                         );
                       });
-                    }).catchError((e) {
+                    }).catchError((Object e) {
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Export failed: $e')),
                       );
@@ -566,12 +586,12 @@ class _FilterCheckbox extends StatelessWidget {
 class _ResultCard extends StatelessWidget {
   const _ResultCard({
     required this.title,
-    this.subtitle,
-    this.details,
-    this.trailingTag,
     required this.isSelected,
     required this.onToggle,
     required this.themeColor,
+    this.subtitle,
+    this.details,
+    this.trailingTag,
     this.leadingContent,
   });
 
@@ -588,7 +608,7 @@ class _ResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: isSelected ? themeColor.withOpacity(0.1) : Colors.white,
+      color: isSelected ? themeColor.withValues(alpha: 0.1) : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -600,35 +620,38 @@ class _ResultCard extends StatelessWidget {
         onTap: onToggle,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Checkbox and Leading
-              Padding(
-                padding: const EdgeInsets.only(top: 0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Checkbox(
-                      value: isSelected,
-                      activeColor: themeColor,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4)),
-                      onChanged: (_) => onToggle(),
+              // Checkbox and Leading
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Checkbox(
+                    value: isSelected,
+                    activeColor: themeColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    if (leadingContent != null) ...[
-                      leadingContent!,
-                      const SizedBox(width: 8),
-                    ],
+                    onChanged: (_) => onToggle(),
+                  ),
+                  if (leadingContent != null) ...[
+                    leadingContent!,
+                    const SizedBox(width: 8),
                   ],
-                ),
+                ],
               ),
               // Content
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(
-                      top: 10, right: 8, bottom: 8, left: 4),
+                    top: 10,
+                    right: 8,
+                    bottom: 8,
+                    left: 4,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -640,7 +663,7 @@ class _ResultCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
-                              child: trailingTag!,
+                              child: trailingTag,
                             ),
                           ],
                         ],
@@ -668,7 +691,7 @@ class _ResultCard extends StatelessWidget {
 class _ExportDialog extends StatefulWidget {
   const _ExportDialog({required this.onExport});
 
-  final Function(String userLevel) onExport;
+  final void Function(String userLevel) onExport;
 
   @override
   State<_ExportDialog> createState() => _ExportDialogState();
@@ -680,8 +703,10 @@ class _ExportDialogState extends State<_ExportDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Export to Anki',
-          style: TextStyle(color: Color(0xFF8E7F7F))),
+      title: const Text(
+        'Export to Anki',
+        style: TextStyle(color: Color(0xFF8E7F7F)),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -689,7 +714,8 @@ class _ExportDialogState extends State<_ExportDialog> {
           const Text('Select your JLPT Level:'),
           const SizedBox(height: 8),
           const Text(
-            'Words above this level will include furigana on the front of the card.',
+            'Words above this level will include furigana on the '
+            'front of the card.',
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 16),

@@ -1,4 +1,5 @@
-// import 'package:ankidroid_for_flutter/ankidroid_for_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/services/i_anki_export_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -6,7 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'anki_export_service_impl.g.dart';
 
 @riverpod
-IAnkiExportService ankiExportService(AnkiExportServiceRef ref) {
+IAnkiExportService ankiExportService(Ref ref) {
   return AnkiExportServiceImpl();
 }
 
@@ -35,11 +36,15 @@ class AnkiExportServiceImpl implements IAnkiExportService {
         front = _escape(item.word);
       }
 
-      final back = '${_escape(item.reading)}<br>'
-          '${_escape(item.meaning)}<br>'
-          '<small>${_escape(item.context)}</small>'
-          '${item.nuanceNote.isNotEmpty ? '<br>[${_escape(item.nuanceNote)}]' : ''}';
-      buffer.writeln('$front\t$back\t[Vocab]');
+      final backBuffer = StringBuffer()
+        ..write('${_escape(item.reading)}<br>')
+        ..write('${_escape(item.meaning)}<br>')
+        ..write('<small>${_escape(item.context)}</small>');
+
+      if (item.nuanceNote.isNotEmpty) {
+        backBuffer.write('<br>[${_escape(item.nuanceNote)}]');
+      }
+      buffer.writeln('$front\t$backBuffer\t[Vocab]'); // line 43
     }
 
     // Grammar (No reading field usually, so standard display)
@@ -55,10 +60,14 @@ class AnkiExportServiceImpl implements IAnkiExportService {
     for (final item in kanji) {
       // Kanji logic simplified to standard display as per plan
       final front = _escape(item.char);
-      final back = 'Meanings: ${_escape(item.meanings)}<br>'
-          'Readings: ${_escape(item.readings)}'
-          '${item.level.isNotEmpty ? "<br>[${_escape(item.level)}]" : ""}';
-      buffer.writeln('$front\t$back\t[Kanji]');
+      final backBuffer = StringBuffer()
+        ..write('Meanings: ${_escape(item.meanings)}<br>')
+        ..write('Readings: ${_escape(item.readings)}');
+
+      if (item.level.isNotEmpty) {
+        backBuffer.write('<br>[${_escape(item.level)}]');
+      }
+      buffer.writeln('$front\t$backBuffer\t[Kanji]');
     }
 
     return buffer.toString();
@@ -91,17 +100,11 @@ class AnkiExportServiceImpl implements IAnkiExportService {
     List<Kanji> kanji = const [],
   }) async {
     // Placeholder implementation
-    print(
-      'AddToAnkiDroid called with ${vocabs.length} vocabs, ${grammar.length} grammar, ${kanji.length} kanji (Not implemented yet)',
+    debugPrint('[AnkiExport] AddToAnkiDroid not implemented.');
+    debugPrint(
+      'Stats: ${vocabs.length} V, ${grammar.length} G, ${kanji.length} K',
     );
   }
-
-  // Also keep the file saving logic if needed, or user might just want the string.
-  // The interface said `generateCsv` returns String.
-  // But usually we save it to a file for the user to open.
-  // I will add a helper or keep it simple as per interface.
-  // The previous implementation saved to file. I might add a `exportToTsvFile` if needed
-  // similar to previous logic, but adhering to the interface strictly for now.
 
   String _escape(String input) {
     // Basic CSV/TSV escaping: replace tabs and newlines to avoid breaking format

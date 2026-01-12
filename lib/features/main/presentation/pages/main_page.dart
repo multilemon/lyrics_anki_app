@@ -21,7 +21,8 @@ class MainPage extends ConsumerWidget {
           // Switch to Lyrics Tab IMMEDIATELY
           ref.read(navIndexProvider.notifier).state = 1;
 
-          // Trigger analysis (fire and forget for UI, but provider handles state)
+          // Trigger analysis (fire and forget for UI,
+          // but provider handles state)
           await ref
               .read(lyricsNotifierProvider.notifier)
               .analyzeSong(title, artist, language);
@@ -44,7 +45,7 @@ class MainPage extends ConsumerWidget {
         },
         backgroundColor: Colors.white,
         elevation: 1,
-        indicatorColor: const Color(0xFFD4A5A5).withOpacity(0.2),
+        indicatorColor: const Color(0xFFD4A5A5).withValues(alpha: 0.2),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),

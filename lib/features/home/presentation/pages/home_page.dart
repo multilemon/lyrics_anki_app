@@ -6,7 +6,7 @@ import 'package:shimmer/shimmer.dart';
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({required this.onNavigateToAnalyze, super.key});
 
-  final Function(String title, String artist, String language)
+  final void Function(String title, String artist, String language)
       onNavigateToAnalyze;
 
   @override
@@ -71,7 +71,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         'Learn Japanese from your favorite songs.',
                         style: TextStyle(
                           fontSize: 16,
-                          color: const Color(0xFF8E7F7F).withOpacity(0.8),
+                          color: const Color(0xFF8E7F7F).withValues(alpha: 0.8),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -90,7 +90,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFD4A5A5).withOpacity(0.1),
+                          color: const Color(0xFFD4A5A5).withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -261,6 +261,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final item = items[index];
+                            final artist = item.artist.isNotEmpty
+                                ? item.artist
+                                : 'Unknown Artist';
                             return Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -272,7 +275,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   borderRadius: BorderRadius.circular(15),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.04),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -291,10 +295,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     ),
                                   ),
                                   subtitle: Text(
-                                    (item.artist.isNotEmpty
-                                            ? item.artist
-                                            : 'Unknown Artist') +
-                                        ' • ${item.targetLanguage}',
+                                    '$artist • ${item.targetLanguage}',
                                     style: const TextStyle(
                                       color: Color(0xFFD4A5A5),
                                     ),
