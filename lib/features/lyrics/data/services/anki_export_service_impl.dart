@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyrics_anki_app/features/anki/data/services/anki_database_service.dart';
+import 'package:lyrics_anki_app/features/anki/data/services/anki_package_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/services/i_anki_export_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -18,8 +22,17 @@ class AnkiExportServiceImpl implements IAnkiExportService {
     List<Grammar> grammar = const [],
     List<Kanji> kanji = const [],
     String? userLevel,
+    required String songTitle,
+    required String artist,
   }) async {
     final buffer = StringBuffer();
+
+    // Add Headers
+    buffer
+        .writeln('#deck:HanaUta::${songTitle.replaceAll(':', ' ')} - $artist');
+    buffer.writeln('#html:true');
+    buffer.writeln('#separator:Tab');
+
     final userLevelValue = _getLevelValue(userLevel);
 
     // Vocab
@@ -28,28 +41,32 @@ class AnkiExportServiceImpl implements IAnkiExportService {
       final showReading = itemLevelValue > userLevelValue;
 
       String front;
+      // Front: Bold word + Reading (if hard)
+      // Format: <b>Word</b> [Reading]
+
+      final escapedWord = '<b>${_escape(item.word)}</b>';
+
       if (showReading) {
-        // Use ruby tag for furigana on front
-        front =
-            '<ruby>${_escape(item.word)}<rt>${_escape(item.reading)}</rt></ruby>';
+        front = '$escapedWord <small>${_escape(item.reading)}</small>';
       } else {
-        front = _escape(item.word);
+        front = escapedWord;
       }
 
       final backBuffer = StringBuffer()
         ..write('${_escape(item.reading)}<br>')
         ..write('${_escape(item.meaning)}<br>')
+        ..write('${item.jlptV.isNotEmpty ? "[${_escape(item.jlptV)}] " : ""}')
         ..write('<small>${_escape(item.context)}</small>');
 
       if (item.nuanceNote.isNotEmpty) {
         backBuffer.write('<br>[${_escape(item.nuanceNote)}]');
       }
-      buffer.writeln('$front\t$backBuffer\t[Vocab]'); // line 43
+      buffer.writeln('$front\t$backBuffer\t[Vocab]');
     }
 
-    // Grammar (No reading field usually, so standard display)
+    // Grammar
     for (final item in grammar) {
-      final front = _escape(item.point);
+      final front = '<b>${_escape(item.point)}</b>';
       final back = '${item.level.isNotEmpty ? "[${_escape(item.level)}] " : ""}'
           '${_escape(item.explanation)}<br>'
           'Usage: ${_escape(item.usage)}';
@@ -58,8 +75,7 @@ class AnkiExportServiceImpl implements IAnkiExportService {
 
     // Kanji
     for (final item in kanji) {
-      // Kanji logic simplified to standard display as per plan
-      final front = _escape(item.char);
+      final front = '<b>${_escape(item.char)}</b>';
       final backBuffer = StringBuffer()
         ..write('Meanings: ${_escape(item.meanings)}<br>')
         ..write('Readings: ${_escape(item.readings)}');
@@ -75,8 +91,6 @@ class AnkiExportServiceImpl implements IAnkiExportService {
 
   int _getLevelValue(String? level) {
     if (level == null || level.isEmpty) return 0;
-    // N5 = 1 (Easiest), N1 = 5 (Hardest)
-    // Scale: N5=1, N4=2, N3=3, N2=4, N1=5
     switch (level.toUpperCase()) {
       case 'N5':
         return 1;
@@ -89,8 +103,30 @@ class AnkiExportServiceImpl implements IAnkiExportService {
       case 'N1':
         return 5;
       default:
-        return 0; // Unknown/None
+        return 0;
     }
+  }
+
+  @override
+  Future<Uint8List> generateApkg({
+    List<Vocab> vocabs = const [],
+    List<Grammar> grammar = const [],
+    List<Kanji> kanji = const [],
+    required String songTitle,
+    required String artist,
+  }) async {
+    final databaseService = AnkiDatabaseService();
+    final deckName = 'HanaUta::${songTitle.replaceAll(':', ' ')} - $artist';
+
+    final dbBytes = await databaseService.createDatabase(
+      vocabs: vocabs,
+      grammar: grammar,
+      kanji: kanji,
+      deckName: deckName,
+    );
+
+    final packageService = AnkiPackageService();
+    return packageService.createApkg(databaseBytes: dbBytes);
   }
 
   @override
@@ -101,13 +137,12 @@ class AnkiExportServiceImpl implements IAnkiExportService {
   }) async {
     // Placeholder implementation
     debugPrint('[AnkiExport] AddToAnkiDroid not implemented.');
-    debugPrint(
-      'Stats: ${vocabs.length} V, ${grammar.length} G, ${kanji.length} K',
-    );
   }
 
   String _escape(String input) {
-    // Basic CSV/TSV escaping: replace tabs and newlines to avoid breaking format
+    // Basic CSV/TSV escaping
+    // Replace tabs with spaces to avoid breaking columns
+    // Replace newlines with <br> for HTML display
     return input.replaceAll('\t', ' ').replaceAll('\n', '<br>');
   }
 }

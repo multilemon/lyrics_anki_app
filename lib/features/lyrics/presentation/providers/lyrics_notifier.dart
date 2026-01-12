@@ -28,13 +28,16 @@ class LyricsNotifier extends _$LyricsNotifier {
       // Debug print
       // print('Analysis Result: ${result.map((e) => e.toJson()).toList()}');
 
+      // Validate result before saving
+      if (result.vocabs.isEmpty &&
+          result.grammar.isEmpty &&
+          result.kanji.isEmpty) {
+        // Don't save empty results (likely errors)
+        return result;
+      }
+
       // Save to History
-      await _saveToHistory(
-        title,
-        artist,
-        language,
-        result.vocabs.isNotEmpty ? 'Analysis Complete' : 'No Lyrics Found',
-      );
+      await repository.saveAnalysisResult(result, language);
 
       return result;
     });
@@ -43,21 +46,14 @@ class LyricsNotifier extends _$LyricsNotifier {
     return result.value;
   }
 
-  Future<void> _saveToHistory(
-    String title,
-    String artist,
-    String language,
-    String snippet,
-  ) async {
-    try {
-      if (title.isEmpty) return;
-
-      await ref
-          .read(historyNotifierProvider.notifier)
-          .addHistoryItem(title, artist, snippet, language);
-    } catch (e) {
-      debugPrint('Failed to save history: $e');
-    }
+  void loadFromHistory(HistoryItem item) {
+    state = AsyncValue.data(AnalysisResult(
+      vocabs: item.vocabs,
+      grammar: item.grammar,
+      kanji: item.kanji,
+      song: item.songTitle,
+      artist: item.artist,
+    ));
   }
 
   void toggleSelection(int index) {

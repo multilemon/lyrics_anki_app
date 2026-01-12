@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lyrics_anki_app/core/utils/file_saver.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
@@ -45,6 +45,41 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
             child: Column(
               children: [
                 const SizedBox(height: 16),
+
+                // Song Title & Artist Header
+                Consumer(
+                  builder: (context, ref, _) {
+                    final analysis =
+                        ref.watch(lyricsNotifierProvider).asData?.value;
+                    if (analysis == null) return const SizedBox.shrink();
+
+                    return Column(
+                      children: [
+                        Text(
+                          analysis.song,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF5D4037),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          analysis.artist,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF8E7F7F),
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  },
+                ),
+
                 // Filters (Quick Select) - Applies to all tabs
                 Consumer(
                   builder: (context, ref, child) {
@@ -317,18 +352,30 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                   onExport: (userLevel) {
                     final exportService = ref.read(ankiExportServiceProvider);
                     exportService
-                        .generateCsv(
+                        .generateApkg(
                       vocabs: selectedVocabs,
                       grammar: selectedGrammar,
                       kanji: selectedKanji,
-                      userLevel: userLevel,
+                      songTitle: analysis.song,
+                      artist: analysis.artist,
                     )
-                        .then((tsvContent) {
+                        .then((bytes) {
                       if (!context.mounted) return;
-                      saveContentToFile(tsvContent, 'anki_export').then((path) {
+
+                      final filename =
+                          '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
+
+                      FileSaver.instance
+                          .saveFile(
+                        name: filename,
+                        bytes: bytes,
+                        mimeType: MimeType.other,
+                      )
+                          .then((path) {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Exported to $path')),
+                          const SnackBar(
+                              content: Text('Export downloaded successfully')),
                         );
                       });
                     }).catchError((Object e) {

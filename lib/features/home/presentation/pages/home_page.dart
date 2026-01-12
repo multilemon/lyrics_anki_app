@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomePage extends ConsumerStatefulWidget {
-  const HomePage({required this.onNavigateToAnalyze, super.key});
+  const HomePage({
+    required this.onNavigateToAnalyze,
+    this.onHistoryItemClick,
+    super.key,
+  });
 
   final void Function(String title, String artist, String language)
       onNavigateToAnalyze;
+  final void Function(HistoryItem item)? onHistoryItemClick;
 
   @override
   ConsumerState<HomePage> createState() => _HomePageState();
@@ -306,11 +312,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     color: Color(0xFFD4A5A5),
                                   ),
                                   onTap: () {
-                                    widget.onNavigateToAnalyze(
-                                      item.songTitle,
-                                      item.artist,
-                                      item.targetLanguage,
-                                    );
+                                    if (widget.onHistoryItemClick != null) {
+                                      widget.onHistoryItemClick!(item);
+                                    } else {
+                                      widget.onNavigateToAnalyze(
+                                        item.songTitle,
+                                        item.artist,
+                                        item.targetLanguage,
+                                      );
+                                    }
                                   },
                                 ),
                               ),

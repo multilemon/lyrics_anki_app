@@ -109,6 +109,15 @@ class HistoryItem extends HiveObject {
 
   @HiveField(5)
   late String targetLanguage;
+
+  @HiveField(6)
+  List<Vocab> vocabs = [];
+
+  @HiveField(7)
+  List<Grammar> grammar = [];
+
+  @HiveField(8)
+  List<Kanji> kanji = [];
 }
 
 class AnalysisResult {
@@ -116,9 +125,13 @@ class AnalysisResult {
     required this.vocabs,
     required this.grammar,
     required this.kanji,
+    this.song = '',
+    this.artist = '',
   });
 
   final List<Vocab> vocabs;
   final List<Grammar> grammar;
   final List<Kanji> kanji;
+  final String song;
+  final String artist;
 }

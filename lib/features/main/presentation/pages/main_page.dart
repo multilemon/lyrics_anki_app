@@ -23,9 +23,16 @@ class MainPage extends ConsumerWidget {
 
           // Trigger analysis (fire and forget for UI,
           // but provider handles state)
-          await ref
+          ref
               .read(lyricsNotifierProvider.notifier)
               .analyzeSong(title, artist, language);
+        },
+        onHistoryItemClick: (item) {
+          // Switch to Lyrics Tab IMMEDIATELY
+          ref.read(navIndexProvider.notifier).state = 1;
+
+          // Load from history
+          ref.read(lyricsNotifierProvider.notifier).loadFromHistory(item);
         },
       ),
       const LyricsPage(),

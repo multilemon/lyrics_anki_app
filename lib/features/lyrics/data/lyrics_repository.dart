@@ -107,6 +107,26 @@ class LyricsRepository {
     }
   }
 
+  Future<void> saveAnalysisResult(
+    AnalysisResult result,
+    String language,
+  ) async {
+    final item = HistoryItem(
+      songTitle: result.song,
+      artist: result.artist,
+      lyricsSnippet: result.vocabs.isNotEmpty
+          ? 'Analysis Complete (${result.vocabs.length} words)'
+          : 'No Data',
+      analyzedAt: DateTime.now(),
+      targetLanguage: language,
+    )
+      ..vocabs = result.vocabs
+      ..grammar = result.grammar
+      ..kanji = result.kanji;
+
+    await saveToHistory(item);
+  }
+
   List<HistoryItem> getHistory() {
     if (_box == null) return [];
     return _box!.values.toList().reversed.toList();
@@ -152,10 +172,22 @@ class LyricsRepository {
         kanji.addAll(list.map((e) => _mapToKanji(e as List<dynamic>)));
       }
 
+      String songTitle = '';
+      String artistName = '';
+      if (parsed.containsKey('song')) {
+        final songData = parsed['song'];
+        if (songData is Map<String, dynamic>) {
+          songTitle = songData['title']?.toString() ?? '';
+          artistName = songData['artist']?.toString() ?? '';
+        }
+      }
+
       return AnalysisResult(
         vocabs: vocabs,
         grammar: grammar,
         kanji: kanji,
+        song: songTitle,
+        artist: artistName,
       );
     } catch (e) {
       debugPrint('JSON Parse Error: $e');
