@@ -664,3 +664,77 @@ class _ResultCard extends StatelessWidget {
     );
   }
 }
+
+class _ExportDialog extends StatefulWidget {
+  const _ExportDialog({required this.onExport});
+
+  final Function(String userLevel) onExport;
+
+  @override
+  State<_ExportDialog> createState() => _ExportDialogState();
+}
+
+class _ExportDialogState extends State<_ExportDialog> {
+  String _selectedLevel = 'N5';
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Export to Anki',
+          style: TextStyle(color: Color(0xFF8E7F7F))),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Select your JLPT Level:'),
+          const SizedBox(height: 8),
+          const Text(
+            'Words above this level will include furigana on the front of the card.',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: _selectedLevel,
+            dropdownColor: Colors.white,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: const Color(0xFFF9F6F7),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            items: ['N5', 'N4', 'N3', 'N2', 'N1'].map((level) {
+              return DropdownMenuItem(
+                value: level,
+                child: Text(level),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedLevel = val);
+              }
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            widget.onExport(_selectedLevel);
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFD4A5A5),
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Export'),
+        ),
+      ],
+    );
+  }
+}
