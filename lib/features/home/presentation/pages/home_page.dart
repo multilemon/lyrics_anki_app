@@ -42,9 +42,17 @@ class _HomePageState extends ConsumerState<HomePage> {
     final title = _titleController.text.trim();
     final artist = _artistController.text.trim();
 
-    if (title.isNotEmpty) {
-      widget.onNavigateToAnalyze(title, artist, _selectedLanguage);
+    if (title.isEmpty || artist.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both Song Title and Artist Name'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
     }
+
+    widget.onNavigateToAnalyze(title, artist, _selectedLanguage);
   }
 
   @override

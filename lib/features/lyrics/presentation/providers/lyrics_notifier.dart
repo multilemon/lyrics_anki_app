@@ -13,11 +13,24 @@ class LyricsNotifier extends _$LyricsNotifier {
     return null;
   }
 
+  String? _lastTitle;
+  String? _lastArtist;
+  String? _lastLanguage;
+
+  Future<void> retry() async {
+    if (_lastTitle != null && _lastArtist != null && _lastLanguage != null) {
+      await analyzeSong(_lastTitle!, _lastArtist!, _lastLanguage!);
+    }
+  }
+
   Future<AnalysisResult?> analyzeSong(
     String title,
     String artist,
     String language,
   ) async {
+    _lastTitle = title;
+    _lastArtist = artist;
+    _lastLanguage = language;
     state = const AsyncValue.loading();
     final result = await AsyncValue.guard(() async {
       final repository = ref.read(lyricsRepositoryProvider);
