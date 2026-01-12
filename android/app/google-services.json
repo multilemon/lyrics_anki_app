@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "98613072986",
+    "project_id": "hanauta-bdc20",
+    "storage_bucket": "hanauta-bdc20.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:98613072986:android:9495469156657d9e483463",
+        "android_client_info": {
+          "package_name": "com.multilemon.lyrics_anki_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2xo7scCChTkvU0BagR1jf3Afpy6zRf8o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

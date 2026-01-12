@@ -1,0 +1,186 @@
+import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
+import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'lyrics_notifier.g.dart';
+
+@Riverpod(keepAlive: true)
+class LyricsNotifier extends _$LyricsNotifier {
+  @override
+  FutureOr<AnalysisResult?> build() {
+    return null;
+  }
+
+  Future<AnalysisResult?> analyzeSong(
+    String title,
+    String artist,
+    String language,
+  ) async {
+    state = const AsyncValue.loading();
+    final result = await AsyncValue.guard(() async {
+      final repository = ref.read(lyricsRepositoryProvider);
+
+      // Update repository to handle structured input
+      final result = await repository.analyzeSong(title, artist, language);
+
+      // Debug print
+      // print('Analysis Result: ${result.map((e) => e.toJson()).toList()}');
+
+      // Save to History
+      await _saveToHistory(
+        title,
+        artist,
+        language,
+        result.vocabs.isNotEmpty ? 'Analysis Complete' : 'No Lyrics Found',
+      );
+
+      return result;
+    });
+
+    state = AsyncValue.data(result.value);
+    return result.value;
+  }
+
+  Future<void> _saveToHistory(
+    String title,
+    String artist,
+    String language,
+    String snippet,
+  ) async {
+    try {
+      if (title.isEmpty) return;
+
+      ref.read(historyNotifierProvider.notifier)
+        ..addHistoryItem(title, artist, snippet, language);
+    } catch (e) {
+      print('Failed to save history: $e');
+    }
+  }
+
+  void toggleSelection(int index) {
+    // Implement selection logic, probably need a separate state for selection
+    // or wrap List<Vocab> in a VM with selection status.
+  }
+}
+
+class SelectionState {
+  const SelectionState({
+    this.vocabIndices = const {},
+    this.grammarIndices = const {},
+    this.kanjiIndices = const {},
+  });
+
+  final Set<int> vocabIndices;
+  final Set<int> grammarIndices;
+  final Set<int> kanjiIndices;
+
+  SelectionState copyWith({
+    Set<int>? vocabIndices,
+    Set<int>? grammarIndices,
+    Set<int>? kanjiIndices,
+  }) {
+    return SelectionState(
+      vocabIndices: vocabIndices ?? this.vocabIndices,
+      grammarIndices: grammarIndices ?? this.grammarIndices,
+      kanjiIndices: kanjiIndices ?? this.kanjiIndices,
+    );
+  }
+}
+
+enum SelectionType { vocab, grammar, kanji }
+
+@riverpod
+class SelectionManager extends _$SelectionManager {
+  @override
+  SelectionState build() => const SelectionState();
+
+  void toggle(SelectionType type, int index, {bool? force}) {
+    switch (type) {
+      case SelectionType.vocab:
+        state = state.copyWith(
+          vocabIndices: _toggleSet(state.vocabIndices, index, force: force),
+        );
+      case SelectionType.grammar:
+        state = state.copyWith(
+          grammarIndices: _toggleSet(state.grammarIndices, index, force: force),
+        );
+      case SelectionType.kanji:
+        state = state.copyWith(
+          kanjiIndices: _toggleSet(state.kanjiIndices, index, force: force),
+        );
+    }
+  }
+
+  Set<int> _toggleSet(Set<int> current, int index, {bool? force}) {
+    if (force == true) {
+      return {...current, index};
+    } else if (force == false) {
+      return {...current}..remove(index);
+    }
+
+    if (current.contains(index)) {
+      return {...current}..remove(index);
+    } else {
+      return {...current, index};
+    }
+  }
+
+  void toggleLevel(
+    AnalysisResult analysis,
+    String level, {
+    required bool select,
+  }) {
+    final vocabIndices = <int>{};
+    for (var i = 0; i < analysis.vocabs.length; i++) {
+      if (analysis.vocabs[i].jlptV.toUpperCase() == level.toUpperCase()) {
+        vocabIndices.add(i);
+      }
+    }
+
+    final grammarIndices = <int>{};
+    for (var i = 0; i < analysis.grammar.length; i++) {
+      if (analysis.grammar[i].level.toUpperCase() == level.toUpperCase()) {
+        grammarIndices.add(i);
+      }
+    }
+
+    final kanjiIndices = <int>{};
+    for (var i = 0; i < analysis.kanji.length; i++) {
+      if (analysis.kanji[i].level.toUpperCase() == level.toUpperCase()) {
+        kanjiIndices.add(i);
+      }
+    }
+
+    if (select) {
+      state = state.copyWith(
+        vocabIndices: {...state.vocabIndices, ...vocabIndices},
+        grammarIndices: {...state.grammarIndices, ...grammarIndices},
+        kanjiIndices: {...state.kanjiIndices, ...kanjiIndices},
+      );
+    } else {
+      state = state.copyWith(
+        vocabIndices: {...state.vocabIndices}..removeAll(vocabIndices),
+        grammarIndices: {...state.grammarIndices}..removeAll(grammarIndices),
+        kanjiIndices: {...state.kanjiIndices}..removeAll(kanjiIndices),
+      );
+    }
+  }
+
+  void toggleAll(AnalysisResult analysis, {required bool select}) {
+    if (select) {
+      state = SelectionState(
+        vocabIndices: List.generate(analysis.vocabs.length, (i) => i).toSet(),
+        grammarIndices:
+            List.generate(analysis.grammar.length, (i) => i).toSet(),
+        kanjiIndices: List.generate(analysis.kanji.length, (i) => i).toSet(),
+      );
+    } else {
+      state = const SelectionState();
+    }
+  }
+
+  void clear() {
+    state = const SelectionState();
+  }
+}
