@@ -261,7 +261,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
           return FloatingActionButton(
             backgroundColor: const Color(0xFFD4A5A5),
             onPressed: () {
-              // Re-read to get latest state in callback (though watch is fine too since we are rebuilding)
+              // Re-read to get latest state in callback
               final analysis = ref.read(lyricsNotifierProvider).asData?.value;
               if (analysis == null) return;
 
@@ -285,32 +285,41 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                   selectedKanji.add(analysis.kanji[i]);
               }
 
-              if (selectedVocabs.isNotEmpty ||
-                  selectedGrammar.isNotEmpty ||
-                  selectedKanji.isNotEmpty) {
-                final exportService = ref.read(ankiExportServiceProvider);
-                exportService
-                    .generateCsv(
-                  vocabs: selectedVocabs,
-                  grammar: selectedGrammar,
-                  kanji: selectedKanji,
-                )
-                    .then((tsvContent) {
-                  saveContentToFile(tsvContent, 'anki_export').then((path) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Exported to $path')),
-                    );
-                  });
-                }).catchError((e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Export failed: $e')),
-                  );
-                });
-              } else {
+              if (selectedVocabs.isEmpty &&
+                  selectedGrammar.isEmpty &&
+                  selectedKanji.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Select items to export')),
                 );
+                return;
               }
+
+              showDialog(
+                context: context,
+                builder: (context) => _ExportDialog(
+                  onExport: (userLevel) {
+                    final exportService = ref.read(ankiExportServiceProvider);
+                    exportService
+                        .generateCsv(
+                      vocabs: selectedVocabs,
+                      grammar: selectedGrammar,
+                      kanji: selectedKanji,
+                      userLevel: userLevel,
+                    )
+                        .then((tsvContent) {
+                      saveContentToFile(tsvContent, 'anki_export').then((path) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Exported to $path')),
+                        );
+                      });
+                    }).catchError((e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Export failed: $e')),
+                      );
+                    });
+                  },
+                ),
+              );
             },
             child: const Icon(Icons.file_upload_outlined, color: Colors.white),
           );

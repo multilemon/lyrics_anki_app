@@ -5,6 +5,7 @@ abstract class IAnkiExportService {
     List<Vocab> vocabs = const [],
     List<Grammar> grammar = const [],
     List<Kanji> kanji = const [],
+    String? userLevel,
   });
   Future<void> addToAnkiDroid({
     List<Vocab> vocabs = const [],
