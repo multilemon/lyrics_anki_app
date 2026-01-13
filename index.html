@@ -28,12 +28,13 @@
       http-equiv="Content-Security-Policy" 
       content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com blob:;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.firebaseapp.com blob:;
+        connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://fonts.gstatic.com https://*.google.com;
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-        img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com;
+        img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com https://*.google.com;
         font-src 'self' https://fonts.gstatic.com data:;
-        connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://fonts.gstatic.com;
-        frame-src 'self' https://*.firebaseapp.com https://*.google.com;
+        frame-src 'self' https://*.firebaseapp.com https://*.google.com https://recaptcha.google.com;
+        worker-src 'self' blob:;
       "
     />
 
@@ -64,7 +65,7 @@ _flutter.buildConfig = {"engineRevision":"cf56914b326edb0ccb123ffdc60f00060bd513
 
 _flutter.loader.load({
   serviceWorkerSettings: {
-    serviceWorkerVersion: "1565539019"
+    serviceWorkerVersion: "4160784334"
   }
 });
 
