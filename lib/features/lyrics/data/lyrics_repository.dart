@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_ai/firebase_ai.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
+import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -94,6 +96,13 @@ class LyricsRepository {
       if (text == null) {
         return AnalysisResult(vocabs: [], grammar: [], kanji: []);
       }
+
+      // Log successful analysis attempt
+      unawaited(analyticsService.logSongAnalysis(
+        songTitle: title,
+        artist: artist,
+        language: language,
+      ));
 
       // Clean up if the model wraps in backticks
       final cleanText = _extractJson(text);

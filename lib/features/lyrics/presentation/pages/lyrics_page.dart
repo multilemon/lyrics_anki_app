@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_saver/file_saver.dart';
+import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
@@ -92,8 +94,6 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                     final selected = ref.watch(selectionManagerProvider);
 
                     bool isLevelSelected(String level) {
-                      // Check if at least one item of this level exists
-                      // and is selected
                       final vocabIndices = <int>[];
                       for (var i = 0; i < analysis.vocabs.length; i++) {
                         if (analysis.vocabs[i].jlptV.toUpperCase() ==
@@ -102,9 +102,38 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                         }
                       }
 
-                      if (vocabIndices.isEmpty) return false;
-                      // Simple check: are all vocabs of this level selected?
-                      return vocabIndices.every(selected.vocabIndices.contains);
+                      final grammarIndices = <int>[];
+                      for (var i = 0; i < analysis.grammar.length; i++) {
+                        if (analysis.grammar[i].level.toUpperCase() ==
+                            level.toUpperCase()) {
+                          grammarIndices.add(i);
+                        }
+                      }
+
+                      final kanjiIndices = <int>[];
+                      for (var i = 0; i < analysis.kanji.length; i++) {
+                        if (analysis.kanji[i].level.toUpperCase() ==
+                            level.toUpperCase()) {
+                          kanjiIndices.add(i);
+                        }
+                      }
+
+                      // If no items of this level exist at all, return false
+                      if (vocabIndices.isEmpty &&
+                          grammarIndices.isEmpty &&
+                          kanjiIndices.isEmpty) {
+                        return false;
+                      }
+
+                      // Check if ALL existing items of this level are selected
+                      final vocabSelected =
+                          vocabIndices.every(selected.vocabIndices.contains);
+                      final grammarSelected = grammarIndices
+                          .every(selected.grammarIndices.contains);
+                      final kanjiSelected =
+                          kanjiIndices.every(selected.kanjiIndices.contains);
+
+                      return vocabSelected && grammarSelected && kanjiSelected;
                     }
 
                     bool isAllSelected() {
@@ -472,41 +501,55 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
               showDialog<void>(
                 context: context,
                 builder: (context) => _ExportDialog(
-                  onExport: (userLevel) {
-                    final exportService = ref.read(ankiExportServiceProvider);
-                    exportService
-                        .generateApkg(
-                      vocabs: selectedVocabs,
-                      grammar: selectedGrammar,
-                      kanji: selectedKanji,
-                      songTitle: analysis.song,
-                      artist: analysis.artist,
-                    )
-                        .then((bytes) {
+                  onExport: (userLevel) async {
+                    try {
+                      final exportService = ref.read(ankiExportServiceProvider);
+
+                      // Log export initiation
+                      unawaited(analyticsService.logExport(
+                        songTitle: analysis.song,
+                        artist: analysis.artist,
+                        level: userLevel,
+                        vocabCount: selectedVocabs.length,
+                        grammarCount: selectedGrammar.length,
+                        kanjiCount: selectedKanji.length,
+                      ));
+
+                      // Generate .apkg
+                      final bytes = await exportService.generateApkg(
+                        vocabs: selectedVocabs,
+                        grammar: selectedGrammar,
+                        kanji: selectedKanji,
+                        songTitle: analysis.song,
+                        artist: analysis.artist,
+                        userLevel: userLevel,
+                      );
+
                       if (!context.mounted) return;
 
                       final filename =
                           '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
 
-                      FileSaver.instance
-                          .saveFile(
+                      // Save file (trigger download)
+                      await FileSaver.instance.saveFile(
                         name: filename,
                         bytes: bytes,
                         mimeType: MimeType.other,
-                      )
-                          .then((path) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Export downloaded successfully')),
-                        );
-                      });
-                    }).catchError((Object e) {
+                      );
+
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Export downloaded successfully')),
+                      );
+                    } catch (e) {
+                      unawaited(analyticsService.logError(
+                          'Export failed: $e', 'export_dialog'));
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Export failed: $e')),
                       );
-                    });
+                    }
                   },
                 ),
               );
@@ -861,7 +904,7 @@ class _ResultCard extends StatelessWidget {
 class _ExportDialog extends StatefulWidget {
   const _ExportDialog({required this.onExport});
 
-  final void Function(String userLevel) onExport;
+  final Future<void> Function(String userLevel) onExport;
 
   @override
   State<_ExportDialog> createState() => _ExportDialogState();
@@ -869,6 +912,7 @@ class _ExportDialog extends StatefulWidget {
 
 class _ExportDialogState extends State<_ExportDialog> {
   String _selectedLevel = 'N5';
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -877,60 +921,75 @@ class _ExportDialogState extends State<_ExportDialog> {
         'Export to Anki',
         style: TextStyle(color: Color(0xFF8E7F7F)),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Select your JLPT Level:'),
-          const SizedBox(height: 8),
-          const Text(
-            'Words above this level will include furigana on the '
-            'front of the card.',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _selectedLevel,
-            dropdownColor: Colors.white,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: const Color(0xFFF9F6F7),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
+      content: _isLoading
+          ? const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Color(0xFFD4A5A5)),
+                SizedBox(height: 16),
+                Text('Generating .apkg file...'),
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select your JLPT Level:'),
+                const SizedBox(height: 8),
+                const Text(
+                  'Words above this level will include furigana on the '
+                  'front of the card.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _selectedLevel,
+                  dropdownColor: Colors.white,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: const Color(0xFFF9F6F7),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  items: ['N5', 'N4', 'N3', 'N2', 'N1'].map((level) {
+                    return DropdownMenuItem(
+                      value: level,
+                      child: Text(level),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedLevel = val);
+                    }
+                  },
+                ),
+              ],
             ),
-            items: ['N5', 'N4', 'N3', 'N2', 'N1'].map((level) {
-              return DropdownMenuItem(
-                value: level,
-                child: Text(level),
-              );
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) {
-                setState(() => _selectedLevel = val);
-              }
-            },
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            widget.onExport(_selectedLevel);
-            Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFD4A5A5),
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('Export'),
-        ),
-      ],
+      actions: _isLoading
+          ? null
+          : [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child:
+                    const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  setState(() => _isLoading = true);
+                  await widget.onExport(_selectedLevel);
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD4A5A5),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Export'),
+              ),
+            ],
     );
   }
 }

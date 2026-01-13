@@ -29,11 +29,19 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    await FirebaseAppCheck.instance.activate(
-      providerWeb: ReCaptchaV3Provider('recaptcha-v3-site-key'),
-      providerAndroid: const AndroidDebugProvider(),
-      providerApple: const AppleDebugProvider(),
-    );
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerWeb:
+            ReCaptchaV3Provider('6LeJBkksAAAAAPtCvtySXr4qr5F7T2o9m0tBr7tF'),
+        providerAndroid: const AndroidDebugProvider(),
+        providerApple: const AppleDebugProvider(),
+      );
+    } catch (e) {
+      // Ignore 'already-initialized' error on hot restart
+      if (!e.toString().contains('already-initialized')) {
+        rethrow;
+      }
+    }
   } catch (e, st) {
     debugPrint('Firebase initialization failed: $e\n$st');
   }

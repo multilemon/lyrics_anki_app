@@ -114,9 +114,11 @@ class AnkiExportServiceImpl implements IAnkiExportService {
     List<Kanji> kanji = const [],
     required String songTitle,
     required String artist,
+    String? userLevel,
   }) async {
     final databaseService = AnkiDatabaseService();
-    final deckName = 'HanaUta::${songTitle.replaceAll(':', ' ')} - $artist';
+    final deckName =
+        'HanaUta::${userLevel != null ? "[$userLevel] " : ""}${songTitle.replaceAll(':', ' ')} - $artist';
 
     final dbBytes = await databaseService.createDatabase(
       vocabs: vocabs,

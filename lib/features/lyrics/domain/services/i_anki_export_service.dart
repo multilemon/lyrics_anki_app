@@ -18,6 +18,7 @@ abstract class IAnkiExportService {
     List<Kanji> kanji = const [],
     required String songTitle,
     required String artist,
+    String? userLevel,
   });
 
   Future<void> addToAnkiDroid({
