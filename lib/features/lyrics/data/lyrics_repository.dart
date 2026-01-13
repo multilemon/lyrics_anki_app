@@ -49,6 +49,9 @@ class LyricsRepository {
    - If **NO**: Return strictly `{"error": "NOT_JAPANESE"}`.
    - If **YES**: Proceed to step 2.
 
+1b. **Existence Verification**: Check if the specific song by the artist largely exists.
+   - If **NO (Not Found/Ambiguous)**: Return strictly `{"error": "NOT_FOUND"}`.
+
 2. **Search**: Google Search Grounding for official lyrics.
 3. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
 4. **Format**: Strictly Minified JSON.
@@ -111,6 +114,10 @@ class LyricsRepository {
       if (cleanText.contains('"error"') && cleanText.contains('NOT_JAPANESE')) {
         throw Exception(
             'This song does not appear to be primarily in Japanese.');
+      }
+
+      if (cleanText.contains('"error"') && cleanText.contains('NOT_FOUND')) {
+        throw SongNotFoundException(title, artist);
       }
 
       return await parseAnalysisResult(cleanText);
@@ -214,7 +221,8 @@ class LyricsRepository {
       );
     } catch (e) {
       debugPrint('JSON Parse Error: $e');
-      return AnalysisResult(vocabs: [], grammar: [], kanji: []);
+      throw const FormatException(
+          'Failed to parse AI response: Invalid JSON format.');
     }
   }
 

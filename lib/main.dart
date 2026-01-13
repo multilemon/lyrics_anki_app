@@ -12,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   Box<HistoryItem>? box;
+  Box<dynamic>? settingsBox;
   try {
     await Hive.initFlutter();
     Hive
@@ -21,6 +22,7 @@ void main() async {
       ..registerAdapter(KanjiAdapter());
 
     box = await Hive.openBox<HistoryItem>('history_box');
+    settingsBox = await Hive.openBox('settings');
   } catch (e, st) {
     debugPrint('Hive initialization failed: $e\n$st');
   }
@@ -50,6 +52,8 @@ void main() async {
     () => const App(),
     overrides: [
       if (box != null) historyBoxProvider.overrideWithValue(box),
+      if (settingsBox != null)
+        settingsBoxProvider.overrideWithValue(settingsBox),
     ],
   );
 }

@@ -5,3 +5,7 @@ import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 final historyBoxProvider = Provider<Box<HistoryItem>?>((ref) {
   return null;
 });
+
+final settingsBoxProvider = Provider<Box<dynamic>?>((ref) {
+  return null;
+});

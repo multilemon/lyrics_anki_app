@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
@@ -26,25 +27,25 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _selectedLanguage = 'English';
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = ref.read(settingsBoxProvider);
+      final saved = box?.get('target_language');
+      if (saved != null && saved is String) {
+        setState(() {
+          _selectedLanguage = saved;
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _artistController.dispose();
     super.dispose();
   }
-
-  final List<String> _languages = [
-    'English',
-    'Thai',
-    'Korean',
-    'Indonesian',
-    'Burmese',
-    'Uzbek',
-    'Vietnamese',
-    'Chinese (Simplified)',
-    'Chinese (Traditional)',
-    'Spanish',
-    'French',
-  ];
 
   void _handleAnalyze() {
     final title = _titleController.text.trim();
@@ -182,38 +183,61 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Target Language Dropdown
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9F6F7),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedLanguage,
-                              isExpanded: true,
-                              icon: const Icon(
-                                Icons.keyboard_arrow_down,
-                                color: Color(0xFFD4A5A5),
-                              ),
-                              items: _languages.map((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(
-                                    value,
-                                    style: TextStyle(color: Colors.grey[800]),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _selectedLanguage = newValue!;
-                                });
-                              },
+                        // Target Language Selector
+                        InkWell(
+                          onTap: () async {
+                            final result = await showDialog<LanguageData>(
+                              context: context,
+                              builder: (context) =>
+                                  const _LanguageSearchDialog(),
+                            );
+                            if (result != null) {
+                              setState(() {
+                                _selectedLanguage = result.englishName;
+                              });
+                              ref
+                                  .read(settingsBoxProvider)
+                                  ?.put('target_language', result.englishName);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9F6F7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Target Language',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _selectedLanguage,
+                                      style: TextStyle(
+                                        color: Colors.grey[800],
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Spacer(),
+                                const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Color(0xFFD4A5A5),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -299,7 +323,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(15),
                                   boxShadow: [
                                     BoxShadow(
@@ -310,40 +333,49 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     ),
                                   ],
                                 ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                  title: Text(
-                                    item.songTitle,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF5D5D5D),
+                                child: Material(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(15),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
                                     ),
-                                  ),
-                                  subtitle: Text(
-                                    '$artist • ${item.targetLanguage}',
-                                    style: const TextStyle(
+                                    hoverColor: const Color(0xFFD4A5A5)
+                                        .withValues(alpha: 0.05),
+                                    splashColor: const Color(0xFFD4A5A5)
+                                        .withValues(alpha: 0.1),
+                                    title: Text(
+                                      item.songTitle,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF5D5D5D),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      '$artist • ${item.targetLanguage}',
+                                      style: const TextStyle(
+                                        color: Color(0xFFD4A5A5),
+                                      ),
+                                    ),
+                                    trailing: const Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 16,
                                       color: Color(0xFFD4A5A5),
                                     ),
+                                    onTap: () {
+                                      if (widget.onHistoryItemClick != null) {
+                                        widget.onHistoryItemClick!(item);
+                                      } else {
+                                        widget.onNavigateToAnalyze(
+                                          item.songTitle,
+                                          item.artist,
+                                          item.targetLanguage,
+                                        );
+                                      }
+                                    },
                                   ),
-                                  trailing: const Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    size: 16,
-                                    color: Color(0xFFD4A5A5),
-                                  ),
-                                  onTap: () {
-                                    if (widget.onHistoryItemClick != null) {
-                                      widget.onHistoryItemClick!(item);
-                                    } else {
-                                      widget.onNavigateToAnalyze(
-                                        item.songTitle,
-                                        item.artist,
-                                        item.targetLanguage,
-                                      );
-                                    }
-                                  },
                                 ),
                               ),
                             );
@@ -386,6 +418,127 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class LanguageData {
+  const LanguageData({
+    required this.englishName,
+    required this.nativeName,
+  });
+
+  final String englishName;
+  final String nativeName;
+}
+
+const _kLanguageList = [
+  LanguageData(englishName: 'English', nativeName: 'English'),
+  LanguageData(englishName: 'Thai', nativeName: 'ไทย'),
+  LanguageData(englishName: 'Korean', nativeName: '한국어'),
+  LanguageData(englishName: 'Indonesian', nativeName: 'Bahasa Indonesia'),
+  LanguageData(englishName: 'Burmese', nativeName: 'ဗမာစာ'),
+  LanguageData(englishName: 'Uzbek', nativeName: 'Oʻzbek'),
+  LanguageData(englishName: 'Vietnamese', nativeName: 'Tiếng Việt'),
+  LanguageData(englishName: 'Chinese (Simplified)', nativeName: '简体中文'),
+  LanguageData(englishName: 'Chinese (Traditional)', nativeName: '繁體中文'),
+  LanguageData(englishName: 'Spanish', nativeName: 'Español'),
+  LanguageData(englishName: 'French', nativeName: 'Français'),
+  LanguageData(englishName: 'Japanese', nativeName: '日本語'),
+  LanguageData(englishName: 'German', nativeName: 'Deutsch'),
+  LanguageData(englishName: 'Portuguese', nativeName: 'Português'),
+  LanguageData(englishName: 'Italian', nativeName: 'Italiano'),
+];
+
+class _LanguageSearchDialog extends StatefulWidget {
+  const _LanguageSearchDialog();
+
+  @override
+  State<_LanguageSearchDialog> createState() => _LanguageSearchDialogState();
+}
+
+class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
+  final _searchController = TextEditingController();
+  List<LanguageData> _filteredLanguages = _kLanguageList;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filter(String query) {
+    if (query.isEmpty) {
+      setState(() => _filteredLanguages = _kLanguageList);
+      return;
+    }
+
+    final lowerQuery = query.toLowerCase();
+    setState(() {
+      _filteredLanguages = _kLanguageList.where((l) {
+        return l.englishName.toLowerCase().contains(lowerQuery) ||
+            l.nativeName.toLowerCase().contains(lowerQuery);
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
+        child: Column(
+          children: [
+            const Text(
+              'Select Language',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5D4037),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search language...',
+                prefixIcon: const Icon(Icons.search, color: Color(0xFFD4A5A5)),
+                filled: true,
+                fillColor: const Color(0xFFF9F6F7),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              ),
+              onChanged: _filter,
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _filteredLanguages.length,
+                itemBuilder: (context, index) {
+                  final lang = _filteredLanguages[index];
+                  return ListTile(
+                    title: Text(lang.englishName),
+                    subtitle: lang.englishName != lang.nativeName
+                        ? Text(lang.nativeName,
+                            style: const TextStyle(color: Color(0xFFD4A5A5)))
+                        : null,
+                    onTap: () => Navigator.pop(context, lang),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

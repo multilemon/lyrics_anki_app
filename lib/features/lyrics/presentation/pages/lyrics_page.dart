@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_saver/file_saver.dart';
+import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
@@ -36,19 +37,13 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6F7),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: const Color(0xFF8E7F7F),
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
             child: Column(
               children: [
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
 
                 // Song Title & Artist Header
                 Consumer(
@@ -57,29 +52,36 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                         ref.watch(lyricsNotifierProvider).asData?.value;
                     if (analysis == null) return const SizedBox.shrink();
 
-                    return Column(
-                      children: [
-                        Text(
-                          analysis.song,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF5D4037),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          Text(
+                            analysis.song,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF5D4037),
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          analysis.artist,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF8E7F7F),
-                            fontStyle: FontStyle.italic,
+                          const SizedBox(height: 4),
+                          Text(
+                            analysis.artist,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF8E7F7F),
+                              fontStyle: FontStyle.italic,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                          const SizedBox(height: 24),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -173,99 +175,97 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                     checkLevels(analysis.grammar, (d) => (d as Grammar).level);
                     checkLevels(analysis.kanji, (d) => (d as Kanji).level);
 
-                    return Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        _FilterCheckbox(
-                          label: 'All',
-                          value: isAllSelected(),
-                          onChanged: (val) {
-                            ref
-                                .read(selectionManagerProvider.notifier)
-                                .toggleAll(analysis, select: val ?? false);
-                          },
-                        ),
-                        for (final level in ['N1', 'N2', 'N3', 'N4', 'N5'])
-                          if (presentLevels.contains(level))
-                            _FilterCheckbox(
-                              label: level,
-                              value: isLevelSelected(level),
-                              onChanged: (val) {
-                                ref
-                                    .read(selectionManagerProvider.notifier)
-                                    .toggleLevel(
-                                      analysis,
-                                      level,
-                                      select: val ?? false,
-                                    );
-                              },
-                            ),
-                        if (hasOther)
-                          _FilterCheckbox(
-                            label: 'Other',
-                            value: (() {
-                              final nonLevels = <int>[];
-                              for (var i = 0; i < analysis.vocabs.length; i++) {
-                                final lvl =
-                                    analysis.vocabs[i].jlptV.toUpperCase();
-                                if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                    .contains(lvl)) {
-                                  nonLevels.add(i);
-                                }
-                              }
-                              if (nonLevels.isEmpty) return false;
-                              return nonLevels
-                                  .every(selected.vocabIndices.contains);
-                            })(),
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          _FilterChip(
+                            label: 'All',
+                            value: isAllSelected(),
                             onChanged: (val) {
-                              // Select all non-standard levels
-                              // This logic should ideally be in the notifier,
-                              // but implementing here for now
-                              // Or better, update notifier to handle a filter
-                              // predicate?
-                              // For simplicity/speed, I'll manually iterate here
-                              // and toggle.
-                              final targetIndices = <int>[];
-                              for (var i = 0; i < analysis.vocabs.length; i++) {
-                                final lvl =
-                                    analysis.vocabs[i].jlptV.toUpperCase();
-                                if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                    .contains(lvl)) {
-                                  targetIndices.add(i);
-                                }
-                              }
-
-                              for (final idx in targetIndices) {
-                                ref
-                                    .read(selectionManagerProvider.notifier)
-                                    .toggle(SelectionType.vocab, idx,
-                                        force: val);
-                              }
-                              // Note: Logic for 'Other' currently only targets
-                              // Vocab based on typical usage.
-                              // Grammar usually has strict levels. Kanji might
-                              // have levels too.
-                              // If we want 'Other' to apply to Kanji too:
-                              for (var i = 0; i < analysis.kanji.length; i++) {
-                                final lvl =
-                                    analysis.kanji[i].level.toUpperCase();
-                                if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                    .contains(lvl)) {
-                                  ref
-                                      .read(selectionManagerProvider.notifier)
-                                      .toggle(SelectionType.kanji, i,
-                                          force: val);
-                                }
-                              }
+                              ref
+                                  .read(selectionManagerProvider.notifier)
+                                  .toggleAll(analysis, select: val);
                             },
                           ),
-                      ],
+                          const SizedBox(width: 8),
+                          for (final level in ['N1', 'N2', 'N3', 'N4', 'N5'])
+                            if (presentLevels.contains(level)) ...[
+                              _FilterChip(
+                                label: level,
+                                value: isLevelSelected(level),
+                                onChanged: (val) {
+                                  ref
+                                      .read(selectionManagerProvider.notifier)
+                                      .toggleLevel(
+                                        analysis,
+                                        level,
+                                        select: val,
+                                      );
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                          if (hasOther)
+                            _FilterChip(
+                              label: 'Other',
+                              value: (() {
+                                final nonLevels = <int>[];
+                                for (var i = 0;
+                                    i < analysis.vocabs.length;
+                                    i++) {
+                                  final lvl =
+                                      analysis.vocabs[i].jlptV.toUpperCase();
+                                  if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                      .contains(lvl)) {
+                                    nonLevels.add(i);
+                                  }
+                                }
+                                if (nonLevels.isEmpty) return false;
+                                return nonLevels
+                                    .every(selected.vocabIndices.contains);
+                              })(),
+                              onChanged: (val) {
+                                final targetIndices = <int>[];
+                                for (var i = 0;
+                                    i < analysis.vocabs.length;
+                                    i++) {
+                                  final lvl =
+                                      analysis.vocabs[i].jlptV.toUpperCase();
+                                  if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                      .contains(lvl)) {
+                                    targetIndices.add(i);
+                                  }
+                                }
+
+                                for (final idx in targetIndices) {
+                                  ref
+                                      .read(selectionManagerProvider.notifier)
+                                      .toggle(SelectionType.vocab, idx,
+                                          force: val);
+                                }
+                                for (var i = 0;
+                                    i < analysis.kanji.length;
+                                    i++) {
+                                  final lvl =
+                                      analysis.kanji[i].level.toUpperCase();
+                                  if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                      .contains(lvl)) {
+                                    ref
+                                        .read(selectionManagerProvider.notifier)
+                                        .toggle(SelectionType.kanji, i,
+                                            force: val);
+                                  }
+                                }
+                              },
+                            ),
+                        ],
+                      ),
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
 
                 // Tabs
                 Consumer(
@@ -289,7 +289,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
 
                 // Results Area
                 Expanded(
@@ -341,9 +341,101 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           ),
                         ),
                         error: (Object e, StackTrace s) {
+                          if (e is SongNotFoundException) {
+                            return Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 32),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.search_off_rounded,
+                                      size: 48,
+                                      color: Color(0xFFE57373),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Song Not Found',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    RichText(
+                                      textAlign: TextAlign.center,
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[600],
+                                          height: 1.4,
+                                        ),
+                                        children: [
+                                          const TextSpan(
+                                              text:
+                                                  'We couldn\'t find lyrics for '),
+                                          TextSpan(
+                                            text: '"${e.title}"',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          const TextSpan(text: ' by '),
+                                          TextSpan(
+                                            text: '"${e.artist}"',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          const TextSpan(
+                                            text:
+                                                '.\nPlease check if the name is correct.',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 32),
+                                    ElevatedButton.icon(
+                                      onPressed: () {
+                                        // Clear Home fields
+                                        ref
+                                            .read(clearHomeFormSignalProvider
+                                                .notifier)
+                                            .state++;
+                                        // Navigate to Home (Index 0)
+                                        ref
+                                            .read(navIndexProvider.notifier)
+                                            .state = 0;
+                                        // Also clear current lyrics state
+                                        ref.invalidate(lyricsNotifierProvider);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFFD4A5A5),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 24, vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.refresh_rounded),
+                                      label: const Text('Try Again'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          // General Error Handling
                           final errorMsg = e.toString();
                           final isNotJapanese = errorMsg.contains(
                               'not appear to be primarily in Japanese');
+                          final isJsonError =
+                              errorMsg.contains('JSON Parse Error') ||
+                                  errorMsg.contains('FormatException');
 
                           return Center(
                             child: Column(
@@ -372,7 +464,10 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 32),
                                   child: Text(
-                                    errorMsg.replaceAll('Exception: ', ''),
+                                    isJsonError
+                                        ? 'Sometimes AI makes a mistake.\nPlease try again.'
+                                        : errorMsg.replaceAll(
+                                            'Exception: ', ''),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 14,
@@ -562,180 +657,266 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
   }
 }
 
-class _VocabList extends ConsumerWidget {
+class _VocabList extends StatefulWidget {
   const _VocabList({required this.vocabList});
   final List<Vocab> vocabList;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (vocabList.isEmpty) {
+  State<_VocabList> createState() => _VocabListState();
+}
+
+class _VocabListState extends State<_VocabList>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    if (widget.vocabList.isEmpty) {
       return const Center(child: Text('No vocabulary found.'));
     }
 
     return ListView.builder(
-      itemCount: vocabList.length,
+      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      cacheExtent: 100,
+      itemCount: widget.vocabList.length,
       itemBuilder: (context, index) {
-        final vocab = vocabList[index];
-        final selected = ref.watch(selectionManagerProvider);
-        final isSelected = selected.vocabIndices.contains(index);
-
-        return _ResultCard(
-          title: Text(
-            vocab.word,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          subtitle: Text(
-            vocab.reading,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          details: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                vocab.meaning,
-                style: const TextStyle(color: Colors.black87),
-              ),
-              if (vocab.context.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    vocab.context,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          trailingTag: vocab.jlptV.isNotEmpty
-              ? _Tag(
-                  label: vocab.jlptV,
-                  color: const Color(0xFFD4A5A5),
-                )
-              : null,
-          isSelected: isSelected,
-          onToggle: () {
-            ref
-                .read(selectionManagerProvider.notifier)
-                .toggle(SelectionType.vocab, index);
-          },
-          themeColor: const Color(0xFFD4A5A5),
+        return _VocabItem(
+          index: index,
+          vocab: widget.vocabList[index],
         );
       },
     );
   }
 }
 
-class _GrammarList extends ConsumerWidget {
+class _VocabItem extends ConsumerWidget {
+  const _VocabItem({required this.index, required this.vocab});
+
+  final int index;
+  final Vocab vocab;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSelected = ref.watch(
+        selectionManagerProvider.select((s) => s.vocabIndices.contains(index)));
+
+    return _ResultCard(
+      title: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: vocab.word,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const WidgetSpan(child: SizedBox(width: 8)),
+            TextSpan(
+              text: vocab.reading,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+      subtitle: null,
+      details: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            vocab.meaning,
+            style: const TextStyle(color: Colors.black87),
+          ),
+          if (vocab.context.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                vocab.context,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+        ],
+      ),
+      trailingTag: vocab.jlptV.isNotEmpty
+          ? _Tag(
+              label: vocab.jlptV,
+              color: const Color(0xFFD4A5A5),
+            )
+          : null,
+      isSelected: isSelected,
+      onToggle: () {
+        ref
+            .read(selectionManagerProvider.notifier)
+            .toggle(SelectionType.vocab, index);
+      },
+      themeColor: const Color(0xFFD4A5A5),
+    );
+  }
+}
+
+class _GrammarList extends StatefulWidget {
   const _GrammarList({required this.grammarList});
   final List<Grammar> grammarList;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (grammarList.isEmpty) {
+  State<_GrammarList> createState() => _GrammarListState();
+}
+
+class _GrammarListState extends State<_GrammarList>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    if (widget.grammarList.isEmpty) {
       return const Center(child: Text('No grammar points found.'));
     }
 
     return ListView.builder(
-      itemCount: grammarList.length,
+      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      cacheExtent: 100,
+      itemCount: widget.grammarList.length,
       itemBuilder: (context, index) {
-        final grammar = grammarList[index];
-        final selected = ref.watch(selectionManagerProvider);
-        final isSelected = selected.grammarIndices.contains(index);
-
-        return _ResultCard(
-          title: Text(
-            grammar.point,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          details: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                grammar.explanation,
-                style: const TextStyle(color: Colors.black87),
-              ),
-              if (grammar.usage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    'Usage: ${grammar.usage}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          trailingTag: grammar.level.isNotEmpty
-              ? _Tag(
-                  label: grammar.level,
-                  color: const Color(0xFF90A4AE), // Blue Grey
-                )
-              : null,
-          isSelected: isSelected,
-          onToggle: () {
-            ref
-                .read(selectionManagerProvider.notifier)
-                .toggle(SelectionType.grammar, index);
-          },
-          themeColor: const Color(0xFF78909C), // Blue Grey
+        return _GrammarItem(
+          index: index,
+          grammar: widget.grammarList[index],
         );
       },
     );
   }
 }
 
-class _KanjiList extends ConsumerWidget {
+class _GrammarItem extends ConsumerWidget {
+  const _GrammarItem({required this.index, required this.grammar});
+
+  final int index;
+  final Grammar grammar;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSelected = ref.watch(selectionManagerProvider
+        .select((s) => s.grammarIndices.contains(index)));
+
+    return _ResultCard(
+      title: Text(
+        grammar.point,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+      details: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            grammar.explanation,
+            style: const TextStyle(color: Colors.black87),
+          ),
+          if (grammar.usage.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Usage: ${grammar.usage}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+        ],
+      ),
+      trailingTag: grammar.level.isNotEmpty
+          ? _Tag(
+              label: grammar.level,
+              color: const Color(0xFF90A4AE), // Blue Grey
+            )
+          : null,
+      isSelected: isSelected,
+      onToggle: () {
+        ref
+            .read(selectionManagerProvider.notifier)
+            .toggle(SelectionType.grammar, index);
+      },
+      themeColor: const Color(0xFF78909C), // Blue Grey
+    );
+  }
+}
+
+class _KanjiList extends StatefulWidget {
   const _KanjiList({required this.kanjiList});
   final List<Kanji> kanjiList;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (kanjiList.isEmpty) {
+  State<_KanjiList> createState() => _KanjiListState();
+}
+
+class _KanjiListState extends State<_KanjiList>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    if (widget.kanjiList.isEmpty) {
       return const Center(child: Text('No kanji found.'));
     }
 
     return ListView.builder(
-      itemCount: kanjiList.length,
+      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      cacheExtent: 100,
+      itemCount: widget.kanjiList.length,
       itemBuilder: (context, index) {
-        final kanji = kanjiList[index];
-        final selected = ref.watch(selectionManagerProvider);
-        final isSelected = selected.kanjiIndices.contains(index);
-
-        return _ResultCard(
-          leadingContent: CircleAvatar(
-            backgroundColor: const Color(0xFFEFEBE9), // Light Brown
-            foregroundColor: const Color(0xFF5D4037), // Dark Brown
-            child: Text(kanji.char, style: const TextStyle(fontSize: 20)),
-          ),
-          title: Text(
-            kanji.meanings,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          subtitle: Text(
-            kanji.readings,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          trailingTag: kanji.level.isNotEmpty
-              ? _Tag(
-                  label: kanji.level,
-                  color: const Color(0xFFA1887F), // Brown
-                )
-              : null,
-          isSelected: isSelected,
-          onToggle: () {
-            ref
-                .read(selectionManagerProvider.notifier)
-                .toggle(SelectionType.kanji, index);
-          },
-          themeColor: const Color(0xFF8D6E63), // Brown
+        return _KanjiItem(
+          index: index,
+          kanji: widget.kanjiList[index],
         );
       },
+    );
+  }
+}
+
+class _KanjiItem extends ConsumerWidget {
+  const _KanjiItem({required this.index, required this.kanji});
+
+  final int index;
+  final Kanji kanji;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSelected = ref.watch(
+        selectionManagerProvider.select((s) => s.kanjiIndices.contains(index)));
+
+    return _ResultCard(
+      leadingContent: CircleAvatar(
+        backgroundColor: const Color(0xFFEFEBE9), // Light Brown
+        foregroundColor: const Color(0xFF5D4037), // Dark Brown
+        child: Text(kanji.char, style: const TextStyle(fontSize: 20)),
+      ),
+      title: Text(
+        kanji.meanings,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+      subtitle: Text(
+        kanji.readings,
+        style: const TextStyle(fontSize: 12, color: Colors.grey),
+      ),
+      trailingTag: kanji.level.isNotEmpty
+          ? _Tag(
+              label: kanji.level,
+              color: const Color(0xFFA1887F), // Brown
+            )
+          : null,
+      isSelected: isSelected,
+      onToggle: () {
+        ref
+            .read(selectionManagerProvider.notifier)
+            .toggle(SelectionType.kanji, index);
+      },
+      themeColor: const Color(0xFF8D6E63), // Brown
     );
   }
 }
@@ -748,10 +929,25 @@ class _Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withValues(alpha: 0.8),
+            color,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.4),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
         label,
@@ -759,14 +955,16 @@ class _Tag extends StatelessWidget {
           fontSize: 10,
           color: Colors.white,
           fontWeight: FontWeight.bold,
+          height: 1.0,
+          letterSpacing: 0.5,
         ),
       ),
     );
   }
 }
 
-class _FilterCheckbox extends StatelessWidget {
-  const _FilterCheckbox({
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
     required this.label,
     required this.value,
     required this.onChanged,
@@ -774,24 +972,38 @@ class _FilterCheckbox extends StatelessWidget {
 
   final String label;
   final bool value;
-  final ValueChanged<bool?> onChanged;
+  final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: value,
-      onSelected: onChanged,
-      checkmarkColor: Colors.white,
-      selectedColor: const Color(0xFFD4A5A5),
-      backgroundColor: Colors.white,
-      side: const BorderSide(color: Color(0xFFE0E0E0)),
-      labelStyle: TextStyle(
-        color: value ? Colors.white : const Color(0xFF8E7F7F),
-        fontWeight: value ? FontWeight.bold : FontWeight.normal,
+    final themeColor = const Color(0xFFD4A5A5);
+
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: value ? themeColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: themeColor,
+            width: 1.5,
+          ),
+        ),
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 200),
+          style: TextStyle(
+            color: value ? Colors.white : themeColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+          child: Text(label),
+        ),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      showCheckmark: true,
     );
   }
 }
@@ -837,12 +1049,12 @@ class _ResultCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Checkbox and Leading
-              // Checkbox and Leading
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Checkbox(
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     value: isSelected,
                     activeColor: themeColor,
                     shape: RoundedRectangleBorder(
@@ -860,7 +1072,7 @@ class _ResultCard extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(
-                    top: 10,
+                    top: 4,
                     right: 8,
                     bottom: 8,
                     left: 4,
@@ -869,15 +1081,11 @@ class _ResultCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(child: title),
                           if (trailingTag != null) ...[
                             const SizedBox(width: 8),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: trailingTag,
-                            ),
+                            trailingTag!,
                           ],
                         ],
                       ),
@@ -901,18 +1109,32 @@ class _ResultCard extends StatelessWidget {
   }
 }
 
-class _ExportDialog extends StatefulWidget {
+class _ExportDialog extends ConsumerStatefulWidget {
   const _ExportDialog({required this.onExport});
 
   final Future<void> Function(String userLevel) onExport;
 
   @override
-  State<_ExportDialog> createState() => _ExportDialogState();
+  ConsumerState<_ExportDialog> createState() => _ExportDialogState();
 }
 
-class _ExportDialogState extends State<_ExportDialog> {
+class _ExportDialogState extends ConsumerState<_ExportDialog> {
   String _selectedLevel = 'N5';
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = ref.read(settingsBoxProvider);
+      final saved = box?.get('export_jlpt_level');
+      if (saved != null && saved is String) {
+        setState(() {
+          _selectedLevel = saved;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -977,6 +1199,9 @@ class _ExportDialogState extends State<_ExportDialog> {
               ),
               ElevatedButton(
                 onPressed: () async {
+                  ref
+                      .read(settingsBoxProvider)
+                      ?.put('export_jlpt_level', _selectedLevel);
                   setState(() => _isLoading = true);
                   await widget.onExport(_selectedLevel);
                   if (mounted) {
