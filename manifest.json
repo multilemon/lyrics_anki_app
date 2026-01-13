@@ -1,23 +1,23 @@
 {
-    "name": "Lyrics Anki App",
-    "short_name": "Lyrics Anki App",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A Very Good Project created by Very Good CLI.",
-    "orientation": "portrait-primary",
-    "prefer_related_applications": false,
-    "icons": [
-        {
-            "src": "icons/Icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/Icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "HanaUta: Learn Japanese with Lyrics",
+  "short_name": "HanaUta",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F9F6F7",
+  "theme_color": "#D4A5A5",
+  "description": "Master Japanese vocabulary and grammar through your favorite songs. Export to Anki instantly.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
