@@ -55,8 +55,12 @@ class LyricsNotifier extends _$LyricsNotifier {
       return result;
     });
 
-    state = AsyncValue.data(result.value);
-    return result.value;
+    // Directly assign the AsyncValue result to state.
+    // If it's an error, this propagates the error state correctly without throwing.
+    state = result;
+
+    // Return the value if it exists, or null. This avoids throwing if error.
+    return result.valueOrNull;
   }
 
   void loadFromHistory(HistoryItem item) {

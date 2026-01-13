@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
+import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -23,6 +24,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   final _titleController = TextEditingController();
   final _artistController = TextEditingController();
   String _selectedLanguage = 'English';
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _artistController.dispose();
+    super.dispose();
+  }
 
   final List<String> _languages = [
     'English',
@@ -57,6 +65,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for clear signal
+    ref.listen(clearHomeFormSignalProvider, (_, __) {
+      _titleController.clear();
+      _artistController.clear();
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6F7),
       body: Center(

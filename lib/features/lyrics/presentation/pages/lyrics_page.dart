@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_saver/file_saver.dart';
+import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
+import 'package:lyrics_anki_app/features/main/presentation/pages/main_page.dart';
 
 class LyricsPage extends ConsumerStatefulWidget {
   const LyricsPage({super.key});
@@ -122,6 +124,26 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                       return vocabAll && grammarAll && kanjiAll;
                     }
 
+                    // Determine which levels actually exist in the data
+                    final presentLevels = <String>{};
+                    bool hasOther = false;
+
+                    void checkLevels(List<dynamic> items,
+                        String Function(dynamic) getLevel) {
+                      for (final item in items) {
+                        final lvl = getLevel(item).toUpperCase();
+                        if (['N1', 'N2', 'N3', 'N4', 'N5'].contains(lvl)) {
+                          presentLevels.add(lvl);
+                        } else {
+                          hasOther = true;
+                        }
+                      }
+                    }
+
+                    checkLevels(analysis.vocabs, (d) => (d as Vocab).jlptV);
+                    checkLevels(analysis.grammar, (d) => (d as Grammar).level);
+                    checkLevels(analysis.kanji, (d) => (d as Kanji).level);
+
                     return Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -137,74 +159,79 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           },
                         ),
                         for (final level in ['N1', 'N2', 'N3', 'N4', 'N5'])
-                          _FilterCheckbox(
-                            label: level,
-                            value: isLevelSelected(level),
-                            onChanged: (val) {
-                              ref
-                                  .read(selectionManagerProvider.notifier)
-                                  .toggleLevel(
-                                    analysis,
-                                    level,
-                                    select: val ?? false,
-                                  );
-                            },
-                          ),
-                        _FilterCheckbox(
-                          label: 'Other',
-                          value: (() {
-                            final nonLevels = <int>[];
-                            for (var i = 0; i < analysis.vocabs.length; i++) {
-                              final lvl =
-                                  analysis.vocabs[i].jlptV.toUpperCase();
-                              if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                  .contains(lvl)) {
-                                nonLevels.add(i);
-                              }
-                            }
-                            if (nonLevels.isEmpty) return false;
-                            return nonLevels
-                                .every(selected.vocabIndices.contains);
-                          })(),
-                          onChanged: (val) {
-                            // Select all non-standard levels
-                            // This logic should ideally be in the notifier,
-                            // but implementing here for now
-                            // Or better, update notifier to handle a filter
-                            // predicate?
-                            // For simplicity/speed, I'll manually iterate here
-                            // and toggle.
-                            final targetIndices = <int>[];
-                            for (var i = 0; i < analysis.vocabs.length; i++) {
-                              final lvl =
-                                  analysis.vocabs[i].jlptV.toUpperCase();
-                              if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                  .contains(lvl)) {
-                                targetIndices.add(i);
-                              }
-                            }
-
-                            for (final idx in targetIndices) {
-                              ref
-                                  .read(selectionManagerProvider.notifier)
-                                  .toggle(SelectionType.vocab, idx, force: val);
-                            }
-                            // Note: Logic for 'Other' currently only targets
-                            // Vocab based on typical usage.
-                            // Grammar usually has strict levels. Kanji might
-                            // have levels too.
-                            // If we want 'Other' to apply to Kanji too:
-                            for (var i = 0; i < analysis.kanji.length; i++) {
-                              final lvl = analysis.kanji[i].level.toUpperCase();
-                              if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                  .contains(lvl)) {
+                          if (presentLevels.contains(level))
+                            _FilterCheckbox(
+                              label: level,
+                              value: isLevelSelected(level),
+                              onChanged: (val) {
                                 ref
                                     .read(selectionManagerProvider.notifier)
-                                    .toggle(SelectionType.kanji, i, force: val);
+                                    .toggleLevel(
+                                      analysis,
+                                      level,
+                                      select: val ?? false,
+                                    );
+                              },
+                            ),
+                        if (hasOther)
+                          _FilterCheckbox(
+                            label: 'Other',
+                            value: (() {
+                              final nonLevels = <int>[];
+                              for (var i = 0; i < analysis.vocabs.length; i++) {
+                                final lvl =
+                                    analysis.vocabs[i].jlptV.toUpperCase();
+                                if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                    .contains(lvl)) {
+                                  nonLevels.add(i);
+                                }
                               }
-                            }
-                          },
-                        ),
+                              if (nonLevels.isEmpty) return false;
+                              return nonLevels
+                                  .every(selected.vocabIndices.contains);
+                            })(),
+                            onChanged: (val) {
+                              // Select all non-standard levels
+                              // This logic should ideally be in the notifier,
+                              // but implementing here for now
+                              // Or better, update notifier to handle a filter
+                              // predicate?
+                              // For simplicity/speed, I'll manually iterate here
+                              // and toggle.
+                              final targetIndices = <int>[];
+                              for (var i = 0; i < analysis.vocabs.length; i++) {
+                                final lvl =
+                                    analysis.vocabs[i].jlptV.toUpperCase();
+                                if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                    .contains(lvl)) {
+                                  targetIndices.add(i);
+                                }
+                              }
+
+                              for (final idx in targetIndices) {
+                                ref
+                                    .read(selectionManagerProvider.notifier)
+                                    .toggle(SelectionType.vocab, idx,
+                                        force: val);
+                              }
+                              // Note: Logic for 'Other' currently only targets
+                              // Vocab based on typical usage.
+                              // Grammar usually has strict levels. Kanji might
+                              // have levels too.
+                              // If we want 'Other' to apply to Kanji too:
+                              for (var i = 0; i < analysis.kanji.length; i++) {
+                                final lvl =
+                                    analysis.kanji[i].level.toUpperCase();
+                                if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                    .contains(lvl)) {
+                                  ref
+                                      .read(selectionManagerProvider.notifier)
+                                      .toggle(SelectionType.kanji, i,
+                                          force: val);
+                                }
+                              }
+                            },
+                          ),
                       ],
                     );
                   },
@@ -284,61 +311,104 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                             ],
                           ),
                         ),
-                        error: (Object e, StackTrace s) => Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 48,
-                                color: Color(0xFFE57373),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Analysis Failed',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[700],
+                        error: (Object e, StackTrace s) {
+                          final errorMsg = e.toString();
+                          final isNotJapanese = errorMsg.contains(
+                              'not appear to be primarily in Japanese');
+
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isNotJapanese
+                                      ? Icons.translate_rounded
+                                      : Icons.error_outline,
+                                  size: 48,
+                                  color: const Color(0xFFE57373),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 32),
-                                child: Text(
-                                  e.toString(),
-                                  textAlign: TextAlign.center,
+                                const SizedBox(height: 16),
+                                Text(
+                                  isNotJapanese
+                                      ? 'Language Mismatch'
+                                      : 'Analysis Failed',
                                   style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[400],
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 24),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  ref
-                                      .read(lyricsNotifierProvider.notifier)
-                                      .retry();
-                                },
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('Retry'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFD4A5A5),
-                                  foregroundColor: Colors.white,
+                                const SizedBox(height: 8),
+                                Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                      horizontal: 32),
+                                  child: Text(
+                                    errorMsg.replaceAll('Exception: ', ''),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                      height: 1.4,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
+                                const SizedBox(height: 32),
+                                if (isNotJapanese)
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      // Clear Home fields
+                                      ref
+                                          .read(clearHomeFormSignalProvider
+                                              .notifier)
+                                          .state++;
+                                      // Navigate to Home (Index 0)
+                                      ref
+                                          .read(navIndexProvider.notifier)
+                                          .state = 0;
+                                      // Also clear current lyrics state
+                                      ref.invalidate(lyricsNotifierProvider);
+                                    },
+                                    icon: const Icon(Icons.search),
+                                    label: const Text('Search Another Song'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFD4A5A5),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 14,
+                                      ),
+                                      textStyle: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      ref
+                                          .read(lyricsNotifierProvider.notifier)
+                                          .retry();
+                                    },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Retry Analysis'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFD4A5A5),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
                       );
                     },
                   ),

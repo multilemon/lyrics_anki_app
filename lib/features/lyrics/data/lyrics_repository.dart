@@ -43,9 +43,13 @@ class LyricsRepository {
 
 **WORKFLOW**:
 
-1. **Search**: Google Search Grounding for official lyrics.
-2. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
-3. **Format**: Strictly Minified JSON.
+1. **Language Verification**: Check if the song's lyrics are primarily in Japanese.
+   - If **NO**: Return strictly `{"error": "NOT_JAPANESE"}`.
+   - If **YES**: Proceed to step 2.
+
+2. **Search**: Google Search Grounding for official lyrics.
+3. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
+4. **Format**: Strictly Minified JSON.
 
 **CONSTRAINTS**:
 
@@ -94,10 +98,20 @@ class LyricsRepository {
       // Clean up if the model wraps in backticks
       final cleanText = _extractJson(text);
 
+      // Check for language error *before* parsing full structure
+      if (cleanText.contains('"error"') && cleanText.contains('NOT_JAPANESE')) {
+        throw Exception(
+            'This song does not appear to be primarily in Japanese.');
+      }
+
       return await parseAnalysisResult(cleanText);
     } catch (e) {
       debugPrint('Analysis error: $e');
-      return AnalysisResult(vocabs: [], grammar: [], kanji: []);
+
+      if (e is Exception) rethrow;
+      if (e is String) throw Exception(e);
+
+      throw Exception('Failed to analyze song. Please try again.');
     }
   }
 
