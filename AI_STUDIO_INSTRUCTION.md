@@ -3,9 +3,19 @@
 
 **WORKFLOW**:
 
-1. **Search**: Google Search Grounding for official lyrics.
-2. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
-3. **Format**: Strictly Minified JSON.
+1. **Language Verification**: Check if the song's lyrics are primarily in Japanese.
+   - If **NO**: Return strictly `{"error": "NOT_JAPANESE"}`.
+   - If **YES**: Proceed to step 2.
+
+1b. **Existence Verification**: Check if the specific song by the artist largely exists.
+
+- If **NO (Not Found/Ambiguous)**: Return strictly `{"error": "NOT_FOUND"}`.
+
+2. **Search**:
+   - Use Google Search to find the **Official Music Video** on YouTube. Extract the exact ID.
+   - Use Google Search for official lyrics.
+3. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
+4. **Format**: Strictly Minified JSON.
 
 **CONSTRAINTS**:
 
@@ -26,7 +36,7 @@
 - VALID RFC 8259. Double quotes ONLY. No trailing commas.
 
 {
-"song":{"title":"","artist":""},
+"song":{"title":"","artist":"","youtube_id":"YouTube Video ID (Official MV preferred)"},
 "vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],
 "grammar":[["point","level","explanation","usage"]],
 "kanji":[["char","level","meanings","readings"]]

@@ -52,7 +52,9 @@ class LyricsRepository {
 1b. **Existence Verification**: Check if the specific song by the artist largely exists.
    - If **NO (Not Found/Ambiguous)**: Return strictly `{"error": "NOT_FOUND"}`.
 
-2. **Search**: Google Search Grounding for official lyrics.
+2. **Search**: 
+   - Use Google Search to find the **Official Music Video** on YouTube. Extract the exact ID.
+   - Use Google Search for official lyrics.
 3. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
 4. **Format**: Strictly Minified JSON.
 
@@ -75,7 +77,7 @@ class LyricsRepository {
 - VALID RFC 8259. Double quotes ONLY. No trailing commas.
 
 {
-"song":{"title":"","artist":"","youtube_id":""},
+"song":{"title":"","artist":"","youtube_id":"YouTube Video ID (Official MV preferred)"},
 "vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],
 "grammar":[["point","level","explanation","usage"]],
 "kanji":[["char","level","meanings","readings"]]
@@ -101,11 +103,13 @@ class LyricsRepository {
       }
 
       // Log successful analysis attempt
-      unawaited(analyticsService.logSongAnalysis(
-        songTitle: title,
-        artist: artist,
-        language: language,
-      ),);
+      unawaited(
+        analyticsService.logSongAnalysis(
+          songTitle: title,
+          artist: artist,
+          language: language,
+        ),
+      );
 
       // Clean up if the model wraps in backticks
       final cleanText = _extractJson(text);
@@ -113,7 +117,8 @@ class LyricsRepository {
       // Check for language error *before* parsing full structure
       if (cleanText.contains('"error"') && cleanText.contains('NOT_JAPANESE')) {
         throw Exception(
-            'This song does not appear to be primarily in Japanese.',);
+          'This song does not appear to be primarily in Japanese.',
+        );
       }
 
       if (cleanText.contains('"error"') && cleanText.contains('NOT_FOUND')) {
@@ -211,7 +216,16 @@ class LyricsRepository {
         if (songData is Map<String, dynamic>) {
           songTitle = songData['title']?.toString() ?? '';
           artistName = songData['artist']?.toString() ?? '';
-          youtubeId = songData['youtube_id']?.toString();
+          final rawId = songData['youtube_id']?.toString();
+          youtubeId = _extractYoutubeId(rawId);
+
+          if (youtubeId == null || youtubeId.isEmpty) {
+            debugPrint(
+              '⚠️ Video NOT FOUND (or invalid) for: $songTitle - $artistName',
+            );
+          } else {
+            debugPrint('✅ Video FOUND: $youtubeId from "$rawId"');
+          }
         }
       }
 
@@ -226,8 +240,43 @@ class LyricsRepository {
     } catch (e) {
       debugPrint('JSON Parse Error: $e');
       throw const FormatException(
-          'Failed to parse AI response: Invalid JSON format.',);
+        'Failed to parse AI response: Invalid JSON format.',
+      );
     }
+  }
+
+  String? _extractYoutubeId(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final text = raw.trim();
+
+    // 1. If it's a full URL, try to parse 'v=' or 'youtu.be/'
+    // Standard format: https://www.youtube.com/watch?v=VIDEO_ID
+    final uri = Uri.tryParse(text);
+    if (uri != null && uri.host.contains('youtube.com')) {
+      if (uri.queryParameters.containsKey('v')) {
+        return uri.queryParameters['v'];
+      }
+    }
+    // Short format: https://youtu.be/VIDEO_ID
+    if (uri != null && uri.host.contains('youtu.be')) {
+      if (uri.pathSegments.isNotEmpty) {
+        return uri.pathSegments.first;
+      }
+    }
+
+    // 2. Fallback: Assume it's an ID if it matches pattern (11 chars, base64-like)
+    // Actually, just checking length/content is decent heuristic if simpler check fails
+    // Regex for ID: ^[a-zA-Z0-9_-]{11}$
+    final idRegex = RegExp(r'^[a-zA-Z0-9_-]{11}$');
+    if (idRegex.hasMatch(text)) {
+      return text;
+    }
+
+    // 3. If standard ID check fails, maybe the AI returned extra text?
+    // Aggressive extraction: limit to first 11 valid chars? No, unsafe.
+    // If the simple URL parse didn't work and regex didn't match, return null or raw?
+    // Let's rely on the URL parser and the ID regex. If neither matches, it's likely garbage.
+    return null;
   }
 
   Vocab _mapToVocab(List<dynamic> array) {
