@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/pages/lyrics_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
@@ -24,11 +25,13 @@ class MainPage extends ConsumerWidget {
 
           // Trigger analysis (fire and forget for UI,
           // but provider handles state)
-          unawaited(ref.read(lyricsNotifierProvider.notifier).analyzeSong(
-                title,
-                artist,
-                language,
-              ));
+          unawaited(
+            ref.read(lyricsNotifierProvider.notifier).analyzeSong(
+                  title,
+                  artist,
+                  language,
+                ),
+          );
         },
         onHistoryItemClick: (
           item,
@@ -57,21 +60,21 @@ class MainPage extends ConsumerWidget {
         },
         backgroundColor: Colors.white,
         elevation: 1,
-        indicatorColor: const Color(0xFFD4A5A5).withValues(alpha: 0.2),
+        indicatorColor: AppColors.sakuraDark.withValues(alpha: 0.2),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: Color(0xFFD4A5A5)),
+            selectedIcon: Icon(Icons.home, color: AppColors.sakuraDark),
             label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.music_note_outlined),
-            selectedIcon: Icon(Icons.music_note, color: Color(0xFFD4A5A5)),
+            selectedIcon: Icon(Icons.music_note, color: AppColors.sakuraDark),
             label: 'Lyrics',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings, color: Color(0xFFD4A5A5)),
+            selectedIcon: Icon(Icons.settings, color: AppColors.sakuraDark),
             label: 'Settings',
           ),
         ],

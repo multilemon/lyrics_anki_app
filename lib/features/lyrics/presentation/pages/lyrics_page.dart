@@ -1,10 +1,11 @@
 import 'dart:async';
-
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
+import 'package:lyrics_anki_app/core/theme/app_colors.dart';
+
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
@@ -22,14 +23,13 @@ class LyricsPage extends ConsumerStatefulWidget {
 class _LyricsPageState extends ConsumerState<LyricsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _showFloatingPlayer = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
   }
-
-  bool _showFloatingPlayer = false;
 
   @override
   void dispose() {
@@ -39,8 +39,10 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F7),
+      // backgroundColor: theme.scaffoldBackgroundColor, // Handled by theme
       body: Stack(
         children: [
           SafeArea(
@@ -64,10 +66,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                             children: [
                               Text(
                                 analysis.song,
-                                style: const TextStyle(
-                                  fontSize: 20,
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: AppColors.textPrimary,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF5D4037),
                                 ),
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
@@ -76,9 +77,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                               const SizedBox(height: 4),
                               Text(
                                 analysis.artist,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF8E7F7F),
+                                style: theme.textTheme.bodyMedium?.copyWith(
                                   fontStyle: FontStyle.italic,
                                 ),
                                 textAlign: TextAlign.center,
@@ -309,9 +308,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
 
                         return TabBar(
                           controller: _tabController,
-                          labelColor: const Color(0xFFD4A5A5),
-                          unselectedLabelColor: const Color(0xFF8E7F7F),
-                          indicatorColor: const Color(0xFFD4A5A5),
+                          labelColor: AppColors.sakuraDark,
+                          unselectedLabelColor: AppColors.textSecondary,
+                          indicatorColor: AppColors.sakuraDark,
                           tabs: [
                             Tab(text: 'Vocab ($vocabCount)'),
                             Tab(text: 'Grammar ($grammarCount)'),
@@ -333,9 +332,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                 return Center(
                                   child: Text(
                                     'No analysis data available.',
-                                    style: TextStyle(
-                                      color: const Color(0xFF8E7F7F)
-                                          .withValues(alpha: 0.5),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: AppColors.textTertiary,
                                     ),
                                   ),
                                 );
@@ -355,17 +353,15 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   const CircularProgressIndicator(
-                                    color: Color(0xFFD4A5A5),
+                                    color: AppColors.sakuraDark,
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
                                     'Analysis in progress...\n'
                                     'This could take a few minutes.',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: const Color(0xFF8E7F7F)
-                                          .withValues(alpha: 0.7),
-                                      fontSize: 14,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -385,26 +381,22 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                         const Icon(
                                           Icons.search_off_rounded,
                                           size: 48,
-                                          color: Color(0xFFE57373),
+                                          color: AppColors.error,
                                         ),
                                         const SizedBox(height: 16),
                                         Text(
                                           'Song Not Found',
-                                          style: TextStyle(
-                                            fontSize: 18,
+                                          style: theme.textTheme.headlineSmall
+                                              ?.copyWith(
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.grey[700],
+                                            color: AppColors.textSecondary,
                                           ),
                                         ),
                                         const SizedBox(height: 8),
                                         RichText(
                                           textAlign: TextAlign.center,
                                           text: TextSpan(
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey[600],
-                                              height: 1.4,
-                                            ),
+                                            style: theme.textTheme.bodyMedium,
                                             children: [
                                               const TextSpan(
                                                 text:
@@ -451,7 +443,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
-                                                const Color(0xFFD4A5A5),
+                                                AppColors.sakuraDark,
                                             foregroundColor: Colors.white,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 24,
@@ -490,17 +482,17 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                           ? Icons.translate_rounded
                                           : Icons.error_outline,
                                       size: 48,
-                                      color: const Color(0xFFE57373),
+                                      color: AppColors.error,
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
                                       isNotJapanese
                                           ? 'Language Mismatch'
                                           : 'Analysis Failed',
-                                      style: TextStyle(
-                                        fontSize: 18,
+                                      style: theme.textTheme.headlineSmall
+                                          ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey[700],
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -516,11 +508,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                                 '',
                                               ),
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                          height: 1.4,
-                                        ),
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(height: 1.4),
                                       ),
                                     ),
                                     const SizedBox(height: 32),
@@ -547,8 +536,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                         label:
                                             const Text('Search Another Song'),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFFD4A5A5),
+                                          backgroundColor: AppColors.sakuraDark,
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 24,
@@ -575,8 +563,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                         icon: const Icon(Icons.refresh),
                                         label: const Text('Retry Analysis'),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFFD4A5A5),
+                                          backgroundColor: AppColors.sakuraDark,
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 24,
@@ -638,7 +625,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                   !_showFloatingPlayer) ...[
                 FloatingActionButton(
                   heroTag: 'play_fab',
-                  backgroundColor: const Color(0xFFD4A5A5),
+                  backgroundColor: AppColors.sakuraDark,
                   onPressed: () => setState(() => _showFloatingPlayer = true),
                   child:
                       const Icon(Icons.play_arrow_rounded, color: Colors.white),
@@ -648,7 +635,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
               if (hasSelection)
                 FloatingActionButton(
                   heroTag: 'export_fab',
-                  backgroundColor: const Color(0xFFD4A5A5),
+                  backgroundColor: AppColors.sakuraDark,
                   onPressed: () {
                     // Re-read to get latest state in callback
                     final analysis =
@@ -779,8 +766,15 @@ class _VocabListState extends State<_VocabList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final theme = Theme.of(context);
     if (widget.vocabList.isEmpty) {
-      return const Center(child: Text('No vocabulary found.'));
+      return Center(
+        child: Text(
+          'No vocabulary found.',
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: AppColors.textTertiary),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -805,6 +799,7 @@ class _VocabItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final isSelected = ref.watch(
       selectionManagerProvider.select((s) => s.vocabIndices.contains(index)),
     );
@@ -815,12 +810,16 @@ class _VocabItem extends ConsumerWidget {
           children: [
             TextSpan(
               text: vocab.word,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const WidgetSpan(child: SizedBox(width: 8)),
             TextSpan(
               text: vocab.reading,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textTertiary,
+              ),
             ),
           ],
         ),
@@ -830,17 +829,16 @@ class _VocabItem extends ConsumerWidget {
         children: [
           Text(
             vocab.meaning,
-            style: const TextStyle(color: Colors.black87),
+            style: theme.textTheme.bodyMedium,
           ),
           if (vocab.context.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 vocab.context,
-                style: const TextStyle(
-                  fontSize: 11,
+                style: theme.textTheme.bodySmall?.copyWith(
                   fontStyle: FontStyle.italic,
-                  color: Colors.grey,
+                  color: AppColors.textTertiary,
                 ),
               ),
             ),
@@ -849,11 +847,11 @@ class _VocabItem extends ConsumerWidget {
       trailingTag: vocab.jlptV.isNotEmpty
           ? _Tag(
               label: vocab.jlptV,
-              color: const Color(0xFFD4A5A5),
+              color: AppColors.sakuraDark,
             )
-          : _Tag(
+          : const _Tag(
               label: 'Other',
-              color: Colors.grey.shade400,
+              color: AppColors.textTertiary,
             ),
       isSelected: isSelected,
       onToggle: () {
@@ -861,7 +859,7 @@ class _VocabItem extends ConsumerWidget {
             .read(selectionManagerProvider.notifier)
             .toggle(SelectionType.vocab, index);
       },
-      themeColor: const Color(0xFFD4A5A5),
+      themeColor: AppColors.sakuraDark,
     );
   }
 }
@@ -882,8 +880,16 @@ class _GrammarListState extends State<_GrammarList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final theme = Theme.of(context);
+
     if (widget.grammarList.isEmpty) {
-      return const Center(child: Text('No grammar points found.'));
+      return Center(
+        child: Text(
+          'No grammar points found.',
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: AppColors.textTertiary),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -908,6 +914,7 @@ class _GrammarItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final isSelected = ref.watch(
       selectionManagerProvider.select((s) => s.grammarIndices.contains(index)),
     );
@@ -915,24 +922,25 @@ class _GrammarItem extends ConsumerWidget {
     return _ResultCard(
       title: Text(
         grammar.point,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
       ),
       details: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             grammar.explanation,
-            style: const TextStyle(color: Colors.black87),
+            style: theme.textTheme.bodyMedium,
           ),
           if (grammar.usage.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 'Usage: ${grammar.usage}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
+                style: theme.textTheme.bodySmall?.copyWith(
                   fontStyle: FontStyle.italic,
+                  color: AppColors.textTertiary,
                 ),
               ),
             ),
@@ -941,16 +949,16 @@ class _GrammarItem extends ConsumerWidget {
       trailingTag: grammar.level.isNotEmpty
           ? _Tag(
               label: grammar.level,
-              color: const Color(0xFFD4A5A5),
+              color: AppColors.sakuraDark,
             )
-          : _Tag(label: 'Other', color: Colors.grey.shade400),
+          : const _Tag(label: 'Other', color: AppColors.textTertiary),
       isSelected: isSelected,
       onToggle: () {
         ref
             .read(selectionManagerProvider.notifier)
             .toggle(SelectionType.grammar, index);
       },
-      themeColor: const Color(0xFF78909C), // Blue Grey
+      themeColor: AppColors.matcha, // Use matcha for Grammar
     );
   }
 }
@@ -971,8 +979,16 @@ class _KanjiListState extends State<_KanjiList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final theme = Theme.of(context);
+
     if (widget.kanjiList.isEmpty) {
-      return const Center(child: Text('No kanji found.'));
+      return Center(
+        child: Text(
+          'No kanji found.',
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: AppColors.textTertiary),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -997,37 +1013,42 @@ class _KanjiItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final isSelected = ref.watch(
       selectionManagerProvider.select((s) => s.kanjiIndices.contains(index)),
     );
 
     return _ResultCard(
       leadingContent: CircleAvatar(
-        backgroundColor: const Color(0xFFEFEBE9), // Light Brown
-        foregroundColor: const Color(0xFF5D4037), // Dark Brown
+        backgroundColor: AppColors.cream,
+        foregroundColor: AppColors.textPrimary,
         child: Text(kanji.char, style: const TextStyle(fontSize: 20)),
       ),
       title: Text(
         kanji.meanings,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
       ),
       subtitle: Text(
         kanji.readings,
-        style: const TextStyle(fontSize: 12, color: Colors.grey),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: AppColors.textTertiary,
+        ),
       ),
       trailingTag: kanji.level.isNotEmpty
           ? _Tag(
               label: kanji.level,
-              color: const Color(0xFFD4A5A5),
+              color: AppColors.sakuraDark,
             )
-          : _Tag(label: 'Other', color: Colors.grey.shade400),
+          : const _Tag(label: 'Other', color: AppColors.textTertiary),
       isSelected: isSelected,
       onToggle: () {
         ref
             .read(selectionManagerProvider.notifier)
             .toggle(SelectionType.kanji, index);
       },
-      themeColor: const Color(0xFF8D6E63), // Brown
+      themeColor: const Color(0xFF8D6E63), // Brown for Kanji
     );
   }
 }
@@ -1039,6 +1060,7 @@ class _Tag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1062,9 +1084,8 @@ class _Tag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 10,
-          color: Colors.white,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: AppColors.white,
           fontWeight: FontWeight.bold,
           height: 1,
           letterSpacing: 0.5,
@@ -1087,7 +1108,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const themeColor = Color(0xFFD4A5A5);
+    const themeColor = AppColors.sakuraDark;
 
     return InkWell(
       onTap: () => onChanged(!value),
@@ -1144,7 +1165,7 @@ class _ResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: isSelected ? themeColor.withValues(alpha: 0.1) : Colors.white,
+      color: isSelected ? themeColor.withValues(alpha: 0.1) : AppColors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -1249,16 +1270,19 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AlertDialog(
-      title: const Text(
+      title: Text(
         'Export to Anki',
-        style: TextStyle(color: Color(0xFF8E7F7F)),
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: AppColors.textSecondary,
+        ),
       ),
       content: _isLoading
           ? const Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: Color(0xFFD4A5A5)),
+                CircularProgressIndicator(color: AppColors.sakuraDark),
                 SizedBox(height: 16),
                 Text('Generating .apkg file...'),
               ],
@@ -1269,18 +1293,20 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
               children: [
                 const Text('Select your JLPT Level:'),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Words above this level will include furigana on the '
                   'front of the card.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: _selectedLevel,
-                  dropdownColor: Colors.white,
+                  dropdownColor: AppColors.white,
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: const Color(0xFFF9F6F7),
+                    fillColor: AppColors.cream,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -1305,8 +1331,12 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
           : [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child:
-                    const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'Cancel',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -1319,7 +1349,7 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4A5A5),
+                  backgroundColor: AppColors.sakuraDark,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Export'),
@@ -1363,7 +1393,7 @@ class _FloatingYouTubePlayerState extends State<_FloatingYouTubePlayer> {
           child: Container(
             width: 320,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -1380,7 +1410,7 @@ class _FloatingYouTubePlayerState extends State<_FloatingYouTubePlayer> {
                 Container(
                   height: 24,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFD4A5A5),
+                    color: AppColors.sakuraDark,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
                       topRight: Radius.circular(12),

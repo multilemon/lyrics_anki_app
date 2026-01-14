@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
+import 'package:lyrics_anki_app/core/theme/app_colors.dart';
+import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
@@ -53,9 +55,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     if (title.isEmpty || artist.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both Song Title and Artist Name'),
-          backgroundColor: Colors.redAccent,
+        SnackBar(
+          content: Text(
+            'Please enter both Song Title and Artist Name',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white),
+          ),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -72,8 +77,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       _artistController.clear();
     });
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F7),
+      // backgroundColor: theme.scaffoldBackgroundColor, // Handled by theme
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
@@ -86,21 +93,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'HanaUta',
-                        style: TextStyle(
-                          fontFamily: 'Serif',
-                          fontSize: 32,
-                          color: Color(0xFFD4A5A5),
-                          fontWeight: FontWeight.w300,
+                        style: theme.textTheme.displayLarge?.copyWith(
+                          color: AppColors.sakuraDark,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Learn Japanese from your favorite songs.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: const Color(0xFF8E7F7F).withValues(alpha: 0.8),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: AppColors.textSecondary,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -115,11 +118,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFD4A5A5).withValues(alpha: 0.1),
+                          color: AppColors.sakuraDark.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -129,11 +132,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text(
+                        Text(
                           'Analyze New Song',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFF8E7F7F),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -142,21 +144,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                         // Song Title
                         TextField(
                           controller: _titleController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Song Title',
-                            labelStyle: TextStyle(color: Colors.grey[600]),
                             hintText: 'e.g. Lemon',
-                            hintStyle: TextStyle(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: const Color(0xFFF9F6F7),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            prefixIcon: const Icon(
-                              Icons.music_note,
-                              color: Color(0xFFD4A5A5),
-                            ),
+                            prefixIcon: Icon(Icons.music_note),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -164,21 +155,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                         // Artist Name
                         TextField(
                           controller: _artistController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Artist Name',
-                            labelStyle: TextStyle(color: Colors.grey[600]),
                             hintText: 'e.g. Kenshi Yonezu',
-                            hintStyle: TextStyle(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: const Color(0xFFF9F6F7),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            prefixIcon: const Icon(
-                              Icons.person,
-                              color: Color(0xFFD4A5A5),
-                            ),
+                            prefixIcon: Icon(Icons.person),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -200,15 +180,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ?.put('target_language', result.englishName);
                             }
                           },
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
-                              vertical: 12,
+                              vertical: 16,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF9F6F7),
-                              borderRadius: BorderRadius.circular(12),
+                              color: AppColors.cream,
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             child: Row(
                               children: [
@@ -217,51 +197,30 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   children: [
                                     Text(
                                       'Target Language',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
+                                      style: theme.textTheme.labelSmall,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       _selectedLanguage,
-                                      style: TextStyle(
-                                        color: Colors.grey[800],
-                                        fontSize: 16,
-                                      ),
+                                      style: theme.textTheme.bodyLarge,
                                     ),
                                   ],
                                 ),
                                 const Spacer(),
                                 const Icon(
                                   Icons.keyboard_arrow_down,
-                                  color: Color(0xFFD4A5A5),
+                                  color: AppColors.sakuraDark,
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
 
                         // Analyze Button
                         ElevatedButton(
                           onPressed: _handleAnalyze,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFD4A5A5),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Analyze Song',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: const Text('Analyze Song'),
                         ),
                       ],
                     ),
@@ -272,15 +231,14 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SliverToBoxAdapter(child: SizedBox(height: 48)),
 
               // History Section Title
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
                     'Recent Analysis',
-                    style: TextStyle(
-                      fontSize: 20,
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       fontFamily: 'Serif',
-                      color: Color(0xFF8E7F7F),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -296,13 +254,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                   return historyAsync.when(
                     data: (items) {
                       if (items.isEmpty) {
-                        return const SliverToBoxAdapter(
+                        return SliverToBoxAdapter(
                           child: Padding(
-                            padding: EdgeInsets.all(32),
+                            padding: const EdgeInsets.all(32),
                             child: Center(
                               child: Text(
                                 'No history yet.',
-                                style: TextStyle(color: Colors.grey),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textTertiary,
+                                ),
                               ),
                             ),
                           ),
@@ -323,7 +283,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
+                                  borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
                                       color:
@@ -334,35 +294,35 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ],
                                 ),
                                 child: Material(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
+                                  color: AppColors.white,
+                                  borderRadius: BorderRadius.circular(20),
                                   clipBehavior: Clip.antiAlias,
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 12,
+                                      horizontal: 24,
+                                      vertical: 16,
                                     ),
-                                    hoverColor: const Color(0xFFD4A5A5)
-                                        .withValues(alpha: 0.05),
-                                    splashColor: const Color(0xFFD4A5A5)
-                                        .withValues(alpha: 0.1),
+                                    hoverColor: AppColors.sakuraLight
+                                        .withValues(alpha: 0.3),
+                                    splashColor: AppColors.sakuraLight,
                                     title: Text(
                                       item.songTitle,
-                                      style: const TextStyle(
+                                      style:
+                                          theme.textTheme.bodyLarge?.copyWith(
                                         fontWeight: FontWeight.w600,
-                                        color: Color(0xFF5D5D5D),
                                       ),
                                     ),
                                     subtitle: Text(
                                       '$artist • ${item.targetLanguage}',
-                                      style: const TextStyle(
-                                        color: Color(0xFFD4A5A5),
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color: AppColors.sakuraDark,
                                       ),
                                     ),
                                     trailing: const Icon(
                                       Icons.arrow_forward_ios_rounded,
                                       size: 16,
-                                      color: Color(0xFFD4A5A5),
+                                      color: AppColors.sakuraDark,
                                     ),
                                     onTap: () {
                                       if (widget.onHistoryItemClick != null) {
@@ -487,49 +447,39 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
         child: Column(
           children: [
-            const Text(
+            Text(
               'Select Language',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF5D4037),
-              ),
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             TextField(
               controller: _searchController,
               autofocus: true,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Search language...',
-                prefixIcon: const Icon(Icons.search, color: Color(0xFFD4A5A5)),
-                filled: true,
-                fillColor: const Color(0xFFF9F6F7),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: EdgeInsets.zero,
+                prefixIcon: Icon(Icons.search),
               ),
               onChanged: _filter,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Expanded(
-              child: ListView.builder(
+              child: ListView.separated(
                 itemCount: _filteredLanguages.length,
+                separatorBuilder: (c, i) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final lang = _filteredLanguages[index];
                   return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                     title: Text(lang.englishName),
                     subtitle: lang.englishName != lang.nativeName
                         ? Text(
                             lang.nativeName,
-                            style: const TextStyle(color: Color(0xFFD4A5A5)),
+                            style: TextStyle(color: AppColors.sakuraDark),
                           )
                         : null,
                     onTap: () => Navigator.pop(context, lang),
