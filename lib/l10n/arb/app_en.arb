@@ -1,7 +1,108 @@
 {
     "@@locale": "en",
-    "counterAppBarTitle": "Counter",
-    "@counterAppBarTitle": {
-        "description": "Text shown in the AppBar of the Counter Page"
+    "appTitle": "HanaUta",
+    "@appTitle": {
+        "description": "The title of the application"
+    },
+    "homeSubtitle": "Learn Japanese from your favorite songs.",
+    "@homeSubtitle": {
+        "description": "Subtitle on the home screen"
+    },
+    "analyzeNewSong": "Analyze New Song",
+    "@analyzeNewSong": {
+        "description": "Header for the analysis input section"
+    },
+    "songTitleLabel": "Song Title",
+    "@songTitleLabel": {
+        "description": "Label for song title input"
+    },
+    "songTitleHint": "e.g. Lemon",
+    "@songTitleHint": {
+        "description": "Hint text for song title input"
+    },
+    "artistNameLabel": "Artist Name",
+    "@artistNameLabel": {
+        "description": "Label for artist name input"
+    },
+    "artistNameHint": "e.g. Kenshi Yonezu",
+    "@artistNameHint": {
+        "description": "Hint text for artist name input"
+    },
+    "targetLanguageLabel": "Target Language",
+    "@targetLanguageLabel": {
+        "description": "Label for target language selector"
+    },
+    "analyzeButton": "Analyze Song",
+    "@analyzeButton": {
+        "description": "Button text to start analysis"
+    },
+    "recentAnalysisTitle": "Recent Analysis",
+    "@recentAnalysisTitle": {
+        "description": "Title for the history section"
+    },
+    "noHistory": "No history yet.",
+    "@noHistory": {
+        "description": "Message shown when history is empty"
+    },
+    "unknownArtist": "Unknown Artist",
+    "@unknownArtist": {
+        "description": "Fallback text for unknown artist"
+    },
+    "settingsTitle": "Settings",
+    "@settingsTitle": {
+        "description": "Title for the settings page"
+    },
+    "uiLanguage": "UI Language",
+    "@uiLanguage": {
+        "description": "Label for UI language setting"
+    },
+    "selectLanguage": "Select Language",
+    "@selectLanguage": {
+        "description": "Dialog title for selecting language"
+    },
+    "analysisInProgress": "Analysis in progress...\nThis could take a few minutes.",
+    "@analysisInProgress": {
+        "description": "Loading message during analysis"
+    },
+    "songNotFound": "Song Not Found",
+    "@songNotFound": {
+        "description": "Error title when song is not found"
+    },
+    "songNotFoundMessage": "We couldn't find lyrics for \"{title}\" by \"{artist}\".\nPlease check if the name is correct.",
+    "@songNotFoundMessage": {
+        "description": "Error message when song is not found",
+        "placeholders": {
+            "title": {
+                "type": "String"
+            },
+            "artist": {
+                "type": "String"
+            }
+        }
+    },
+    "vocabTab": "Vocab",
+    "@vocabTab": {
+        "description": "Tab label for Vocabulary"
+    },
+    "grammarTab": "Grammar",
+    "@grammarTab": {
+        "description": "Tab label for Grammar"
+    },
+    "kanjiTab": "Kanji",
+    "@kanjiTab": {
+        "description": "Tab label for Kanji"
+    },
+    "watchOnYouTube": "Watch on YouTube",
+    "@watchOnYouTube": {
+        "description": "Button text to open video in external player"
+    },
+    "searchLanguageHint": "Search language...",
+    "homeTab": "Home",
+    "@homeTab": {
+        "description": "Label for the Home tab in the bottom navigation bar"
+    },
+    "lyricsTab": "Lyrics",
+    "@lyricsTab": {
+        "description": "Label for the Lyrics tab in the bottom navigation bar"
     }
 }

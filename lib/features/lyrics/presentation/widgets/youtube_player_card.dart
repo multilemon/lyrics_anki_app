@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
@@ -64,11 +65,14 @@ class _YouTubePlayerCardState extends State<YouTubePlayerCard> {
                 final url = 'https://www.youtube.com/watch?v=${widget.videoId}';
                 html.window.open(url, '_blank');
               },
-              icon: const Icon(Icons.open_in_new,
-                  size: 16, color: Colors.white70),
-              label: const Text(
-                'Watch on YouTube',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+              icon: const Icon(
+                Icons.open_in_new,
+                size: 16,
+                color: Colors.white70,
+              ),
+              label: Text(
+                context.l10n.watchOnYouTube,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,

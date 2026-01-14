@@ -6,6 +6,7 @@ import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
+import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -78,6 +79,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       // backgroundColor: theme.scaffoldBackgroundColor, // Handled by theme
@@ -94,14 +96,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'HanaUta',
+                        l10n.appTitle,
                         style: theme.textTheme.displayLarge?.copyWith(
                           color: AppColors.sakuraDark,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Learn Japanese from your favorite songs.',
+                        l10n.homeSubtitle,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: AppColors.textSecondary,
                           fontStyle: FontStyle.italic,
@@ -133,7 +135,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Analyze New Song',
+                          l10n.analyzeNewSong,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -144,10 +146,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                         // Song Title
                         TextField(
                           controller: _titleController,
-                          decoration: const InputDecoration(
-                            labelText: 'Song Title',
-                            hintText: 'e.g. Lemon',
-                            prefixIcon: Icon(Icons.music_note),
+                          decoration: InputDecoration(
+                            labelText: l10n.songTitleLabel,
+                            hintText: l10n.songTitleHint,
+                            prefixIcon: const Icon(Icons.music_note),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -155,10 +157,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                         // Artist Name
                         TextField(
                           controller: _artistController,
-                          decoration: const InputDecoration(
-                            labelText: 'Artist Name',
-                            hintText: 'e.g. Kenshi Yonezu',
-                            prefixIcon: Icon(Icons.person),
+                          decoration: InputDecoration(
+                            labelText: l10n.artistNameLabel,
+                            hintText: l10n.artistNameHint,
+                            prefixIcon: const Icon(Icons.person),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -196,7 +198,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Target Language',
+                                      l10n.targetLanguageLabel,
                                       style: theme.textTheme.labelSmall,
                                     ),
                                     const SizedBox(height: 4),
@@ -220,7 +222,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         // Analyze Button
                         ElevatedButton(
                           onPressed: _handleAnalyze,
-                          child: const Text('Analyze Song'),
+                          child: Text(l10n.analyzeButton),
                         ),
                       ],
                     ),
@@ -235,7 +237,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
-                    'Recent Analysis',
+                    l10n.recentAnalysisTitle,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontFamily: 'Serif',
                       color: AppColors.textSecondary,
@@ -259,7 +261,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             padding: const EdgeInsets.all(32),
                             child: Center(
                               child: Text(
-                                'No history yet.',
+                                l10n.noHistory,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: AppColors.textTertiary,
                                 ),
@@ -275,7 +277,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             final item = items[index];
                             final artist = item.artist.isNotEmpty
                                 ? item.artist
-                                : 'Unknown Artist';
+                                : l10n.unknownArtist;
                             return Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -446,6 +448,7 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Dialog(
       child: Container(
         padding: const EdgeInsets.all(24),
@@ -453,16 +456,16 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
         child: Column(
           children: [
             Text(
-              'Select Language',
+              l10n.selectLanguage,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 24),
             TextField(
               controller: _searchController,
               autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Search language...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: l10n.searchLanguageHint,
+                prefixIcon: const Icon(Icons.search),
               ),
               onChanged: _filter,
             ),

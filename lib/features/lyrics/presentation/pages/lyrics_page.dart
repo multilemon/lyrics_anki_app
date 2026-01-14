@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
+import 'package:lyrics_anki_app/l10n/l10n.dart';
 
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
@@ -103,7 +104,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                         bool isLevelSelected(String level) {
                           final vocabIndices = <int>[];
                           for (var i = 0; i < analysis.vocabs.length; i++) {
-                            if (analysis.vocabs[i].jlptV.toUpperCase() ==
+                            if (analysis.vocabs[i].jlptV.trim().toUpperCase() ==
                                 level.toUpperCase()) {
                               vocabIndices.add(i);
                             }
@@ -111,7 +112,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
 
                           final grammarIndices = <int>[];
                           for (var i = 0; i < analysis.grammar.length; i++) {
-                            if (analysis.grammar[i].level.toUpperCase() ==
+                            if (analysis.grammar[i].level
+                                    .trim()
+                                    .toUpperCase() ==
                                 level.toUpperCase()) {
                               grammarIndices.add(i);
                             }
@@ -119,7 +122,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
 
                           final kanjiIndices = <int>[];
                           for (var i = 0; i < analysis.kanji.length; i++) {
-                            if (analysis.kanji[i].level.toUpperCase() ==
+                            if (analysis.kanji[i].level.trim().toUpperCase() ==
                                 level.toUpperCase()) {
                               kanjiIndices.add(i);
                             }
@@ -171,7 +174,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           String Function(dynamic) getLevel,
                         ) {
                           for (final item in items) {
-                            final lvl = getLevel(item).toUpperCase();
+                            final lvl = getLevel(item).trim().toUpperCase();
                             if (['N1', 'N2', 'N3', 'N4', 'N5'].contains(lvl)) {
                               presentLevels.add(lvl);
                             } else {
@@ -193,7 +196,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           child: Row(
                             children: [
                               _FilterChip(
-                                label: 'All',
+                                label:
+                                    'All', // TODO: Add l10n.all if strictly needed
                                 value: isAllSelected(),
                                 onChanged: (val) {
                                   ref
@@ -229,22 +233,62 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                 ],
                               if (hasOther)
                                 _FilterChip(
-                                  label: 'Other',
+                                  label:
+                                      'Other', // TODO: Add l10n.other if strictly needed
                                   value: (() {
-                                    final nonLevels = <int>[];
+                                    final nonLevelVocab = <int>[];
                                     for (var i = 0;
                                         i < analysis.vocabs.length;
                                         i++) {
                                       final lvl = analysis.vocabs[i].jlptV
+                                          .trim()
                                           .toUpperCase();
                                       if (!['N1', 'N2', 'N3', 'N4', 'N5']
                                           .contains(lvl)) {
-                                        nonLevels.add(i);
+                                        nonLevelVocab.add(i);
                                       }
                                     }
-                                    if (nonLevels.isEmpty) return false;
-                                    return nonLevels
+
+                                    final nonLevelGrammar = <int>[];
+                                    for (var i = 0;
+                                        i < analysis.grammar.length;
+                                        i++) {
+                                      final lvl = analysis.grammar[i].level
+                                          .trim()
+                                          .toUpperCase();
+                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                          .contains(lvl)) {
+                                        nonLevelGrammar.add(i);
+                                      }
+                                    }
+
+                                    final nonLevelKanji = <int>[];
+                                    for (var i = 0;
+                                        i < analysis.kanji.length;
+                                        i++) {
+                                      final lvl = analysis.kanji[i].level
+                                          .trim()
+                                          .toUpperCase();
+                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                          .contains(lvl)) {
+                                        nonLevelKanji.add(i);
+                                      }
+                                    }
+
+                                    if (nonLevelVocab.isEmpty &&
+                                        nonLevelGrammar.isEmpty &&
+                                        nonLevelKanji.isEmpty) {
+                                      return false;
+                                    }
+
+                                    final vocabAll = nonLevelVocab
                                         .every(selected.vocabIndices.contains);
+                                    final grammarAll = nonLevelGrammar.every(
+                                        selected.grammarIndices.contains);
+                                    final kanjiAll = nonLevelKanji
+                                        .every(selected.kanjiIndices.contains);
+
+                                    return vocabAll && grammarAll && kanjiAll;
                                   })(),
                                   onChanged: (val) {
                                     final targetIndices = <int>[];
@@ -252,6 +296,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                         i < analysis.vocabs.length;
                                         i++) {
                                       final lvl = analysis.vocabs[i].jlptV
+                                          .trim()
                                           .toUpperCase();
                                       if (!['N1', 'N2', 'N3', 'N4', 'N5']
                                           .contains(lvl)) {
@@ -271,10 +316,30 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                           );
                                     }
                                     for (var i = 0;
+                                        i < analysis.grammar.length;
+                                        i++) {
+                                      final lvl = analysis.grammar[i].level
+                                          .trim()
+                                          .toUpperCase();
+                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                          .contains(lvl)) {
+                                        ref
+                                            .read(
+                                              selectionManagerProvider.notifier,
+                                            )
+                                            .toggle(
+                                              SelectionType.grammar,
+                                              i,
+                                              force: val,
+                                            );
+                                      }
+                                    }
+                                    for (var i = 0;
                                         i < analysis.kanji.length;
                                         i++) {
-                                      final lvl =
-                                          analysis.kanji[i].level.toUpperCase();
+                                      final lvl = analysis.kanji[i].level
+                                          .trim()
+                                          .toUpperCase();
                                       if (!['N1', 'N2', 'N3', 'N4', 'N5']
                                           .contains(lvl)) {
                                         ref
@@ -312,9 +377,11 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           unselectedLabelColor: AppColors.textSecondary,
                           indicatorColor: AppColors.sakuraDark,
                           tabs: [
-                            Tab(text: 'Vocab ($vocabCount)'),
-                            Tab(text: 'Grammar ($grammarCount)'),
-                            Tab(text: 'Kanji ($kanjiCount)'),
+                            Tab(text: '${context.l10n.vocabTab} ($vocabCount)'),
+                            Tab(
+                                text:
+                                    '${context.l10n.grammarTab} ($grammarCount)'),
+                            Tab(text: '${context.l10n.kanjiTab} ($kanjiCount)'),
                           ],
                         );
                       },
@@ -357,8 +424,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Analysis in progress...\n'
-                                    'This could take a few minutes.',
+                                    context.l10n.analysisInProgress,
                                     textAlign: TextAlign.center,
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       color: AppColors.textSecondary,
@@ -384,8 +450,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                           color: AppColors.error,
                                         ),
                                         const SizedBox(height: 16),
+                                        const SizedBox(height: 16),
                                         Text(
-                                          'Song Not Found',
+                                          context.l10n.songNotFound,
                                           style: theme.textTheme.headlineSmall
                                               ?.copyWith(
                                             fontWeight: FontWeight.bold,
@@ -393,34 +460,11 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                           ),
                                         ),
                                         const SizedBox(height: 8),
-                                        RichText(
+                                        Text(
+                                          context.l10n.songNotFoundMessage(
+                                              e.title, e.artist),
                                           textAlign: TextAlign.center,
-                                          text: TextSpan(
-                                            style: theme.textTheme.bodyMedium,
-                                            children: [
-                                              const TextSpan(
-                                                text:
-                                                    "We couldn't find lyrics for ",
-                                              ),
-                                              TextSpan(
-                                                text: '"${e.title}"',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              const TextSpan(text: ' by '),
-                                              TextSpan(
-                                                text: '"${e.artist}"',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              const TextSpan(
-                                                text:
-                                                    '.\nPlease check if the name is correct.',
-                                              ),
-                                            ],
-                                          ),
+                                          style: theme.textTheme.bodyMedium,
                                         ),
                                         const SizedBox(height: 32),
                                         ElevatedButton.icon(
@@ -844,7 +888,7 @@ class _VocabItem extends ConsumerWidget {
             ),
         ],
       ),
-      trailingTag: vocab.jlptV.isNotEmpty
+      trailingTag: vocab.jlptV.trim().isNotEmpty
           ? _Tag(
               label: vocab.jlptV,
               color: AppColors.sakuraDark,
@@ -946,7 +990,7 @@ class _GrammarItem extends ConsumerWidget {
             ),
         ],
       ),
-      trailingTag: grammar.level.isNotEmpty
+      trailingTag: grammar.level.trim().isNotEmpty
           ? _Tag(
               label: grammar.level,
               color: AppColors.sakuraDark,
@@ -1036,7 +1080,7 @@ class _KanjiItem extends ConsumerWidget {
           color: AppColors.textTertiary,
         ),
       ),
-      trailingTag: kanji.level.isNotEmpty
+      trailingTag: kanji.level.trim().isNotEmpty
           ? _Tag(
               label: kanji.level,
               color: AppColors.sakuraDark,
