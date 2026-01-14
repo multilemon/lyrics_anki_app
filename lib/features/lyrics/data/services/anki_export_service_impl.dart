@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/features/anki/data/services/anki_database_service.dart';
@@ -18,20 +16,20 @@ IAnkiExportService ankiExportService(Ref ref) {
 class AnkiExportServiceImpl implements IAnkiExportService {
   @override
   Future<String> generateCsv({
+    required String songTitle,
+    required String artist,
     List<Vocab> vocabs = const [],
     List<Grammar> grammar = const [],
     List<Kanji> kanji = const [],
     String? userLevel,
-    required String songTitle,
-    required String artist,
   }) async {
     final buffer = StringBuffer();
 
     // Add Headers
     buffer
-        .writeln('#deck:HanaUta::${songTitle.replaceAll(':', ' ')} - $artist');
-    buffer.writeln('#html:true');
-    buffer.writeln('#separator:Tab');
+      ..writeln('#deck:HanaUta::${songTitle.replaceAll(':', ' ')} - $artist')
+      ..writeln('#html:true')
+      ..writeln('#separator:Tab');
 
     final userLevelValue = _getLevelValue(userLevel);
 
@@ -55,7 +53,7 @@ class AnkiExportServiceImpl implements IAnkiExportService {
       final backBuffer = StringBuffer()
         ..write('${_escape(item.reading)}<br>')
         ..write('${_escape(item.meaning)}<br>')
-        ..write('${item.jlptV.isNotEmpty ? "[${_escape(item.jlptV)}] " : ""}')
+        ..write(item.jlptV.isNotEmpty ? '[${_escape(item.jlptV)}] ' : '')
         ..write('<small>${_escape(item.context)}</small>');
 
       if (item.nuanceNote.isNotEmpty) {
@@ -109,11 +107,11 @@ class AnkiExportServiceImpl implements IAnkiExportService {
 
   @override
   Future<Uint8List> generateApkg({
+    required String songTitle,
+    required String artist,
     List<Vocab> vocabs = const [],
     List<Grammar> grammar = const [],
     List<Kanji> kanji = const [],
-    required String songTitle,
-    required String artist,
     String? userLevel,
   }) async {
     final databaseService = AnkiDatabaseService();

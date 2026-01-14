@@ -125,7 +125,7 @@ class AnkiDatabaseService {
             'afmt': '{{FrontSide}}<hr id=answer>{{Back}}',
             'bqfmt': '',
             'bafmt': '',
-            'did': null
+            'did': null,
           }
         ],
         'flds': [
@@ -136,7 +136,7 @@ class AnkiDatabaseService {
             'rtl': false,
             'font': 'Arial',
             'size': 20,
-            'media': []
+            'media': [],
           },
           {
             'name': 'Back',
@@ -145,23 +145,23 @@ class AnkiDatabaseService {
             'rtl': false,
             'font': 'Arial',
             'size': 20,
-            'media': []
+            'media': [],
           },
         ],
         'css':
             '.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }',
         'latexPre':
             '\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n',
-        'latexPost': '\\end{document}',
+        'latexPost': r'\end{document}',
         'latexSvg': false,
         'req': [
           [
             0,
             'all',
-            [0]
+            [0],
           ]
-        ]
-      }
+        ],
+      },
     };
 
     final decks = {
@@ -180,7 +180,7 @@ class AnkiDatabaseService {
         'dyn': 0,
         'conf': 1,
         'extendNew': 10,
-        'extendRev': 50
+        'extendRev': 50,
       },
       '1': {
         'id': 1,
@@ -197,8 +197,8 @@ class AnkiDatabaseService {
         'timeToday': [0, 0],
         'revToday': [0, 0],
         'lrnToday': [0, 0],
-        'browserCollapsed': false
-      }
+        'browserCollapsed': false,
+      },
     };
 
     final dconf = {
@@ -217,7 +217,7 @@ class AnkiDatabaseService {
           'initialFactor': 2500,
           'ints': [1, 4, 7],
           'order': 1,
-          'perDay': 20
+          'perDay': 20,
         },
         'rev': {
           'bury': false,
@@ -226,16 +226,16 @@ class AnkiDatabaseService {
           'ivlFct': 1,
           'maxIvl': 36500,
           'minSpace': 1,
-          'perDay': 200
+          'perDay': 200,
         },
         'lapse': {
           'delays': [10],
           'leechAction': 1,
           'leechFails': 8,
           'minInt': 1,
-          'mult': 0
-        }
-      }
+          'mult': 0,
+        },
+      },
     };
 
     _db!.execute(
@@ -265,7 +265,7 @@ class AnkiDatabaseService {
     int modelId,
     int deckId,
   ) async {
-    int idCounter = DateTime.now().millisecondsSinceEpoch;
+    var idCounter = DateTime.now().millisecondsSinceEpoch;
 
     // Helper to insert a note and card
     void insertItem(String front, String back, List<String> tags) {

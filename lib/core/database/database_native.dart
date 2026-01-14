@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:sqlite3/common.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -14,11 +14,14 @@ Future<Uint8List> exportDatabase(CommonDatabase db) async {
     // Attempt serialize if available (e.g. if custom lib sqlite3 is used)
     // Use definition from package:sqlite3/sqlite3.dart
     // return (db as Database).serialize();
-    print('Native serialize not implemented/available in this environment');
+    debugPrint(
+        'Native serialize not implemented/available in this environment');
     return Uint8List(0);
   } catch (e) {
-    print(
-        'Native export not explicitly supported in this plain implementation: $e');
+    debugPrint(
+      'Native export not explicitly supported in this plain '
+      'implementation: $e',
+    );
     return Uint8List(0);
   }
 }

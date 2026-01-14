@@ -195,7 +195,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               setState(() {
                                 _selectedLanguage = result.englishName;
                               });
-                              ref
+                              await ref
                                   .read(settingsBoxProvider)
                                   ?.put('target_language', result.englishName);
                             }
@@ -514,7 +514,7 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                contentPadding: EdgeInsets.zero,
               ),
               onChanged: _filter,
             ),
@@ -527,8 +527,10 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
                   return ListTile(
                     title: Text(lang.englishName),
                     subtitle: lang.englishName != lang.nativeName
-                        ? Text(lang.nativeName,
-                            style: const TextStyle(color: Color(0xFFD4A5A5)))
+                        ? Text(
+                            lang.nativeName,
+                            style: const TextStyle(color: Color(0xFFD4A5A5)),
+                          )
                         : null,
                     onTap: () => Navigator.pop(context, lang),
                     shape: RoundedRectangleBorder(

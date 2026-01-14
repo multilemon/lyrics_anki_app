@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:sqlite3/common.dart';
 import 'package:sqlite3/wasm.dart';
 
 InMemoryFileSystem? _fs;
@@ -19,7 +18,7 @@ Future<Uint8List> exportDatabase(CommonDatabase db) async {
     throw StateError('FileSystem not initialized');
   }
 
-  final path = '/export.db';
+  const path = '/export.db';
   try {
     _fs!.xDelete(path, 0);
   } catch (_) {

@@ -1,5 +1,6 @@
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:lyrics_anki_app/app/app.dart';
@@ -31,17 +32,19 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    try {
-      await FirebaseAppCheck.instance.activate(
-        providerWeb:
-            ReCaptchaV3Provider('6LeJBkksAAAAAPtCvtySXr4qr5F7T2o9m0tBr7tF'),
-        providerAndroid: const AndroidDebugProvider(),
-        providerApple: const AppleDebugProvider(),
-      );
-    } catch (e) {
-      // Ignore 'already-initialized' error on hot restart
-      if (!e.toString().contains('already-initialized')) {
-        rethrow;
+    if (!kDebugMode) {
+      try {
+        await FirebaseAppCheck.instance.activate(
+          providerWeb:
+              ReCaptchaV3Provider('6LeJBkksAAAAAPtCvtySXr4qr5F7T2o9m0tBr7tF'),
+          providerAndroid: const AndroidDebugProvider(),
+          providerApple: const AppleDebugProvider(),
+        );
+      } catch (e) {
+        // Ignore 'already-initialized' error on hot restart
+        if (!e.toString().contains('already-initialized')) {
+          rethrow;
+        }
       }
     }
   } catch (e, st) {

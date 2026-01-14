@@ -105,7 +105,7 @@ void main() {
           level: 'N4',
           explanation: 'Must not do',
           usage: '食べてはいけない',
-        )
+        ),
       ];
 
       final result = await service.generateCsv(
@@ -129,7 +129,7 @@ void main() {
           level: 'N2',
           meanings: 'Cat',
           readings: 'ビョウ, ねこ',
-        )
+        ),
       ];
 
       final result = await service.generateCsv(

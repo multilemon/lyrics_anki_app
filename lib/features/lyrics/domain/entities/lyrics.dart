@@ -118,13 +118,16 @@ class HistoryItem extends HiveObject {
 
   @HiveField(8)
   List<Kanji> kanji = [];
+
+  @HiveField(9)
+  String? youtubeId;
 }
 
 class SongNotFoundException implements Exception {
-  final String title;
-  final String artist;
 
   SongNotFoundException(this.title, this.artist);
+  final String title;
+  final String artist;
 
   @override
   String toString() => 'SongNotFoundException: $title by $artist';
@@ -137,6 +140,7 @@ class AnalysisResult {
     required this.kanji,
     this.song = '',
     this.artist = '',
+    this.youtubeId,
   });
 
   final List<Vocab> vocabs;
@@ -144,4 +148,5 @@ class AnalysisResult {
   final List<Kanji> kanji;
   final String song;
   final String artist;
+  final String? youtubeId;
 }

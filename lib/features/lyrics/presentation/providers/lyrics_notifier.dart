@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -70,7 +68,8 @@ class LyricsNotifier extends _$LyricsNotifier {
       kanji: item.kanji,
       song: item.songTitle,
       artist: item.artist,
-    ));
+      youtubeId: item.youtubeId,
+    ),);
   }
 
   void toggleSelection(int index) {

@@ -75,7 +75,7 @@ class LyricsRepository {
 - VALID RFC 8259. Double quotes ONLY. No trailing commas.
 
 {
-"song":{"title":"","artist":""},
+"song":{"title":"","artist":"","youtube_id":""},
 "vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],
 "grammar":[["point","level","explanation","usage"]],
 "kanji":[["char","level","meanings","readings"]]
@@ -105,7 +105,7 @@ class LyricsRepository {
         songTitle: title,
         artist: artist,
         language: language,
-      ));
+      ),);
 
       // Clean up if the model wraps in backticks
       final cleanText = _extractJson(text);
@@ -113,7 +113,7 @@ class LyricsRepository {
       // Check for language error *before* parsing full structure
       if (cleanText.contains('"error"') && cleanText.contains('NOT_JAPANESE')) {
         throw Exception(
-            'This song does not appear to be primarily in Japanese.');
+            'This song does not appear to be primarily in Japanese.',);
       }
 
       if (cleanText.contains('"error"') && cleanText.contains('NOT_FOUND')) {
@@ -152,7 +152,8 @@ class LyricsRepository {
     )
       ..vocabs = result.vocabs
       ..grammar = result.grammar
-      ..kanji = result.kanji;
+      ..kanji = result.kanji
+      ..youtubeId = result.youtubeId;
 
     await saveToHistory(item);
   }
@@ -202,13 +203,15 @@ class LyricsRepository {
         kanji.addAll(list.map((e) => _mapToKanji(e as List<dynamic>)));
       }
 
-      String songTitle = '';
-      String artistName = '';
+      var songTitle = '';
+      var artistName = '';
+      String? youtubeId;
       if (parsed.containsKey('song')) {
         final songData = parsed['song'];
         if (songData is Map<String, dynamic>) {
           songTitle = songData['title']?.toString() ?? '';
           artistName = songData['artist']?.toString() ?? '';
+          youtubeId = songData['youtube_id']?.toString();
         }
       }
 
@@ -218,11 +221,12 @@ class LyricsRepository {
         kanji: kanji,
         song: songTitle,
         artist: artistName,
+        youtubeId: youtubeId,
       );
     } catch (e) {
       debugPrint('JSON Parse Error: $e');
       throw const FormatException(
-          'Failed to parse AI response: Invalid JSON format.');
+          'Failed to parse AI response: Invalid JSON format.',);
     }
   }
 

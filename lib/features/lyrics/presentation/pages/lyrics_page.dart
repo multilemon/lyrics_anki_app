@@ -1,13 +1,15 @@
 import 'dart:async';
+
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/youtube_player_card.dart';
 import 'package:lyrics_anki_app/features/main/presentation/pages/main_page.dart';
 
 class LyricsPage extends ConsumerStatefulWidget {
@@ -27,6 +29,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
     _tabController = TabController(length: 3, vsync: this);
   }
 
+  bool _showFloatingPlayer = false;
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -37,326 +41,462 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6F7),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Column(
-              children: [
-                const SizedBox(height: 8),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
 
-                // Song Title & Artist Header
-                Consumer(
-                  builder: (context, ref, _) {
-                    final analysis =
-                        ref.watch(lyricsNotifierProvider).asData?.value;
-                    if (analysis == null) return const SizedBox.shrink();
+                    // Song Title & Artist Header
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final analysis =
+                            ref.watch(lyricsNotifierProvider).asData?.value;
+                        if (analysis == null) return const SizedBox.shrink();
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: [
-                          Text(
-                            analysis.song,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF5D4037),
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: [
+                              Text(
+                                analysis.song,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF5D4037),
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                analysis.artist,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF8E7F7F),
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 24),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            analysis.artist,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF8E7F7F),
-                              fontStyle: FontStyle.italic,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
 
-                // Filters (Quick Select) - Applies to all tabs
-                Consumer(
-                  builder: (context, ref, child) {
-                    final analysis =
-                        ref.watch(lyricsNotifierProvider).asData?.value;
-                    if (analysis == null) return const SizedBox.shrink();
+                    // Filters (Quick Select) - Applies to all tabs
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final analysis =
+                            ref.watch(lyricsNotifierProvider).asData?.value;
+                        if (analysis == null) return const SizedBox.shrink();
 
-                    final selected = ref.watch(selectionManagerProvider);
+                        final selected = ref.watch(selectionManagerProvider);
 
-                    bool isLevelSelected(String level) {
-                      final vocabIndices = <int>[];
-                      for (var i = 0; i < analysis.vocabs.length; i++) {
-                        if (analysis.vocabs[i].jlptV.toUpperCase() ==
-                            level.toUpperCase()) {
-                          vocabIndices.add(i);
+                        bool isLevelSelected(String level) {
+                          final vocabIndices = <int>[];
+                          for (var i = 0; i < analysis.vocabs.length; i++) {
+                            if (analysis.vocabs[i].jlptV.toUpperCase() ==
+                                level.toUpperCase()) {
+                              vocabIndices.add(i);
+                            }
+                          }
+
+                          final grammarIndices = <int>[];
+                          for (var i = 0; i < analysis.grammar.length; i++) {
+                            if (analysis.grammar[i].level.toUpperCase() ==
+                                level.toUpperCase()) {
+                              grammarIndices.add(i);
+                            }
+                          }
+
+                          final kanjiIndices = <int>[];
+                          for (var i = 0; i < analysis.kanji.length; i++) {
+                            if (analysis.kanji[i].level.toUpperCase() ==
+                                level.toUpperCase()) {
+                              kanjiIndices.add(i);
+                            }
+                          }
+
+                          // If no items of this level exist at all, return false
+                          if (vocabIndices.isEmpty &&
+                              grammarIndices.isEmpty &&
+                              kanjiIndices.isEmpty) {
+                            return false;
+                          }
+
+                          // Check if ALL existing items of this level are selected
+                          final vocabSelected = vocabIndices
+                              .every(selected.vocabIndices.contains);
+                          final grammarSelected = grammarIndices
+                              .every(selected.grammarIndices.contains);
+                          final kanjiSelected = kanjiIndices
+                              .every(selected.kanjiIndices.contains);
+
+                          return vocabSelected &&
+                              grammarSelected &&
+                              kanjiSelected;
                         }
-                      }
 
-                      final grammarIndices = <int>[];
-                      for (var i = 0; i < analysis.grammar.length; i++) {
-                        if (analysis.grammar[i].level.toUpperCase() ==
-                            level.toUpperCase()) {
-                          grammarIndices.add(i);
+                        bool isAllSelected() {
+                          if (analysis.vocabs.isEmpty &&
+                              analysis.grammar.isEmpty &&
+                              analysis.kanji.isEmpty) {
+                            return false;
+                          }
+
+                          final vocabAll = selected.vocabIndices.length ==
+                              analysis.vocabs.length;
+                          final grammarAll = selected.grammarIndices.length ==
+                              analysis.grammar.length;
+                          final kanjiAll = selected.kanjiIndices.length ==
+                              analysis.kanji.length;
+
+                          return vocabAll && grammarAll && kanjiAll;
                         }
-                      }
 
-                      final kanjiIndices = <int>[];
-                      for (var i = 0; i < analysis.kanji.length; i++) {
-                        if (analysis.kanji[i].level.toUpperCase() ==
-                            level.toUpperCase()) {
-                          kanjiIndices.add(i);
+                        // Determine which levels actually exist in the data
+                        final presentLevels = <String>{};
+                        var hasOther = false;
+
+                        void checkLevels(
+                          List<dynamic> items,
+                          String Function(dynamic) getLevel,
+                        ) {
+                          for (final item in items) {
+                            final lvl = getLevel(item).toUpperCase();
+                            if (['N1', 'N2', 'N3', 'N4', 'N5'].contains(lvl)) {
+                              presentLevels.add(lvl);
+                            } else {
+                              hasOther = true;
+                            }
+                          }
                         }
-                      }
 
-                      // If no items of this level exist at all, return false
-                      if (vocabIndices.isEmpty &&
-                          grammarIndices.isEmpty &&
-                          kanjiIndices.isEmpty) {
-                        return false;
-                      }
+                        checkLevels(analysis.vocabs, (d) => (d as Vocab).jlptV);
+                        checkLevels(
+                          analysis.grammar,
+                          (d) => (d as Grammar).level,
+                        );
+                        checkLevels(analysis.kanji, (d) => (d as Kanji).level);
 
-                      // Check if ALL existing items of this level are selected
-                      final vocabSelected =
-                          vocabIndices.every(selected.vocabIndices.contains);
-                      final grammarSelected = grammarIndices
-                          .every(selected.grammarIndices.contains);
-                      final kanjiSelected =
-                          kanjiIndices.every(selected.kanjiIndices.contains);
-
-                      return vocabSelected && grammarSelected && kanjiSelected;
-                    }
-
-                    bool isAllSelected() {
-                      if (analysis.vocabs.isEmpty &&
-                          analysis.grammar.isEmpty &&
-                          analysis.kanji.isEmpty) {
-                        return false;
-                      }
-
-                      final vocabAll = selected.vocabIndices.length ==
-                          analysis.vocabs.length;
-                      final grammarAll = selected.grammarIndices.length ==
-                          analysis.grammar.length;
-                      final kanjiAll =
-                          selected.kanjiIndices.length == analysis.kanji.length;
-
-                      return vocabAll && grammarAll && kanjiAll;
-                    }
-
-                    // Determine which levels actually exist in the data
-                    final presentLevels = <String>{};
-                    bool hasOther = false;
-
-                    void checkLevels(List<dynamic> items,
-                        String Function(dynamic) getLevel) {
-                      for (final item in items) {
-                        final lvl = getLevel(item).toUpperCase();
-                        if (['N1', 'N2', 'N3', 'N4', 'N5'].contains(lvl)) {
-                          presentLevels.add(lvl);
-                        } else {
-                          hasOther = true;
-                        }
-                      }
-                    }
-
-                    checkLevels(analysis.vocabs, (d) => (d as Vocab).jlptV);
-                    checkLevels(analysis.grammar, (d) => (d as Grammar).level);
-                    checkLevels(analysis.kanji, (d) => (d as Kanji).level);
-
-                    return SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          _FilterChip(
-                            label: 'All',
-                            value: isAllSelected(),
-                            onChanged: (val) {
-                              ref
-                                  .read(selectionManagerProvider.notifier)
-                                  .toggleAll(analysis, select: val);
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          for (final level in ['N1', 'N2', 'N3', 'N4', 'N5'])
-                            if (presentLevels.contains(level)) ...[
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
                               _FilterChip(
-                                label: level,
-                                value: isLevelSelected(level),
+                                label: 'All',
+                                value: isAllSelected(),
                                 onChanged: (val) {
                                   ref
                                       .read(selectionManagerProvider.notifier)
-                                      .toggleLevel(
-                                        analysis,
-                                        level,
-                                        select: val,
-                                      );
+                                      .toggleAll(analysis, select: val);
                                 },
                               ),
                               const SizedBox(width: 8),
-                            ],
-                          if (hasOther)
-                            _FilterChip(
-                              label: 'Other',
-                              value: (() {
-                                final nonLevels = <int>[];
-                                for (var i = 0;
-                                    i < analysis.vocabs.length;
-                                    i++) {
-                                  final lvl =
-                                      analysis.vocabs[i].jlptV.toUpperCase();
-                                  if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                      .contains(lvl)) {
-                                    nonLevels.add(i);
-                                  }
-                                }
-                                if (nonLevels.isEmpty) return false;
-                                return nonLevels
-                                    .every(selected.vocabIndices.contains);
-                              })(),
-                              onChanged: (val) {
-                                final targetIndices = <int>[];
-                                for (var i = 0;
-                                    i < analysis.vocabs.length;
-                                    i++) {
-                                  final lvl =
-                                      analysis.vocabs[i].jlptV.toUpperCase();
-                                  if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                      .contains(lvl)) {
-                                    targetIndices.add(i);
-                                  }
-                                }
+                              for (final level in [
+                                'N1',
+                                'N2',
+                                'N3',
+                                'N4',
+                                'N5',
+                              ])
+                                if (presentLevels.contains(level)) ...[
+                                  _FilterChip(
+                                    label: level,
+                                    value: isLevelSelected(level),
+                                    onChanged: (val) {
+                                      ref
+                                          .read(
+                                            selectionManagerProvider.notifier,
+                                          )
+                                          .toggleLevel(
+                                            analysis,
+                                            level,
+                                            select: val,
+                                          );
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                              if (hasOther)
+                                _FilterChip(
+                                  label: 'Other',
+                                  value: (() {
+                                    final nonLevels = <int>[];
+                                    for (var i = 0;
+                                        i < analysis.vocabs.length;
+                                        i++) {
+                                      final lvl = analysis.vocabs[i].jlptV
+                                          .toUpperCase();
+                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                          .contains(lvl)) {
+                                        nonLevels.add(i);
+                                      }
+                                    }
+                                    if (nonLevels.isEmpty) return false;
+                                    return nonLevels
+                                        .every(selected.vocabIndices.contains);
+                                  })(),
+                                  onChanged: (val) {
+                                    final targetIndices = <int>[];
+                                    for (var i = 0;
+                                        i < analysis.vocabs.length;
+                                        i++) {
+                                      final lvl = analysis.vocabs[i].jlptV
+                                          .toUpperCase();
+                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                          .contains(lvl)) {
+                                        targetIndices.add(i);
+                                      }
+                                    }
 
-                                for (final idx in targetIndices) {
-                                  ref
-                                      .read(selectionManagerProvider.notifier)
-                                      .toggle(SelectionType.vocab, idx,
-                                          force: val);
-                                }
-                                for (var i = 0;
-                                    i < analysis.kanji.length;
-                                    i++) {
-                                  final lvl =
-                                      analysis.kanji[i].level.toUpperCase();
-                                  if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                      .contains(lvl)) {
-                                    ref
-                                        .read(selectionManagerProvider.notifier)
-                                        .toggle(SelectionType.kanji, i,
-                                            force: val);
-                                  }
-                                }
-                              },
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                // Tabs
-                Consumer(
-                  builder: (context, ref, _) {
-                    final analysis =
-                        ref.watch(lyricsNotifierProvider).asData?.value;
-                    final vocabCount = analysis?.vocabs.length ?? 0;
-                    final grammarCount = analysis?.grammar.length ?? 0;
-                    final kanjiCount = analysis?.kanji.length ?? 0;
-
-                    return TabBar(
-                      controller: _tabController,
-                      labelColor: const Color(0xFFD4A5A5),
-                      unselectedLabelColor: const Color(0xFF8E7F7F),
-                      indicatorColor: const Color(0xFFD4A5A5),
-                      tabs: [
-                        Tab(text: 'Vocab ($vocabCount)'),
-                        Tab(text: 'Grammar ($grammarCount)'),
-                        Tab(text: 'Kanji ($kanjiCount)'),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                // Results Area
-                Expanded(
-                  child: Consumer(
-                    builder: (context, ref, child) {
-                      final state = ref.watch(lyricsNotifierProvider);
-                      return state.when(
-                        data: (analysis) {
-                          if (analysis == null) {
-                            return Center(
-                              child: Text(
-                                'No analysis data available.',
-                                style: TextStyle(
-                                  color: const Color(0xFF8E7F7F)
-                                      .withValues(alpha: 0.5),
+                                    for (final idx in targetIndices) {
+                                      ref
+                                          .read(
+                                            selectionManagerProvider.notifier,
+                                          )
+                                          .toggle(
+                                            SelectionType.vocab,
+                                            idx,
+                                            force: val,
+                                          );
+                                    }
+                                    for (var i = 0;
+                                        i < analysis.kanji.length;
+                                        i++) {
+                                      final lvl =
+                                          analysis.kanji[i].level.toUpperCase();
+                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
+                                          .contains(lvl)) {
+                                        ref
+                                            .read(
+                                              selectionManagerProvider.notifier,
+                                            )
+                                            .toggle(
+                                              SelectionType.kanji,
+                                              i,
+                                              force: val,
+                                            );
+                                      }
+                                    }
+                                  },
                                 ),
-                              ),
-                            );
-                          }
-
-                          return TabBarView(
-                            controller: _tabController,
-                            children: [
-                              _VocabList(vocabList: analysis.vocabs),
-                              _GrammarList(grammarList: analysis.grammar),
-                              _KanjiList(kanjiList: analysis.kanji),
-                            ],
-                          );
-                        },
-                        loading: () => Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const CircularProgressIndicator(
-                                color: Color(0xFFD4A5A5),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Analysis in progress...\n'
-                                'This could take a few minutes.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: const Color(0xFF8E7F7F)
-                                      .withValues(alpha: 0.7),
-                                  fontSize: 14,
-                                ),
-                              ),
                             ],
                           ),
-                        ),
-                        error: (Object e, StackTrace s) {
-                          if (e is SongNotFoundException) {
-                            return Center(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 32),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Tabs
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final analysis =
+                            ref.watch(lyricsNotifierProvider).asData?.value;
+                        final vocabCount = analysis?.vocabs.length ?? 0;
+                        final grammarCount = analysis?.grammar.length ?? 0;
+                        final kanjiCount = analysis?.kanji.length ?? 0;
+
+                        return TabBar(
+                          controller: _tabController,
+                          labelColor: const Color(0xFFD4A5A5),
+                          unselectedLabelColor: const Color(0xFF8E7F7F),
+                          indicatorColor: const Color(0xFFD4A5A5),
+                          tabs: [
+                            Tab(text: 'Vocab ($vocabCount)'),
+                            Tab(text: 'Grammar ($grammarCount)'),
+                            Tab(text: 'Kanji ($kanjiCount)'),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Results Area
+                    Expanded(
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final state = ref.watch(lyricsNotifierProvider);
+                          return state.when(
+                            data: (analysis) {
+                              if (analysis == null) {
+                                return Center(
+                                  child: Text(
+                                    'No analysis data available.',
+                                    style: TextStyle(
+                                      color: const Color(0xFF8E7F7F)
+                                          .withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              return TabBarView(
+                                controller: _tabController,
+                                children: [
+                                  _VocabList(vocabList: analysis.vocabs),
+                                  _GrammarList(grammarList: analysis.grammar),
+                                  _KanjiList(kanjiList: analysis.kanji),
+                                ],
+                              );
+                            },
+                            loading: () => Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const CircularProgressIndicator(
+                                    color: Color(0xFFD4A5A5),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Analysis in progress...\n'
+                                    'This could take a few minutes.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: const Color(0xFF8E7F7F)
+                                          .withValues(alpha: 0.7),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            error: (Object e, StackTrace s) {
+                              if (e is SongNotFoundException) {
+                                return Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.search_off_rounded,
+                                          size: 48,
+                                          color: Color(0xFFE57373),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Song Not Found',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        RichText(
+                                          textAlign: TextAlign.center,
+                                          text: TextSpan(
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600],
+                                              height: 1.4,
+                                            ),
+                                            children: [
+                                              const TextSpan(
+                                                text:
+                                                    "We couldn't find lyrics for ",
+                                              ),
+                                              TextSpan(
+                                                text: '"${e.title}"',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const TextSpan(text: ' by '),
+                                              TextSpan(
+                                                text: '"${e.artist}"',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const TextSpan(
+                                                text:
+                                                    '.\nPlease check if the name is correct.',
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 32),
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            // Clear Home fields
+                                            ref
+                                                .read(
+                                                  clearHomeFormSignalProvider
+                                                      .notifier,
+                                                )
+                                                .state++;
+                                            // Navigate to Home (Index 0)
+                                            ref
+                                                .read(navIndexProvider.notifier)
+                                                .state = 0;
+                                            // Also clear current lyrics state
+                                            ref.invalidate(
+                                              lyricsNotifierProvider,
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFFD4A5A5),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          icon:
+                                              const Icon(Icons.refresh_rounded),
+                                          label: const Text('Try Again'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              // General Error Handling
+                              final errorMsg = e.toString();
+                              final isNotJapanese = errorMsg.contains(
+                                'not appear to be primarily in Japanese',
+                              );
+                              final isJsonError =
+                                  errorMsg.contains('JSON Parse Error') ||
+                                      errorMsg.contains('FormatException');
+
+                              return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
-                                      Icons.search_off_rounded,
+                                    Icon(
+                                      isNotJapanese
+                                          ? Icons.translate_rounded
+                                          : Icons.error_outline,
                                       size: 48,
-                                      color: Color(0xFFE57373),
+                                      color: const Color(0xFFE57373),
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'Song Not Found',
+                                      isNotJapanese
+                                          ? 'Language Mismatch'
+                                          : 'Analysis Failed',
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -364,183 +504,118 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    RichText(
-                                      textAlign: TextAlign.center,
-                                      text: TextSpan(
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                      ),
+                                      child: Text(
+                                        isJsonError
+                                            ? 'Sometimes AI makes a mistake.\nPlease try again.'
+                                            : errorMsg.replaceAll(
+                                                'Exception: ',
+                                                '',
+                                              ),
+                                        textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: Colors.grey[600],
                                           height: 1.4,
                                         ),
-                                        children: [
-                                          const TextSpan(
-                                              text:
-                                                  'We couldn\'t find lyrics for '),
-                                          TextSpan(
-                                            text: '"${e.title}"',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          const TextSpan(text: ' by '),
-                                          TextSpan(
-                                            text: '"${e.artist}"',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          const TextSpan(
-                                            text:
-                                                '.\nPlease check if the name is correct.',
-                                          ),
-                                        ],
                                       ),
                                     ),
                                     const SizedBox(height: 32),
-                                    ElevatedButton.icon(
-                                      onPressed: () {
-                                        // Clear Home fields
-                                        ref
-                                            .read(clearHomeFormSignalProvider
-                                                .notifier)
-                                            .state++;
-                                        // Navigate to Home (Index 0)
-                                        ref
-                                            .read(navIndexProvider.notifier)
-                                            .state = 0;
-                                        // Also clear current lyrics state
-                                        ref.invalidate(lyricsNotifierProvider);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            const Color(0xFFD4A5A5),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 24, vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                    if (isNotJapanese)
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          // Clear Home fields
+                                          ref
+                                              .read(
+                                                clearHomeFormSignalProvider
+                                                    .notifier,
+                                              )
+                                              .state++;
+                                          // Navigate to Home (Index 0)
+                                          ref
+                                              .read(navIndexProvider.notifier)
+                                              .state = 0;
+                                          // Also clear current lyrics state
+                                          ref.invalidate(
+                                            lyricsNotifierProvider,
+                                          );
+                                        },
+                                        icon: const Icon(Icons.search),
+                                        label:
+                                            const Text('Search Another Song'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(0xFFD4A5A5),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 14,
+                                          ),
+                                          textStyle: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          ref
+                                              .read(
+                                                lyricsNotifierProvider.notifier,
+                                              )
+                                              .retry();
+                                        },
+                                        icon: const Icon(Icons.refresh),
+                                        label: const Text('Retry Analysis'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(0xFFD4A5A5),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 12,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
                                         ),
                                       ),
-                                      icon: const Icon(Icons.refresh_rounded),
-                                      label: const Text('Try Again'),
-                                    ),
                                   ],
                                 ),
-                              ),
-                            );
-                          }
-
-                          // General Error Handling
-                          final errorMsg = e.toString();
-                          final isNotJapanese = errorMsg.contains(
-                              'not appear to be primarily in Japanese');
-                          final isJsonError =
-                              errorMsg.contains('JSON Parse Error') ||
-                                  errorMsg.contains('FormatException');
-
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isNotJapanese
-                                      ? Icons.translate_rounded
-                                      : Icons.error_outline,
-                                  size: 48,
-                                  color: const Color(0xFFE57373),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  isNotJapanese
-                                      ? 'Language Mismatch'
-                                      : 'Analysis Failed',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 32),
-                                  child: Text(
-                                    isJsonError
-                                        ? 'Sometimes AI makes a mistake.\nPlease try again.'
-                                        : errorMsg.replaceAll(
-                                            'Exception: ', ''),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
-                                if (isNotJapanese)
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      // Clear Home fields
-                                      ref
-                                          .read(clearHomeFormSignalProvider
-                                              .notifier)
-                                          .state++;
-                                      // Navigate to Home (Index 0)
-                                      ref
-                                          .read(navIndexProvider.notifier)
-                                          .state = 0;
-                                      // Also clear current lyrics state
-                                      ref.invalidate(lyricsNotifierProvider);
-                                    },
-                                    icon: const Icon(Icons.search),
-                                    label: const Text('Search Another Song'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFD4A5A5),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 24,
-                                        vertical: 14,
-                                      ),
-                                      textStyle: const TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      ref
-                                          .read(lyricsNotifierProvider.notifier)
-                                          .retry();
-                                    },
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Retry Analysis'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFD4A5A5),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 24,
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          Consumer(
+            builder: (context, ref, _) {
+              final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
+              if (analysis == null ||
+                  analysis.youtubeId == null ||
+                  !_showFloatingPlayer) {
+                return const SizedBox.shrink();
+              }
+              return _FloatingYouTubePlayer(
+                videoId: analysis.youtubeId!,
+                onClose: () => setState(() => _showFloatingPlayer = false),
+              );
+            },
+          ),
+        ],
       ),
       floatingActionButton: Consumer(
         builder: (context, ref, child) {
@@ -550,106 +625,137 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
               selectedState.grammarIndices.isNotEmpty ||
               selectedState.kanjiIndices.isNotEmpty;
 
-          if (analysis == null || !hasSelection) {
+          if (analysis == null) {
             return const SizedBox.shrink();
           }
 
-          return FloatingActionButton(
-            backgroundColor: const Color(0xFFD4A5A5),
-            onPressed: () {
-              // Re-read to get latest state in callback
-              final analysis = ref.read(lyricsNotifierProvider).asData?.value;
-              if (analysis == null) return;
-
-              final selectedState = ref.read(selectionManagerProvider);
-
-              final selectedVocabs = <Vocab>[];
-              for (final i in selectedState.vocabIndices) {
-                if (i < analysis.vocabs.length) {
-                  selectedVocabs.add(analysis.vocabs[i]);
-                }
-              }
-
-              final selectedGrammar = <Grammar>[];
-              for (final i in selectedState.grammarIndices) {
-                if (i < analysis.grammar.length) {
-                  selectedGrammar.add(analysis.grammar[i]);
-                }
-              }
-
-              final selectedKanji = <Kanji>[];
-              for (final i in selectedState.kanjiIndices) {
-                if (i < analysis.kanji.length) {
-                  selectedKanji.add(analysis.kanji[i]);
-                }
-              }
-
-              if (selectedVocabs.isEmpty &&
-                  selectedGrammar.isEmpty &&
-                  selectedKanji.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Select items to export')),
-                );
-                return;
-              }
-
-              showDialog<void>(
-                context: context,
-                builder: (context) => _ExportDialog(
-                  onExport: (userLevel) async {
-                    try {
-                      final exportService = ref.read(ankiExportServiceProvider);
-
-                      // Log export initiation
-                      unawaited(analyticsService.logExport(
-                        songTitle: analysis.song,
-                        artist: analysis.artist,
-                        level: userLevel,
-                        vocabCount: selectedVocabs.length,
-                        grammarCount: selectedGrammar.length,
-                        kanjiCount: selectedKanji.length,
-                      ));
-
-                      // Generate .apkg
-                      final bytes = await exportService.generateApkg(
-                        vocabs: selectedVocabs,
-                        grammar: selectedGrammar,
-                        kanji: selectedKanji,
-                        songTitle: analysis.song,
-                        artist: analysis.artist,
-                        userLevel: userLevel,
-                      );
-
-                      if (!context.mounted) return;
-
-                      final filename =
-                          '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
-
-                      // Save file (trigger download)
-                      await FileSaver.instance.saveFile(
-                        name: filename,
-                        bytes: bytes,
-                        mimeType: MimeType.other,
-                      );
-
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Export downloaded successfully')),
-                      );
-                    } catch (e) {
-                      unawaited(analyticsService.logError(
-                          'Export failed: $e', 'export_dialog'));
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Export failed: $e')),
-                      );
-                    }
-                  },
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (analysis.youtubeId != null &&
+                  analysis.youtubeId!.isNotEmpty &&
+                  !_showFloatingPlayer) ...[
+                FloatingActionButton(
+                  heroTag: 'play_fab',
+                  backgroundColor: const Color(0xFFD4A5A5),
+                  onPressed: () => setState(() => _showFloatingPlayer = true),
+                  child:
+                      const Icon(Icons.play_arrow_rounded, color: Colors.white),
                 ),
-              );
-            },
-            child: const Icon(Icons.file_upload_outlined, color: Colors.white),
+                const SizedBox(height: 16),
+              ],
+              if (hasSelection)
+                FloatingActionButton(
+                  heroTag: 'export_fab',
+                  backgroundColor: const Color(0xFFD4A5A5),
+                  onPressed: () {
+                    // Re-read to get latest state in callback
+                    final analysis =
+                        ref.read(lyricsNotifierProvider).asData?.value;
+                    if (analysis == null) return;
+
+                    final selectedState = ref.read(selectionManagerProvider);
+
+                    final selectedVocabs = <Vocab>[];
+                    for (final i in selectedState.vocabIndices) {
+                      if (i < analysis.vocabs.length) {
+                        selectedVocabs.add(analysis.vocabs[i]);
+                      }
+                    }
+
+                    final selectedGrammar = <Grammar>[];
+                    for (final i in selectedState.grammarIndices) {
+                      if (i < analysis.grammar.length) {
+                        selectedGrammar.add(analysis.grammar[i]);
+                      }
+                    }
+
+                    final selectedKanji = <Kanji>[];
+                    for (final i in selectedState.kanjiIndices) {
+                      if (i < analysis.kanji.length) {
+                        selectedKanji.add(analysis.kanji[i]);
+                      }
+                    }
+
+                    if (selectedVocabs.isEmpty &&
+                        selectedGrammar.isEmpty &&
+                        selectedKanji.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Select items to export')),
+                      );
+                      return;
+                    }
+
+                    showDialog<void>(
+                      context: context,
+                      builder: (context) => _ExportDialog(
+                        onExport: (userLevel) async {
+                          try {
+                            final exportService =
+                                ref.read(ankiExportServiceProvider);
+
+                            // Log export initiation
+                            unawaited(
+                              analyticsService.logExport(
+                                songTitle: analysis.song,
+                                artist: analysis.artist,
+                                level: userLevel,
+                                vocabCount: selectedVocabs.length,
+                                grammarCount: selectedGrammar.length,
+                                kanjiCount: selectedKanji.length,
+                              ),
+                            );
+
+                            // Generate .apkg
+                            final bytes = await exportService.generateApkg(
+                              vocabs: selectedVocabs,
+                              grammar: selectedGrammar,
+                              kanji: selectedKanji,
+                              songTitle: analysis.song,
+                              artist: analysis.artist,
+                              userLevel: userLevel,
+                            );
+
+                            if (!context.mounted) return;
+
+                            final filename =
+                                '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
+
+                            // Save file (trigger download)
+                            await FileSaver.instance.saveFile(
+                              name: filename,
+                              bytes: bytes,
+                            );
+
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Export downloaded successfully'),
+                              ),
+                            );
+                          } catch (e) {
+                            unawaited(
+                              analyticsService.logError(
+                                'Export failed: $e',
+                                'export_dialog',
+                              ),
+                            );
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Export failed: $e')),
+                            );
+                          }
+                        },
+                      ),
+                    );
+                  },
+                  child: const Icon(
+                    Icons.file_upload_outlined,
+                    color: Colors.white,
+                  ),
+                ),
+            ],
           );
         },
       ),
@@ -700,7 +806,8 @@ class _VocabItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSelected = ref.watch(
-        selectionManagerProvider.select((s) => s.vocabIndices.contains(index)));
+      selectionManagerProvider.select((s) => s.vocabIndices.contains(index)),
+    );
 
     return _ResultCard(
       title: Text.rich(
@@ -718,7 +825,6 @@ class _VocabItem extends ConsumerWidget {
           ],
         ),
       ),
-      subtitle: null,
       details: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -745,7 +851,10 @@ class _VocabItem extends ConsumerWidget {
               label: vocab.jlptV,
               color: const Color(0xFFD4A5A5),
             )
-          : null,
+          : _Tag(
+              label: 'Other',
+              color: Colors.grey.shade400,
+            ),
       isSelected: isSelected,
       onToggle: () {
         ref
@@ -799,8 +908,9 @@ class _GrammarItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSelected = ref.watch(selectionManagerProvider
-        .select((s) => s.grammarIndices.contains(index)));
+    final isSelected = ref.watch(
+      selectionManagerProvider.select((s) => s.grammarIndices.contains(index)),
+    );
 
     return _ResultCard(
       title: Text(
@@ -831,9 +941,9 @@ class _GrammarItem extends ConsumerWidget {
       trailingTag: grammar.level.isNotEmpty
           ? _Tag(
               label: grammar.level,
-              color: const Color(0xFF90A4AE), // Blue Grey
+              color: const Color(0xFFD4A5A5),
             )
-          : null,
+          : _Tag(label: 'Other', color: Colors.grey.shade400),
       isSelected: isSelected,
       onToggle: () {
         ref
@@ -888,7 +998,8 @@ class _KanjiItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSelected = ref.watch(
-        selectionManagerProvider.select((s) => s.kanjiIndices.contains(index)));
+      selectionManagerProvider.select((s) => s.kanjiIndices.contains(index)),
+    );
 
     return _ResultCard(
       leadingContent: CircleAvatar(
@@ -907,9 +1018,9 @@ class _KanjiItem extends ConsumerWidget {
       trailingTag: kanji.level.isNotEmpty
           ? _Tag(
               label: kanji.level,
-              color: const Color(0xFFA1887F), // Brown
+              color: const Color(0xFFD4A5A5),
             )
-          : null,
+          : _Tag(label: 'Other', color: Colors.grey.shade400),
       isSelected: isSelected,
       onToggle: () {
         ref
@@ -955,7 +1066,7 @@ class _Tag extends StatelessWidget {
           fontSize: 10,
           color: Colors.white,
           fontWeight: FontWeight.bold,
-          height: 1.0,
+          height: 1,
           letterSpacing: 0.5,
         ),
       ),
@@ -976,7 +1087,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFFD4A5A5);
+    const themeColor = Color(0xFFD4A5A5);
 
     return InkWell(
       onTap: () => onChanged(!value),
@@ -1199,14 +1310,13 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  ref
+                  await ref
                       .read(settingsBoxProvider)
                       ?.put('export_jlpt_level', _selectedLevel);
                   setState(() => _isLoading = true);
                   await widget.onExport(_selectedLevel);
-                  if (mounted) {
-                    Navigator.pop(context);
-                  }
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD4A5A5),
@@ -1215,6 +1325,99 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
                 child: const Text('Export'),
               ),
             ],
+    );
+  }
+}
+
+class _FloatingYouTubePlayer extends StatefulWidget {
+  const _FloatingYouTubePlayer({
+    required this.videoId,
+    required this.onClose,
+  });
+
+  final String videoId;
+  final VoidCallback onClose;
+
+  @override
+  State<_FloatingYouTubePlayer> createState() => _FloatingYouTubePlayerState();
+}
+
+class _FloatingYouTubePlayerState extends State<_FloatingYouTubePlayer> {
+  Offset _position = const Offset(20, 100);
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: _position.dx,
+      top: _position.dy,
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          setState(() {
+            _position += details.delta;
+          });
+        },
+        child: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.transparent,
+          child: Container(
+            width: 320,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD4A5A5),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Icon(
+                          Icons.drag_handle_rounded,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          size: 16,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: widget.onClose,
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Player
+                YouTubePlayerCard(videoId: widget.videoId),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

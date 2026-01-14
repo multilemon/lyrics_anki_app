@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
@@ -23,11 +24,15 @@ class MainPage extends ConsumerWidget {
 
           // Trigger analysis (fire and forget for UI,
           // but provider handles state)
-          ref
-              .read(lyricsNotifierProvider.notifier)
-              .analyzeSong(title, artist, language);
+          unawaited(ref.read(lyricsNotifierProvider.notifier).analyzeSong(
+                title,
+                artist,
+                language,
+              ));
         },
-        onHistoryItemClick: (item) {
+        onHistoryItemClick: (
+          item,
+        ) {
           // Switch to Lyrics Tab IMMEDIATELY
           ref.read(navIndexProvider.notifier).state = 1;
 
