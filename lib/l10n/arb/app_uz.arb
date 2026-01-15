@@ -24,5 +24,11 @@
     "watchOnYouTube": "YouTube-da koʻrish",
     "searchLanguageHint": "Tilni qidirish...",
     "homeTab": "Bosh sahifa",
-    "lyricsTab": "Qoʻshiq matni"
+    "lyricsTab": "Qoʻshiq matni",
+    "exportToAnki": "Anki-ga eksport qilish",
+    "generatingApkg": ".apkg fayli yaratilmoqda...",
+    "selectJlptLevel": "JLPT darajangizni tanlang:",
+    "furiganaExplanation": "Ushbu darajadan yuqori soʻzlar kartaning old tomonida furiganani oʻz ichiga oladi.",
+    "cancelButton": "Bekor qilish",
+    "exportButton": "Eksport"
 }

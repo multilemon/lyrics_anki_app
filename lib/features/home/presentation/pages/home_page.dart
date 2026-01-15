@@ -412,6 +412,7 @@ const _kLanguageList = [
   LanguageData(englishName: 'German', nativeName: 'Deutsch'),
   LanguageData(englishName: 'Portuguese', nativeName: 'Português'),
   LanguageData(englishName: 'Italian', nativeName: 'Italiano'),
+  LanguageData(englishName: 'Russian', nativeName: 'Русский'),
 ];
 
 class _LanguageSearchDialog extends StatefulWidget {

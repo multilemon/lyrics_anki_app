@@ -53,7 +53,7 @@ class LyricsRepository {
    - If **NO (Not Found/Ambiguous)**: Return strictly `{"error": "NOT_FOUND"}`.
 
 2. **Search**: 
-   - Use Google Search to find the **Official Music Video** on YouTube. Extract the exact ID.
+   - Use Google Search to find the **Official Music Video** on YouTube. Extract the exact **11-character Video ID**.
    - Use Google Search for official lyrics.
 3. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
 4. **Format**: Strictly Minified JSON.
@@ -71,13 +71,18 @@ class LyricsRepository {
 - **JLPT**: Standard calibration. Basic greetings = N5.
 - **Data Integrity**: Every Kanji in vocab/grammar MUST be in the kanji list. NO DUPLICATES.
 
+**CRITICAL JSON FORMATTING**:
+- **ESCAPE QUOTES**: All double quotes within values MUST be escaped (e.g., `\"`).
+- **NO COMMENTS**: Do not include comments or markdown.
+- **Youtube ID**: Must be exactly 11 characters (e.g., `dQw4w9WgXcQ`), NOT a full URL.
+
 **OUTPUT (STRICT MINIFIED JSON)**:
 
 - NO markdown, NO preamble, NO citations.
 - VALID RFC 8259. Double quotes ONLY. No trailing commas.
 
 {
-"song":{"title":"","artist":"","youtube_id":"YouTube Video ID (Official MV preferred)"},
+"song":{"title":"","artist":"","youtube_id":"11_CHAR_ID_ONLY"},
 "vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],
 "grammar":[["point","level","explanation","usage"]],
 "kanji":[["char","level","meanings","readings"]]
@@ -88,7 +93,11 @@ class LyricsRepository {
 
     final prompt = '''
       Song: $title - $artist
-      TARGET_LANGUAGE: $language
+      
+      Step 1: Search for the "Official Music Video" for this song on YouTube. (Ignore TARGET_LANGUAGE for this search).
+      Step 2: Analyze the lyrics as requested.
+      
+      TARGET_LANGUAGE for Analysis: $language
     ''';
 
     try {
@@ -250,32 +259,32 @@ class LyricsRepository {
     final text = raw.trim();
 
     // 1. If it's a full URL, try to parse 'v=' or 'youtu.be/'
-    // Standard format: https://www.youtube.com/watch?v=VIDEO_ID
     final uri = Uri.tryParse(text);
     if (uri != null && uri.host.contains('youtube.com')) {
       if (uri.queryParameters.containsKey('v')) {
         return uri.queryParameters['v'];
       }
     }
-    // Short format: https://youtu.be/VIDEO_ID
     if (uri != null && uri.host.contains('youtu.be')) {
       if (uri.pathSegments.isNotEmpty) {
         return uri.pathSegments.first;
       }
     }
 
-    // 2. Fallback: Assume it's an ID if it matches pattern (11 chars, base64-like)
-    // Actually, just checking length/content is decent heuristic if simpler check fails
-    // Regex for ID: ^[a-zA-Z0-9_-]{11}$
+    // 2. Strict Regex for ID: ^[a-zA-Z0-9_-]{11}$
     final idRegex = RegExp(r'^[a-zA-Z0-9_-]{11}$');
     if (idRegex.hasMatch(text)) {
       return text;
     }
 
-    // 3. If standard ID check fails, maybe the AI returned extra text?
-    // Aggressive extraction: limit to first 11 valid chars? No, unsafe.
-    // If the simple URL parse didn't work and regex didn't match, return null or raw?
-    // Let's rely on the URL parser and the ID regex. If neither matches, it's likely garbage.
+    // 3. Fallback: Search for any 11-char sequence that looks like an ID
+    // This handles cases like "ID: dQw4w9WgXcQ" or "dQw4w9WgXcQ."
+    final fallbackRegex = RegExp(r'[a-zA-Z0-9_-]{11}');
+    final match = fallbackRegex.firstMatch(text);
+    if (match != null) {
+      return match.group(0);
+    }
+
     return null;
   }
 
@@ -347,11 +356,18 @@ class LyricsRepository {
   }
 
   String _extractJson(String text) {
-    final startIndex = text.indexOf('{');
-    final endIndex = text.lastIndexOf('}');
+    var clean = text.trim();
+    // Remove markdown code blocks
+    clean = clean.replaceAll('```json', '').replaceAll('```', '').trim();
+
+    // Find the first '{' and last '}'
+    final startIndex = clean.indexOf('{');
+    final endIndex = clean.lastIndexOf('}');
+
     if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
-      return text.substring(startIndex, endIndex + 1);
+      clean = clean.substring(startIndex, endIndex + 1);
     }
-    return text.replaceAll('```json', '').replaceAll('```', '').trim();
+
+    return clean;
   }
 }

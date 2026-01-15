@@ -24,5 +24,11 @@
     "watchOnYouTube": "在 YouTube 上觀看",
     "searchLanguageHint": "搜尋語言...",
     "homeTab": "首頁",
-    "lyricsTab": "歌詞"
+    "lyricsTab": "歌詞",
+    "exportToAnki": "匯出至 Anki",
+    "generatingApkg": "正在產生 .apkg 檔案...",
+    "selectJlptLevel": "選擇您的 JLPT 等級：",
+    "furiganaExplanation": "高於此等級的單字將在卡片正面顯示振假名。",
+    "cancelButton": "取消",
+    "exportButton": "匯出"
 }

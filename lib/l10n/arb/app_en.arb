@@ -104,5 +104,29 @@
     "lyricsTab": "Lyrics",
     "@lyricsTab": {
         "description": "Label for the Lyrics tab in the bottom navigation bar"
+    },
+    "exportToAnki": "Export to Anki",
+    "@exportToAnki": {
+        "description": "Title for the export dialog"
+    },
+    "generatingApkg": "Generating .apkg file...",
+    "@generatingApkg": {
+        "description": "Progress message during export"
+    },
+    "selectJlptLevel": "Select your JLPT Level:",
+    "@selectJlptLevel": {
+        "description": "Label for JLPT level dropdown"
+    },
+    "furiganaExplanation": "Words above this level will include furigana on the front of the card.",
+    "@furiganaExplanation": {
+        "description": "Explanation text for JLPT level selection"
+    },
+    "cancelButton": "Cancel",
+    "@cancelButton": {
+        "description": "Cancel button text"
+    },
+    "exportButton": "Export",
+    "@exportButton": {
+        "description": "Export button text"
     }
 }

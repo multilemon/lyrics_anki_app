@@ -24,5 +24,11 @@
     "watchOnYouTube": "YouTube တွင်ကြည့်ပါ",
     "searchLanguageHint": "ဘာသာစကားရှာပါ...",
     "homeTab": "မူလစာမျက်နှာ",
-    "lyricsTab": "သီချင်းစာသား"
+    "lyricsTab": "သီချင်းစာသား",
+    "exportToAnki": "Anki သို့ ပို့ရန်",
+    "generatingApkg": ".apkg ဖိုင်ကို ဖန်တီးနေသည်...",
+    "selectJlptLevel": "သင့် JLPT အဆင့်ကို ရွေးချယ်ပါ-",
+    "furiganaExplanation": "ဒီအဆင့်အထက်ရှိ စကားလုံးများတွင် ကတ်၏ ရှေ့မျက်နှာပြင်၌ furigana ပါဝင်ပါမည်။",
+    "cancelButton": "မလုပ်တော့ပါ",
+    "exportButton": "ပို့ရန်"
 }

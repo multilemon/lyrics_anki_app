@@ -97,6 +97,13 @@ class LanguageSelectionPage extends ConsumerWidget {
             onChanged: (v) =>
                 ref.read(localeNotifierProvider.notifier).setLocale(v),
           ),
+          _LanguageTile(
+            label: 'Русский (Russian)',
+            value: const Locale('ru'),
+            groupValue: currentLocale,
+            onChanged: (v) =>
+                ref.read(localeNotifierProvider.notifier).setLocale(v),
+          ),
         ],
       ),
     );

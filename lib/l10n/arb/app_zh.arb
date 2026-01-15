@@ -24,5 +24,11 @@
     "watchOnYouTube": "在 YouTube 上观看",
     "searchLanguageHint": "搜索语言...",
     "homeTab": "首页",
-    "lyricsTab": "歌词"
+    "lyricsTab": "歌词",
+    "exportToAnki": "导出到 Anki",
+    "generatingApkg": "正在生成 .apkg 文件...",
+    "selectJlptLevel": "选择您的 JLPT 等级：",
+    "furiganaExplanation": "高于此等级的单词将在卡片正面显示注音。",
+    "cancelButton": "取消",
+    "exportButton": "导出"
 }

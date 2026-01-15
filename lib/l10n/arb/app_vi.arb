@@ -24,5 +24,11 @@
     "watchOnYouTube": "Xem trên YouTube",
     "searchLanguageHint": "Tìm kiếm ngôn ngữ...",
     "homeTab": "Trang chủ",
-    "lyricsTab": "Lời bài hát"
+    "lyricsTab": "Lời bài hát",
+    "exportToAnki": "Xuất sang Anki",
+    "generatingApkg": "Đang tạo tệp .apkg...",
+    "selectJlptLevel": "Chọn cấp độ JLPT của bạn:",
+    "furiganaExplanation": "Các từ trên cấp độ này sẽ bao gồm furigana ở mặt trước thẻ.",
+    "cancelButton": "Hủy",
+    "exportButton": "Xuất"
 }

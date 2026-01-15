@@ -24,5 +24,11 @@
     "watchOnYouTube": "ดูบน YouTube",
     "searchLanguageHint": "ค้นหาภาษา...",
     "homeTab": "หน้าแรก",
-    "lyricsTab": "เนื้อเพลง"
+    "lyricsTab": "เนื้อเพลง",
+    "exportToAnki": "ส่งออกไปยัง Anki",
+    "generatingApkg": "กำลังสร้างไฟล์ .apkg...",
+    "selectJlptLevel": "เลือกระดับ JLPT ของคุณ:",
+    "furiganaExplanation": "คำศัพท์ที่สูงกว่าระดับนี้จะมีฟุริงานะที่ด้านหน้าของการ์ด",
+    "cancelButton": "ยกเลิก",
+    "exportButton": "ส่งออก"
 }

@@ -24,5 +24,11 @@
     "watchOnYouTube": "Tonton di YouTube",
     "searchLanguageHint": "Cari bahasa...",
     "homeTab": "Beranda",
-    "lyricsTab": "Lirik"
+    "lyricsTab": "Lirik",
+    "exportToAnki": "Ekspor ke Anki",
+    "generatingApkg": "Membuat file .apkg...",
+    "selectJlptLevel": "Pilih Level JLPT Anda:",
+    "furiganaExplanation": "Kata-kata di atas level ini akan menyertakan furigana di bagian depan kartu.",
+    "cancelButton": "Batal",
+    "exportButton": "Ekspor"
 }

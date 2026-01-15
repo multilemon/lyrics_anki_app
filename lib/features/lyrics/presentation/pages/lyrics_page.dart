@@ -42,6 +42,15 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Reset video player when song changes
+    ref.listen(lyricsNotifierProvider, (_, __) {
+      if (_showFloatingPlayer) {
+        setState(() => _showFloatingPlayer = false);
+      }
+    });
+
+    final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
+
     return Scaffold(
       // backgroundColor: theme.scaffoldBackgroundColor, // Handled by theme
       body: Stack(
@@ -632,20 +641,13 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
               ),
             ),
           ),
-          Consumer(
-            builder: (context, ref, _) {
-              final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
-              if (analysis == null ||
-                  analysis.youtubeId == null ||
-                  !_showFloatingPlayer) {
-                return const SizedBox.shrink();
-              }
-              return _FloatingYouTubePlayer(
-                videoId: analysis.youtubeId!,
-                onClose: () => setState(() => _showFloatingPlayer = false),
-              );
-            },
-          ),
+          if (analysis != null &&
+              analysis.youtubeId != null &&
+              _showFloatingPlayer)
+            _FloatingYouTubePlayer(
+              videoId: analysis.youtubeId!,
+              onClose: () => setState(() => _showFloatingPlayer = false),
+            ),
         ],
       ),
       floatingActionButton: Consumer(
@@ -1315,31 +1317,31 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return AlertDialog(
       title: Text(
-        'Export to Anki',
+        l10n.exportToAnki,
         style: theme.textTheme.titleLarge?.copyWith(
           color: AppColors.textSecondary,
         ),
       ),
       content: _isLoading
-          ? const Column(
+          ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: AppColors.sakuraDark),
-                SizedBox(height: 16),
-                Text('Generating .apkg file...'),
+                const CircularProgressIndicator(color: AppColors.sakuraDark),
+                const SizedBox(height: 16),
+                Text(l10n.generatingApkg),
               ],
             )
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Select your JLPT Level:'),
+                Text(l10n.selectJlptLevel),
                 const SizedBox(height: 8),
                 Text(
-                  'Words above this level will include furigana on the '
-                  'front of the card.',
+                  l10n.furiganaExplanation,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -1376,7 +1378,7 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Cancel',
+                  l10n.cancelButton,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -1396,7 +1398,7 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
                   backgroundColor: AppColors.sakuraDark,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Export'),
+                child: Text(l10n.exportButton),
               ),
             ],
     );

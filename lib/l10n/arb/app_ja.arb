@@ -24,5 +24,11 @@
     "watchOnYouTube": "YouTubeで見る",
     "searchLanguageHint": "言語を検索...",
     "homeTab": "ホーム",
-    "lyricsTab": "歌詞"
+    "lyricsTab": "歌詞",
+    "exportToAnki": "Ankiへエクスポート",
+    "generatingApkg": ".apkgファイルを生成中...",
+    "selectJlptLevel": "JLPTレベルを選択:",
+    "furiganaExplanation": "このレベル以上の単語には、カードの表面にふりがなが付きます。",
+    "cancelButton": "キャンセル",
+    "exportButton": "エクスポート"
 }
