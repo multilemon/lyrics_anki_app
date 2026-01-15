@@ -11,6 +11,7 @@ class AppColors {
   // Secondary Palette
   static const Color matcha = Color(0xFFA3C9A8);
   static const Color matchaDark = Color(0xFF84A98C);
+  static const Color peach = Color(0xFFFFCCBC);
 
   // Neutrals / Backgrounds
   // A warm, paper-like cream for main backgrounds

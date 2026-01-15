@@ -11,7 +11,7 @@ import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_pro
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/youtube_player_card.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/native_video_player.dart';
 import 'package:lyrics_anki_app/features/main/presentation/pages/main_page.dart';
 
 class LyricsPage extends ConsumerStatefulWidget {
@@ -24,7 +24,9 @@ class LyricsPage extends ConsumerStatefulWidget {
 class _LyricsPageState extends ConsumerState<LyricsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _showFloatingPlayer = false;
+  bool _showPlayer = false;
+  bool _isDragging = false;
+  Offset? _playerOffset;
 
   @override
   void initState() {
@@ -44,15 +46,12 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
 
     // Reset video player when song changes
     ref.listen(lyricsNotifierProvider, (_, __) {
-      if (_showFloatingPlayer) {
-        setState(() => _showFloatingPlayer = false);
+      if (_showPlayer) {
+        setState(() => _showPlayer = false);
       }
     });
 
-    final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
-
     return Scaffold(
-      // backgroundColor: theme.scaffoldBackgroundColor, // Handled by theme
       body: Stack(
         children: [
           SafeArea(
@@ -137,14 +136,12 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                             }
                           }
 
-                          // If no items of this level exist at all, return false
                           if (vocabIndices.isEmpty &&
                               grammarIndices.isEmpty &&
                               kanjiIndices.isEmpty) {
                             return false;
                           }
 
-                          // Check if ALL existing items of this level are selected
                           final vocabSelected = vocabIndices
                               .every(selected.vocabIndices.contains);
                           final grammarSelected = grammarIndices
@@ -174,7 +171,6 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           return vocabAll && grammarAll && kanjiAll;
                         }
 
-                        // Determine which levels actually exist in the data
                         final presentLevels = <String>{};
                         var hasOther = false;
 
@@ -205,8 +201,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           child: Row(
                             children: [
                               _FilterChip(
-                                label:
-                                    'All', // TODO: Add l10n.all if strictly needed
+                                label: 'All', // TODO: Localize
                                 value: isAllSelected(),
                                 onChanged: (val) {
                                   ref
@@ -242,8 +237,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                 ],
                               if (hasOther)
                                 _FilterChip(
-                                  label:
-                                      'Other', // TODO: Add l10n.other if strictly needed
+                                  label: 'Other', // TODO: Localize
                                   value: (() {
                                     final nonLevelVocab = <int>[];
                                     for (var i = 0;
@@ -293,7 +287,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                     final vocabAll = nonLevelVocab
                                         .every(selected.vocabIndices.contains);
                                     final grammarAll = nonLevelGrammar.every(
-                                        selected.grammarIndices.contains);
+                                      selected.grammarIndices.contains,
+                                    );
                                     final kanjiAll = nonLevelKanji
                                         .every(selected.kanjiIndices.contains);
 
@@ -388,8 +383,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           tabs: [
                             Tab(text: '${context.l10n.vocabTab} ($vocabCount)'),
                             Tab(
-                                text:
-                                    '${context.l10n.grammarTab} ($grammarCount)'),
+                              text:
+                                  '${context.l10n.grammarTab} ($grammarCount)',
+                            ),
                             Tab(text: '${context.l10n.kanjiTab} ($kanjiCount)'),
                           ],
                         );
@@ -471,7 +467,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                         const SizedBox(height: 8),
                                         Text(
                                           context.l10n.songNotFoundMessage(
-                                              e.title, e.artist),
+                                            e.title,
+                                            e.artist,
+                                          ),
                                           textAlign: TextAlign.center,
                                           style: theme.textTheme.bodyMedium,
                                         ),
@@ -641,12 +639,125 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
               ),
             ),
           ),
-          if (analysis != null &&
-              analysis.youtubeId != null &&
-              _showFloatingPlayer)
-            _FloatingYouTubePlayer(
-              videoId: analysis.youtubeId!,
-              onClose: () => setState(() => _showFloatingPlayer = false),
+          // Floating Video Player
+          if (_showPlayer)
+            Consumer(
+              builder: (context, ref, child) {
+                final analysis =
+                    ref.watch(lyricsNotifierProvider).asData?.value;
+                if (analysis?.youtubeId == null) return const SizedBox.shrink();
+
+                final size = MediaQuery.of(context).size;
+                const videoWidth = 300.0;
+                const headerHeight = 48.0;
+                const videoHeight = 169.0;
+                final totalHeight = headerHeight + videoHeight;
+
+                // Default position: Centered
+                final defaultLeft = (size.width - videoWidth) / 2;
+                final defaultTop = (size.height - totalHeight) / 2;
+
+                return Positioned(
+                  left: _playerOffset?.dx ?? defaultLeft,
+                  top: _playerOffset?.dy ?? defaultTop,
+                  child: Material(
+                    elevation: 12,
+                    borderRadius: BorderRadius.circular(12),
+                    clipBehavior: Clip.antiAlias,
+                    color: AppColors.sakuraDark,
+                    child: SizedBox(
+                      width: videoWidth,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Drag Handle Header
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onPanStart: (_) =>
+                                setState(() => _isDragging = true),
+                            onPanEnd: (_) =>
+                                setState(() => _isDragging = false),
+                            onPanCancel: () =>
+                                setState(() => _isDragging = false),
+                            onPanUpdate: (details) {
+                              setState(() {
+                                final currentLeft =
+                                    _playerOffset?.dx ?? defaultLeft;
+                                final currentTop =
+                                    _playerOffset?.dy ?? defaultTop;
+                                _playerOffset = Offset(
+                                  currentLeft + details.delta.dx,
+                                  currentTop + details.delta.dy,
+                                );
+                              });
+                            },
+                            child: Container(
+                              height: headerHeight,
+                              color: AppColors.sakuraDark,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.drag_indicator,
+                                    color: Colors.white70,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Video',
+                                      style:
+                                          theme.textTheme.labelMedium?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () => setState(() {
+                                      _showPlayer = false;
+                                      // Keep _playerOffset to remember position
+                                    }),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Video Player
+                          SizedBox(
+                            height: videoHeight,
+                            child: Stack(
+                              children: [
+                                const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                NativeVideoPlayer(
+                                  videoId: analysis!.youtubeId!,
+                                  key: ValueKey(analysis.youtubeId),
+                                ),
+                                if (_isDragging)
+                                  Positioned.fill(
+                                    child: Container(color: Colors.transparent),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
         ],
       ),
@@ -666,15 +777,49 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (analysis.youtubeId != null &&
-                  analysis.youtubeId!.isNotEmpty &&
-                  !_showFloatingPlayer) ...[
+              if (analysis.youtubeId != null) ...[
                 FloatingActionButton(
-                  heroTag: 'play_fab',
+                  heroTag: 'video_fab',
                   backgroundColor: AppColors.sakuraDark,
-                  onPressed: () => setState(() => _showFloatingPlayer = true),
-                  child:
-                      const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                  onPressed: () => setState(() => _showPlayer = !_showPlayer),
+                  child: _showPlayer
+                      ? Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Icon(
+                              Icons.smart_display_rounded,
+                              color: Colors.white,
+                            ),
+                            // Masking "Eraser" to separate slash from icon
+                            Transform.rotate(
+                              angle: -0.785, // -45 degrees
+                              child: Container(
+                                width: 4.5,
+                                height: 26,
+                                decoration: BoxDecoration(
+                                  color: AppColors.sakuraDark,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                            // The actual Slash
+                            Transform.rotate(
+                              angle: -0.785,
+                              child: Container(
+                                width: 2,
+                                height: 26,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(1),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Icon(
+                          Icons.smart_display_rounded,
+                          color: Colors.white,
+                        ),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -1401,99 +1546,6 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
                 child: Text(l10n.exportButton),
               ),
             ],
-    );
-  }
-}
-
-class _FloatingYouTubePlayer extends StatefulWidget {
-  const _FloatingYouTubePlayer({
-    required this.videoId,
-    required this.onClose,
-  });
-
-  final String videoId;
-  final VoidCallback onClose;
-
-  @override
-  State<_FloatingYouTubePlayer> createState() => _FloatingYouTubePlayerState();
-}
-
-class _FloatingYouTubePlayerState extends State<_FloatingYouTubePlayer> {
-  Offset _position = const Offset(20, 100);
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: _position.dx,
-      top: _position.dy,
-      child: GestureDetector(
-        onPanUpdate: (details) {
-          setState(() {
-            _position += details.delta;
-          });
-        },
-        child: Material(
-          elevation: 8,
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.transparent,
-          child: Container(
-            width: 320,
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Handle bar
-                Container(
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: AppColors.sakuraDark,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Icon(
-                          Icons.drag_handle_rounded,
-                          color: Colors.white.withValues(alpha: 0.8),
-                          size: 16,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: widget.onClose,
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Icon(
-                            Icons.close_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Player
-                YouTubePlayerCard(videoId: widget.videoId),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -22,6 +22,12 @@ class LyricsRepository {
   LyricsRepository(this._box);
   final Box<HistoryItem>? _box;
 
+  // Fallback for when Hive/IndexedDB is blocked (e.g. Mobile Private Mode)
+  final List<HistoryItem> _memoryStore = [];
+  final _memoryStreamController = StreamController<void>.broadcast();
+
+  bool get isReady => _box != null;
+
   Future<AnalysisResult> analyzeSong(
     String title,
     String artist,
@@ -72,7 +78,7 @@ class LyricsRepository {
 - **Data Integrity**: Every Kanji in vocab/grammar MUST be in the kanji list. NO DUPLICATES.
 
 **CRITICAL JSON FORMATTING**:
-- **ESCAPE QUOTES**: All double quotes within values MUST be escaped (e.g., `\"`).
+- **ESCAPE QUOTES**: All double quotes within values MUST be escaped (e.g., `"`).
 - **NO COMMENTS**: Do not include comments or markdown.
 - **Youtube ID**: Must be exactly 11 characters (e.g., `dQw4w9WgXcQ`), NOT a full URL.
 
@@ -148,6 +154,9 @@ class LyricsRepository {
   Future<void> saveToHistory(HistoryItem item) async {
     if (_box != null) {
       await _box!.add(item);
+    } else {
+      _memoryStore.add(item);
+      _memoryStreamController.add(null);
     }
   }
 
@@ -173,7 +182,7 @@ class LyricsRepository {
   }
 
   List<HistoryItem> getHistory() {
-    if (_box == null) return [];
+    if (_box == null) return _memoryStore.reversed.toList();
     return _box!.values.toList().reversed.toList();
   }
 
@@ -183,12 +192,19 @@ class LyricsRepository {
       await for (final _ in _box!.watch()) {
         yield getHistory();
       }
+    } else {
+      await for (final _ in _memoryStreamController.stream) {
+        yield getHistory();
+      }
     }
   }
 
   Future<void> clearHistory() async {
     if (_box != null) {
       await _box!.clear();
+    } else {
+      _memoryStore.clear();
+      _memoryStreamController.add(null);
     }
   }
 
@@ -279,7 +295,7 @@ class LyricsRepository {
 
     // 3. Fallback: Search for any 11-char sequence that looks like an ID
     // This handles cases like "ID: dQw4w9WgXcQ" or "dQw4w9WgXcQ."
-    final fallbackRegex = RegExp(r'[a-zA-Z0-9_-]{11}');
+    final fallbackRegex = RegExp('[a-zA-Z0-9_-]{11}');
     final match = fallbackRegex.firstMatch(text);
     if (match != null) {
       return match.group(0);
