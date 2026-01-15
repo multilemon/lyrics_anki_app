@@ -30546,7 +30546,8 @@ _.a=a
 _.b=b
 _.c=c
 _.d=d},
-a_S:function a_S(a){this.x=a},
+a_S:function a_S(a,b){this.x=a
+this.ax=b},
 apW:function apW(a,b){this.a=a
 this.b=b},
 Hc:function Hc(a,b,c,d,e,f){var _=this
@@ -102997,7 +102998,7 @@ s=s.gnk(s)
 r=A.pt()
 o.P(0,A.a4(["origin",s,"widget_referrer",r.gnk(r)],q,p))
 o.m(0,"playsinline",1)
-o.m(0,"rel",1)
+o.m(0,"rel",!this.ax?1:0)
 return o},
 cf(){var s,r,q=t.N,p=t.z,o=A.u(q,p)
 o.m(0,"autoplay",1)
@@ -103018,7 +103019,7 @@ s=s.gnk(s)
 r=A.pt()
 o.P(0,A.a4(["origin",s,"widget_referrer",r.gnk(r)],q,p))
 o.m(0,"playsinline",1)
-o.m(0,"rel",1)
+o.m(0,"rel",!this.ax?1:0)
 return B.ax.l5(o,null)}}
 A.apW.prototype={
 H(){return"PointerEvents."+this.b}}
@@ -110341,8 +110342,8 @@ B.nk=new A.H9(0,"start")
 B.aic=new A.H9(1,"end")
 B.aid=new A.H9(2,"center")
 B.aik=new A.a_Q("","","",B.F)
-B.ak7=new A.a_S(!1)
-B.ail=new A.a_S(!0)
+B.ak7=new A.a_S(!1,!1)
+B.ail=new A.a_S(!0,!0)
 B.aR=new A.yn(0,"forward")
 B.k5=new A.yn(1,"reverse")
 B.ak9=new A.azp(0,"elevated")
