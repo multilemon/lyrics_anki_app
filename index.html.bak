@@ -47,11 +47,6 @@
   </head>
   <body>
     <script>
-      window.flutterConfiguration = {
-        renderer: "html",
-      };
-    </script>
-    <script>
       {{flutter_bootstrap_js}}
     </script>
   </body>
