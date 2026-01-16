@@ -72,7 +72,7 @@ class AppTheme {
         ),
         prefixIconColor: AppColors.sakuraDark,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.white,
         elevation: 4,
         shadowColor: Colors.black.withValues(alpha: 0.05),
@@ -81,7 +81,7 @@ class AppTheme {
         ),
         margin: EdgeInsets.zero,
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.white,
         elevation: 8,
         shape: RoundedRectangleBorder(
