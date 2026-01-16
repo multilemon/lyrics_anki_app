@@ -15,7 +15,8 @@ Future<Uint8List> exportDatabase(CommonDatabase db) async {
     // Use definition from package:sqlite3/sqlite3.dart
     // return (db as Database).serialize();
     debugPrint(
-        'Native serialize not implemented/available in this environment');
+      'Native serialize not implemented/available in this environment',
+    );
     return Uint8List(0);
   } catch (e) {
     debugPrint(

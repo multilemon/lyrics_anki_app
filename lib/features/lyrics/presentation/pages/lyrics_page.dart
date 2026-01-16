@@ -515,6 +515,135 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                 );
                               }
 
+                              if (e is ServerOverloadedException) {
+                                return Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.cloud_off_rounded,
+                                          size: 48,
+                                          color: AppColors.sakuraDark,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'AI is Busy',
+                                          style: theme.textTheme.headlineSmall
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'The AI service is currently overloaded (503).\nThis happens with the Free Tier.\nPlease wait a moment and try again.',
+                                          textAlign: TextAlign.center,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(height: 1.4),
+                                        ),
+                                        const SizedBox(height: 32),
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            ref
+                                                .read(
+                                                  lyricsNotifierProvider
+                                                      .notifier,
+                                                )
+                                                .retry();
+                                          },
+                                          icon: const Icon(Icons.refresh),
+                                          label: const Text('Retry Now'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                AppColors.sakuraDark,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              if (e is QuotaExceededException) {
+                                return Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.hourglass_empty_rounded,
+                                          size: 48,
+                                          color: AppColors.sakuraDark,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Daily Limit Reached',
+                                          style: theme.textTheme.headlineSmall
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          "You've hit the daily usage limit for the free AI tier.\nPlease try again tomorrow.",
+                                          textAlign: TextAlign.center,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(height: 1.4),
+                                        ),
+                                        const SizedBox(height: 32),
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            // Describe navigation purely via providers
+                                            ref
+                                                .read(
+                                                  clearHomeFormSignalProvider
+                                                      .notifier,
+                                                )
+                                                .state++;
+                                            ref
+                                                .read(navIndexProvider.notifier)
+                                                .state = 0;
+                                            ref.invalidate(
+                                              lyricsNotifierProvider,
+                                            );
+                                          },
+                                          icon: const Icon(Icons.arrow_back),
+                                          label: const Text('Back to Search'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                AppColors.sakuraDark,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+
                               // General Error Handling
                               final errorMsg = e.toString();
                               final isNotJapanese = errorMsg.contains(
@@ -1030,6 +1159,18 @@ class _VocabItem extends ConsumerWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontStyle: FontStyle.italic,
                   color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+          if (vocab.nuanceNote.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Note: ${vocab.nuanceNote}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
                 ),
               ),
             ),

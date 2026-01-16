@@ -120,7 +120,6 @@ class _ShareDialog extends StatelessWidget {
               ),
               child: QrImageView(
                 data: 'https://multilemon.github.io/lyrics_anki_app/',
-                version: QrVersions.auto,
                 size: 200,
                 backgroundColor: Colors.white,
                 eyeStyle: const QrEyeStyle(

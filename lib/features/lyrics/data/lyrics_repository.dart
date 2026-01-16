@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:firebase_ai/firebase_ai.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:lyrics_anki_app/core/config/env.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive.dart';
@@ -33,63 +34,54 @@ class LyricsRepository {
     String artist,
     String language,
   ) async {
-    final model = FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-2.5-pro',
+    final model = GenerativeModel(
+      model: 'gemini-3-flash-preview',
+      apiKey: Env.geminiApiKey,
       generationConfig: GenerationConfig(
         candidateCount: 1,
-        temperature: 0.1,
-        topP: 0.95,
+        temperature: 0,
+        topP: 1,
         topK: 40,
       ),
-      tools: [
-        Tool.googleSearch(),
-      ],
       systemInstruction: Content.system(
         '''
-**ROLE**: Japanese Linguistic Data Engineer.
-**GOAL**: Analyze lyrics -> Structured JSON.
+**ROLE**: Senior Japanese Linguistic Data Engineer.
+**TARGET_LANGUAGE**: [Specify Target Language, e.g., Thai, English].
+**GOAL**: Absolute Exhaustive Analysis of Lyrics -> Structured JSON for Language Learners.
 
 **WORKFLOW**:
+1. **Validation**: Check if primarily Japanese and if the song exists. If fail, return strictly `{"error": "NOT_JAPANESE"}` or `{"error": "NOT_FOUND"}`.
+2. **Search (Grounding)**: 
+   - Fetch Official Lyrics. Scan every single line (Line-by-Line Parsing).
+   - Fetch Official MV 11-char YouTube ID.
+3. **Verify (Data-Backed)**: Use Google Search to find official JLPT levels for every unit identified. 
+   - **jlpt_v**: Must reflect Official Usage Frequency. [DO NOT estimate by kanji].
+   - **jlpt_k**: Must reflect Official Kanji Grade.
+4. **Filter**: If verified official level is **N5**, DISCARD immediately. Only N4-N1 allowed for vocab and grammar.
 
-1. **Language Verification**: Check if the song's lyrics are primarily in Japanese.
-   - If **NO**: Return strictly `{"error": "NOT_JAPANESE"}`.
-   - If **YES**: Proceed to step 2.
+**EXTRACTION_CONSTRAINTS**:
+- **Vocab (Target >50 entries)**: Break all compounds (Atomic). 
+  - **Index 5 (context)**: MUST be the exact, verbatim line from the lyrics. NO explanations.
+  - **Index 6 (nuance)**: Provide essential linguistic data in **TARGET_LANGUAGE**. 
+    - **Identify**: Grammatical Properties (Transitivity, Register, Honorifics) and Linguistic Nuance (Connotation, Intensity, Emotional undertones).
+    - **Technical Terms**: Use formal terminology of **TARGET_LANGUAGE**.
+    - **Neutrality**: NO plot summaries. NO gender-bias based on sentence endings. Return strictly `""` for common nouns/neutral verbs with no specific linguistic property.
+- **Grammar (N4-N1 ONLY)**: High Recall. All explanations and usage rules in **TARGET_LANGUAGE**.
+- **Kanji (STRICT ATOMIC)**:
+  - **Single Char ONLY**: 1 Char/entry. NO compounds (e.g., If "自分", create two entries: "自" and "分").
+  - **Coverage**: Every unique N4-N1 Kanji used in `vocab` and `grammar` arrays.
+  - **Readings**: Format: "On | Kun" (Katakana | Hiragana).
+  - **Meanings**: ALL standard definitions in **TARGET_LANGUAGE**.
+  - **Level Standard**: MUST be strictly based on official JLPT levels.
+- **Integrity**: Every character used in `vocab` and `grammar` MUST exist in the `kanji` list. No duplicates.
 
-1b. **Existence Verification**: Check if the specific song by the artist largely exists.
-   - If **NO (Not Found/Ambiguous)**: Return strictly `{"error": "NOT_FOUND"}`.
-
-2. **Search**: 
-   - Use Google Search to find the **Official Music Video** on YouTube. Extract the exact **11-character Video ID**.
-   - Use Google Search for official lyrics.
-3. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
-4. **Format**: Strictly Minified JSON.
-
-**CONSTRAINTS**:
-
-- **Translate**: Use formal linguistics (e.g., "Intransitive Verb") in TARGET_LANGUAGE.
-- **Vocab**: Atomic N/V/Adj/Adv. Break compounds (e.g., 喉 + 奥).
-- **Grammar**: NO N5. Format: "V.て", "V.る", "V.た". No trailing slashes.
-- **Kanji (EXHAUSTIVE)**:
-  - 1 Char/entry. No okurigana.
-  - Meanings: ALL standard dictionary definitions.
-  - Readings: ALL On'yomi (Katakana) | ALL Kun'yomi (Hiragana). Format: "コウ | のど".
-  - NO transliterations (e.g., No Thai/English phonetics).
-- **JLPT**: Standard calibration. Basic greetings = N5.
-- **Data Integrity**: Every Kanji in vocab/grammar MUST be in the kanji list. NO DUPLICATES.
-
-**CRITICAL JSON FORMATTING**:
-- **ESCAPE QUOTES**: All double quotes within values MUST be escaped (e.g., `"`).
-- **NO COMMENTS**: Do not include comments or markdown.
-- **Youtube ID**: Must be exactly 11 characters (e.g., `dQw4w9WgXcQ`), NOT a full URL.
-
-**OUTPUT (STRICT MINIFIED JSON)**:
-
-- NO markdown, NO preamble, NO citations.
-- VALID RFC 8259. Double quotes ONLY. No trailing commas.
+**FORMAT (STRICT MINIFIED JSON)**:
+- NO markdown, NO preamble, NO extra text.
+- VALID RFC 8259. Double quotes ONLY. No standalone hyphens `-`.
 
 {
-"song":{"title":"","artist":"","youtube_id":"11_CHAR_ID_ONLY"},
-"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],
+"song":{"title":"","artist":"","youtube_id":""},
+"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance"]],
 "grammar":[["point","level","explanation","usage"]],
 "kanji":[["char","level","meanings","readings"]]
 }
@@ -97,18 +89,19 @@ class LyricsRepository {
       ),
     );
 
-    final prompt = '''
-      Song: $title - $artist
-      
-      Step 1: Search for the "Official Music Video" for this song on YouTube. (Ignore TARGET_LANGUAGE for this search).
-      Step 2: Analyze the lyrics as requested.
-      
-      TARGET_LANGUAGE for Analysis: $language
-    ''';
+    final prompt =
+        'Analyze "$title" by "$artist" for Target Language: $language';
+    debugPrint('AI Prompt: $prompt');
 
     try {
       final content = [Content.text(prompt)];
+
+      final stopwatch = Stopwatch()..start();
       final response = await model.generateContent(content);
+      stopwatch.stop();
+
+      debugPrint('⏱️ AI Analysis took: ${stopwatch.elapsedMilliseconds}ms');
+
       final text = response.text;
 
       debugPrint('Response: $text');
@@ -143,6 +136,19 @@ class LyricsRepository {
       return await parseAnalysisResult(cleanText);
     } catch (e) {
       debugPrint('Analysis error: $e');
+
+      // Check for 503 Overloaded
+      if (e is GenerativeAIException) {
+        final message = e.message.toLowerCase();
+        if (message.contains('503') || message.contains('overloaded')) {
+          throw ServerOverloadedException();
+        }
+        if (message.contains('429') ||
+            message.contains('quota') ||
+            message.contains('exhausted')) {
+          throw QuotaExceededException();
+        }
+      }
 
       if (e is Exception) rethrow;
       if (e is String) throw Exception(e);
@@ -181,9 +187,30 @@ class LyricsRepository {
     await saveToHistory(item);
   }
 
-  List<HistoryItem> getHistory() {
-    if (_box == null) return _memoryStore.reversed.toList();
-    return _box!.values.toList().reversed.toList();
+  List<HistoryItem> getHistory({int limit = 50}) {
+    if (_box == null) {
+      // Memory store fallback
+      final count = limit < _memoryStore.length ? limit : _memoryStore.length;
+      if (count == 0) return [];
+      return _memoryStore
+          .sublist(_memoryStore.length - count)
+          .reversed
+          .toList();
+    }
+
+    // Optimization: Use getAt(i) which is O(1) for standard Boxes to avoid
+    // realizing the entire values list.
+    final length = _box!.length;
+    final count = limit < length ? limit : length;
+    final items = <HistoryItem>[];
+
+    for (var i = length - 1; i >= length - count; i--) {
+      final item = _box!.getAt(i);
+      if (item != null) {
+        items.add(item);
+      }
+    }
+    return items;
   }
 
   Stream<List<HistoryItem>> watchHistory() async* {

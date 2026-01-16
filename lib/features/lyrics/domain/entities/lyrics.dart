@@ -124,13 +124,22 @@ class HistoryItem extends HiveObject {
 }
 
 class SongNotFoundException implements Exception {
-
   SongNotFoundException(this.title, this.artist);
   final String title;
   final String artist;
 
   @override
   String toString() => 'SongNotFoundException: $title by $artist';
+}
+
+class ServerOverloadedException implements Exception {
+  @override
+  String toString() => 'ServerOverloadedException: model is overloaded';
+}
+
+class QuotaExceededException implements Exception {
+  @override
+  String toString() => 'QuotaExceededException: daily quota exceeded';
 }
 
 class AnalysisResult {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:lyrics_anki_app/app/app.dart';
 import 'package:lyrics_anki_app/bootstrap.dart';
+
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/firebase_options.dart';

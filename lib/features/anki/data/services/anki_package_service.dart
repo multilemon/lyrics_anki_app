@@ -9,11 +9,13 @@ class AnkiPackageService {
     Map<String, Uint8List> mediaFiles = const {},
   }) async {
     final archive = Archive()
-      ..addFile(ArchiveFile(
-        'collection.anki2',
-        databaseBytes.lengthInBytes,
-        databaseBytes,
-      ));
+      ..addFile(
+        ArchiveFile(
+          'collection.anki2',
+          databaseBytes.lengthInBytes,
+          databaseBytes,
+        ),
+      );
 
     // 2. Add media
     final mediaMap = <String, String>{};

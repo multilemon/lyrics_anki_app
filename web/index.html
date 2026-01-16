@@ -40,11 +40,106 @@
     <!-- Google Fonts Preload to prevent FOUT/Tofu -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans+Thai:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
     <!-- Required for youtube_player_iframe in production -->
+    <!-- CSS Skeleton for Startup -->
+    <style>
+      body {
+        margin: 0;
+        background-color: #F9F6F7; /* AppColors.cream */
+        font-family: sans-serif;
+      }
+      .skeleton-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 60px;
+        opacity: 1;
+        transition: opacity 0.5s ease-out;
+      }
+      .skeleton-header {
+        width: 100%;
+        max-width: 800px;
+        padding: 0 24px;
+        margin-bottom: 32px;
+        box-sizing: border-box;
+      }
+      .skeleton-title {
+        height: 60px;
+        width: 200px;
+        background-color: #D4A5A5; /* AppColors.sakuraDark */
+        border-radius: 8px;
+        margin-bottom: 8px;
+        opacity: 0.3;
+      }
+      .skeleton-subtitle {
+        height: 24px;
+        width: 300px;
+        background-color: #8E7F7F; /* AppColors.textSecondary */
+        border-radius: 6px;
+        opacity: 0.1;
+      }
+      .skeleton-card-container {
+        width: 100%;
+        max-width: 800px;
+        padding: 0 24px;
+        box-sizing: border-box;
+      }
+      .skeleton-card {
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 10px 20px rgba(212, 165, 165, 0.1);
+      }
+      .skeleton-card-title {
+        height: 32px;
+        width: 180px;
+        background-color: #E0E0E0;
+        border-radius: 6px;
+        margin-bottom: 24px;
+        opacity: 0.5;
+      }
+      .skeleton-input {
+        height: 56px;
+        width: 100%;
+        background-color: #F9F6F7;
+        border-radius: 16px;
+        margin-bottom: 16px;
+      }
+      .skeleton-btn {
+        height: 48px;
+        width: 120px;
+        background-color: #E0E0E0;
+        border-radius: 20px;
+        margin-top: 16px;
+        opacity: 0.5;
+      }
+      @keyframes pulse {
+        0% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+        100% { opacity: 0.3; }
+      }
+      .pulse {
+        animation: pulse 1.5s infinite ease-in-out;
+      }
+    </style>
   </head>
   <body>
+    <div id="app_skeleton" class="skeleton-loader">
+      <div class="skeleton-header">
+        <div class="skeleton-title pulse"></div>
+        <div class="skeleton-subtitle pulse"></div>
+      </div>
+      <div class="skeleton-card-container">
+        <div class="skeleton-card">
+          <div class="skeleton-card-title pulse"></div>
+          <div class="skeleton-input pulse"></div>
+          <div class="skeleton-input pulse"></div>
+          <div class="skeleton-input pulse"></div>
+          <div class="skeleton-btn pulse"></div>
+        </div>
+      </div>
+    </div>
     <script>
       {{flutter_bootstrap_js}}
     </script>

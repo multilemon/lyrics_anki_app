@@ -16,11 +16,15 @@ class HistoryNotifier extends _$HistoryNotifier {
     });
     ref.onDispose(subscription.cancel);
 
-    return repo.getHistory();
+    return repo.getHistory(limit: 50);
   }
 
   Future<void> addHistoryItem(
-      String title, String artist, String snippet, String language,) async {
+    String title,
+    String artist,
+    String snippet,
+    String language,
+  ) async {
     final newItem = HistoryItem(
       songTitle: title,
       artist: artist,
