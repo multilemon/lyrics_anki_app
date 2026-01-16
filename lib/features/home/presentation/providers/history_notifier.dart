@@ -16,7 +16,7 @@ class HistoryNotifier extends _$HistoryNotifier {
     });
     ref.onDispose(subscription.cancel);
 
-    return repo.getHistory(limit: 50);
+    return repo.getHistory();
   }
 
   Future<void> addHistoryItem(

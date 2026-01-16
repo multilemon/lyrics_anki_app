@@ -26,10 +26,12 @@ class AnkiExportServiceImpl implements IAnkiExportService {
     final buffer = StringBuffer();
 
     // Add Headers
-    buffer
-      ..writeln('#deck:HanaUta::${songTitle.replaceAll(':', ' ')} - $artist')
-      ..writeln('#html:true')
-      ..writeln('#separator:Tab');
+    // Add Headers
+    buffer.writeln(
+      '#deck:HanaUta::${songTitle.replaceAll(':', ' ')} - $artist',
+    );
+    buffer.writeln('#html:true');
+    buffer.writeln('#separator:Tab');
 
     final userLevelValue = _getLevelValue(userLevel);
 
@@ -115,8 +117,9 @@ class AnkiExportServiceImpl implements IAnkiExportService {
     String? userLevel,
   }) async {
     final databaseService = AnkiDatabaseService();
-    final deckName =
-        'HanaUta::${userLevel != null ? "[$userLevel] " : ""}${songTitle.replaceAll(':', ' ')} - $artist';
+    final deckName = 'HanaUta::'
+        '${userLevel != null ? "[$userLevel] " : ""}'
+        '${songTitle.replaceAll(':', ' ')} - $artist';
 
     final dbBytes = await databaseService.createDatabase(
       vocabs: vocabs,

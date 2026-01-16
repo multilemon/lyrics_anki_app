@@ -117,7 +117,7 @@ class AnkiDatabaseService {
         'usn': -1,
         'sortf': 0,
         'did': deckId,
-        'tmpls': [
+        'tmpls': <Map<String, Object?>>[
           {
             'name': 'Card 1',
             'ord': 0,
@@ -128,7 +128,7 @@ class AnkiDatabaseService {
             'did': null,
           }
         ],
-        'flds': [
+        'flds': <Map<String, Object?>>[
           {
             'name': 'Front',
             'ord': 0,
@@ -148,10 +148,15 @@ class AnkiDatabaseService {
             'media': [],
           },
         ],
-        'css':
-            '.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }',
-        'latexPre':
-            '\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n',
+        'css': '.card { font-family: arial; font-size: 20px; '
+            'text-align: center; color: black; background-color: white; }',
+        'latexPre': '\\documentclass[12pt]{article}\n'
+            '\\special{papersize=3in,5in}\n'
+            '\\usepackage[utf8]{inputenc}\n'
+            '\\usepackage{amssymb,amsmath}\n'
+            '\\pagestyle{empty}\n'
+            '\\setlength{\\parindent}{0in}\n'
+            '\\begin{document}\n',
         'latexPost': r'\end{document}',
         'latexSvg': false,
         'req': [

@@ -1,18 +1,18 @@
 import 'dart:async';
+
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
-import 'package:lyrics_anki_app/l10n/l10n.dart';
-
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/native_video_player.dart';
 import 'package:lyrics_anki_app/features/main/presentation/pages/main_page.dart';
+import 'package:lyrics_anki_app/l10n/l10n.dart';
 
 class LyricsPage extends ConsumerStatefulWidget {
   const LyricsPage({super.key});
@@ -201,7 +201,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           child: Row(
                             children: [
                               _FilterChip(
-                                label: 'All', // TODO: Localize
+                                label: 'All', // TODO(user): Localize
                                 value: isAllSelected(),
                                 onChanged: (val) {
                                   ref
@@ -237,7 +237,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                 ],
                               if (hasOther)
                                 _FilterChip(
-                                  label: 'Other', // TODO: Localize
+                                  label: 'Other', // TODO(user): Localize
                                   value: (() {
                                     final nonLevelVocab = <int>[];
                                     for (var i = 0;
@@ -539,7 +539,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          'The AI service is currently overloaded (503).\nThis happens with the Free Tier.\nPlease wait a moment and try again.',
+                                          'The AI service is currently overloaded (503).\n'
+                                          'This happens with the Free Tier.\n'
+                                          'Please wait a moment and try again.',
                                           textAlign: TextAlign.center,
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(height: 1.4),
@@ -600,7 +602,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          "You've hit the daily usage limit for the free AI tier.\nPlease try again tomorrow.",
+                                          "You've hit the daily usage limit for the free AI tier.\n"
+                                          'Please try again tomorrow.',
                                           textAlign: TextAlign.center,
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(height: 1.4),
@@ -682,7 +685,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                       ),
                                       child: Text(
                                         isJsonError
-                                            ? 'Sometimes AI makes a mistake.\nPlease try again.'
+                                            ? 'Sometimes AI makes a mistake.\n'
+                                                'Please try again.'
                                             : errorMsg.replaceAll(
                                                 'Exception: ',
                                                 '',
@@ -780,7 +784,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                 const videoWidth = 300.0;
                 const headerHeight = 48.0;
                 const videoHeight = 169.0;
-                final totalHeight = headerHeight + videoHeight;
+                const totalHeight = headerHeight + videoHeight;
 
                 // Default position: Centered
                 final defaultLeft = (size.width - videoWidth) / 2;

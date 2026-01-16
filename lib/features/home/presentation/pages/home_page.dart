@@ -5,11 +5,11 @@ import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
+import 'package:lyrics_anki_app/features/home/presentation/widgets/storage_warning_banner.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:lyrics_anki_app/features/home/presentation/widgets/storage_warning_banner.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({
@@ -502,7 +502,7 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
                     subtitle: lang.englishName != lang.nativeName
                         ? Text(
                             lang.nativeName,
-                            style: TextStyle(color: AppColors.sakuraDark),
+                            style: const TextStyle(color: AppColors.sakuraDark),
                           )
                         : null,
                     onTap: () => Navigator.pop(context, lang),

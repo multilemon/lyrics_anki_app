@@ -16,7 +16,6 @@ class StorageWarningBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.peach,
-          width: 1,
         ),
       ),
       child: Row(
