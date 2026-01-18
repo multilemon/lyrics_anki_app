@@ -54,7 +54,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get selectLanguage => 'Выберите язык';
 
   @override
-  String get analysisInProgress => 'Идет анализ...\nЭто может занять несколько минут.';
+  String get analysisInProgress =>
+      'Идет анализ...\nЭто может занять несколько минут.';
 
   @override
   String get songNotFound => 'Песня не найдена';
@@ -95,7 +96,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get selectJlptLevel => 'Выберите ваш уровень JLPT:';
 
   @override
-  String get furiganaExplanation => 'Слова выше этого уровня будут содержать фуригану на лицевой стороне карточки.';
+  String get furiganaExplanation =>
+      'Слова выше этого уровня будут содержать фуригану на лицевой стороне карточки.';
 
   @override
   String get cancelButton => 'Отмена';

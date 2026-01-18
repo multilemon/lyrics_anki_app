@@ -54,7 +54,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectLanguage => 'Select Language';
 
   @override
-  String get analysisInProgress => 'Analysis in progress...\nThis could take a few minutes.';
+  String get analysisInProgress =>
+      'Analysis in progress...\nThis could take a few minutes.';
 
   @override
   String get songNotFound => 'Song Not Found';
@@ -95,7 +96,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectJlptLevel => 'Select your JLPT Level:';
 
   @override
-  String get furiganaExplanation => 'Words above this level will include furigana on the front of the card.';
+  String get furiganaExplanation =>
+      'Words above this level will include furigana on the front of the card.';
 
   @override
   String get cancelButton => 'Cancel';

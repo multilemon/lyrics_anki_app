@@ -1638,7 +1638,7 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedLevel,
+                  initialValue: _selectedLevel,
                   dropdownColor: AppColors.white,
                   decoration: InputDecoration(
                     filled: true,

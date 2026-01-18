@@ -95,7 +95,8 @@ class AppLocalizationsTh extends AppLocalizations {
   String get selectJlptLevel => 'เลือกระดับ JLPT ของคุณ:';
 
   @override
-  String get furiganaExplanation => 'คำศัพท์ที่สูงกว่าระดับนี้จะมีฟุริงานะที่ด้านหน้าของการ์ด';
+  String get furiganaExplanation =>
+      'คำศัพท์ที่สูงกว่าระดับนี้จะมีฟุริงานะที่ด้านหน้าของการ์ด';
 
   @override
   String get cancelButton => 'ยกเลิก';

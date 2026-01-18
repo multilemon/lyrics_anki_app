@@ -54,7 +54,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get selectLanguage => 'Pilih Bahasa';
 
   @override
-  String get analysisInProgress => 'Sedang menganalisis...\nIni mungkin memakan waktu beberapa menit.';
+  String get analysisInProgress =>
+      'Sedang menganalisis...\nIni mungkin memakan waktu beberapa menit.';
 
   @override
   String get songNotFound => 'Lagu Tidak Ditemukan';
@@ -95,7 +96,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get selectJlptLevel => 'Pilih Level JLPT Anda:';
 
   @override
-  String get furiganaExplanation => 'Kata-kata di atas level ini akan menyertakan furigana di bagian depan kartu.';
+  String get furiganaExplanation =>
+      'Kata-kata di atas level ini akan menyertakan furigana di bagian depan kartu.';
 
   @override
   String get cancelButton => 'Batal';

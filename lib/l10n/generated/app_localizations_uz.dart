@@ -12,7 +12,8 @@ class AppLocalizationsUz extends AppLocalizations {
   String get appTitle => 'HanaUta';
 
   @override
-  String get homeSubtitle => 'Sevimli qoʻshiqlaringiz orqali yapon tilini oʻrganing.';
+  String get homeSubtitle =>
+      'Sevimli qoʻshiqlaringiz orqali yapon tilini oʻrganing.';
 
   @override
   String get analyzeNewSong => 'Yangi qoʻshiqni tahlil qilish';
@@ -54,7 +55,8 @@ class AppLocalizationsUz extends AppLocalizations {
   String get selectLanguage => 'Tilni tanlang';
 
   @override
-  String get analysisInProgress => 'Tahlil qilinmoqda...\nBu bir necha daqiqa vaqt olishi mumkin.';
+  String get analysisInProgress =>
+      'Tahlil qilinmoqda...\nBu bir necha daqiqa vaqt olishi mumkin.';
 
   @override
   String get songNotFound => 'Qoʻshiq topilmadi';
@@ -95,7 +97,8 @@ class AppLocalizationsUz extends AppLocalizations {
   String get selectJlptLevel => 'JLPT darajangizni tanlang:';
 
   @override
-  String get furiganaExplanation => 'Ushbu darajadan yuqori soʻzlar kartaning old tomonida furiganani oʻz ichiga oladi.';
+  String get furiganaExplanation =>
+      'Ushbu darajadan yuqori soʻzlar kartaning old tomonida furiganani oʻz ichiga oladi.';
 
   @override
   String get cancelButton => 'Bekor qilish';

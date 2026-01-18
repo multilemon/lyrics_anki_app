@@ -12,7 +12,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appTitle => 'HanaUta';
 
   @override
-  String get homeSubtitle => 'Học tiếng Nhật qua các bài hát yêu thích của bạn.';
+  String get homeSubtitle =>
+      'Học tiếng Nhật qua các bài hát yêu thích của bạn.';
 
   @override
   String get analyzeNewSong => 'Phân tích bài hát mới';
@@ -54,7 +55,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get selectLanguage => 'Chọn ngôn ngữ';
 
   @override
-  String get analysisInProgress => 'Đang phân tích...\nQuá trình này có thể mất vài phút.';
+  String get analysisInProgress =>
+      'Đang phân tích...\nQuá trình này có thể mất vài phút.';
 
   @override
   String get songNotFound => 'Không tìm thấy bài hát';
@@ -95,7 +97,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get selectJlptLevel => 'Chọn cấp độ JLPT của bạn:';
 
   @override
-  String get furiganaExplanation => 'Các từ trên cấp độ này sẽ bao gồm furigana ở mặt trước thẻ.';
+  String get furiganaExplanation =>
+      'Các từ trên cấp độ này sẽ bao gồm furigana ở mặt trước thẻ.';
 
   @override
   String get cancelButton => 'Hủy';

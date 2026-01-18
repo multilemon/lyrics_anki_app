@@ -54,7 +54,8 @@ class AppLocalizationsMy extends AppLocalizations {
   String get selectLanguage => 'ဘာသာစကားရွေးချယ်ပါ';
 
   @override
-  String get analysisInProgress => 'လေ့လာနေဆဲဖြစ်ပါသည်...\nမိနစ်အနည်းငယ်ကြာနိုင်ပါသည်။';
+  String get analysisInProgress =>
+      'လေ့လာနေဆဲဖြစ်ပါသည်...\nမိနစ်အနည်းငယ်ကြာနိုင်ပါသည်။';
 
   @override
   String get songNotFound => 'သီချင်းမတွေ့ပါ';
@@ -95,7 +96,8 @@ class AppLocalizationsMy extends AppLocalizations {
   String get selectJlptLevel => 'သင့် JLPT အဆင့်ကို ရွေးချယ်ပါ-';
 
   @override
-  String get furiganaExplanation => 'ဒီအဆင့်အထက်ရှိ စကားလုံးများတွင် ကတ်၏ ရှေ့မျက်နှာပြင်၌ furigana ပါဝင်ပါမည်။';
+  String get furiganaExplanation =>
+      'ဒီအဆင့်အထက်ရှိ စကားလုံးများတွင် ကတ်၏ ရှေ့မျက်နှာပြင်၌ furigana ပါဝင်ပါမည်။';
 
   @override
   String get cancelButton => 'မလုပ်တော့ပါ';
