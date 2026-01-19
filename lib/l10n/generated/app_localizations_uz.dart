@@ -105,4 +105,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get exportButton => 'Eksport';
+
+  @override
+  String get noLyricsAvailable => 'No lyrics available.';
 }

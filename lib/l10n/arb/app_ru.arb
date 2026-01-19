@@ -30,5 +30,9 @@
     "selectJlptLevel": "Выберите ваш уровень JLPT:",
     "furiganaExplanation": "Слова выше этого уровня будут содержать фуригану на лицевой стороне карточки.",
     "cancelButton": "Отмена",
-    "exportButton": "Экспорт"
+    "exportButton": "Экспорт",
+    "noLyricsAvailable": "No lyrics available.",
+    "@noLyricsAvailable": {
+        "description": "Message shown when no lyrics are found"
+    }
 }

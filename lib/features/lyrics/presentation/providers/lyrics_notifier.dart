@@ -62,14 +62,17 @@ class LyricsNotifier extends _$LyricsNotifier {
   }
 
   void loadFromHistory(HistoryItem item) {
-    state = AsyncValue.data(AnalysisResult(
-      vocabs: item.vocabs,
-      grammar: item.grammar,
-      kanji: item.kanji,
-      song: item.songTitle,
-      artist: item.artist,
-      youtubeId: item.youtubeId,
-    ),);
+    state = AsyncValue.data(
+      AnalysisResult(
+        vocabs: item.vocabs,
+        grammar: item.grammar,
+        kanji: item.kanji,
+        song: item.songTitle,
+        artist: item.artist,
+        youtubeId: item.youtubeId,
+        lyrics: item.lyrics ?? '',
+      ),
+    );
   }
 
   void toggleSelection(int index) {

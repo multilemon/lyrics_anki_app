@@ -301,6 +301,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export'**
   String get exportButton;
+
+  /// Message shown when no lyrics are found
+  ///
+  /// In en, this message translates to:
+  /// **'No lyrics available.'**
+  String get noLyricsAvailable;
 }
 
 class _AppLocalizationsDelegate

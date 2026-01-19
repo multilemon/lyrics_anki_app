@@ -30,5 +30,9 @@
     "selectJlptLevel": "เลือกระดับ JLPT ของคุณ:",
     "furiganaExplanation": "คำศัพท์ที่สูงกว่าระดับนี้จะมีฟุริงานะที่ด้านหน้าของการ์ด",
     "cancelButton": "ยกเลิก",
-    "exportButton": "ส่งออก"
+    "exportButton": "ส่งออก",
+    "noLyricsAvailable": "No lyrics available.",
+    "@noLyricsAvailable": {
+        "description": "Message shown when no lyrics are found"
+    }
 }

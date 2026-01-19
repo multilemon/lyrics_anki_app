@@ -35,6 +35,7 @@ void main() {
         Vocab(
           word: '猫',
           reading: 'ねこ',
+          partOfSpeech: 'N',
           meaning: 'Cat',
           jlptV: 'N5',
           jlptK: 'N5',
@@ -75,6 +76,7 @@ void main() {
         Vocab(
           word: '難しい',
           reading: 'むずかしい',
+          partOfSpeech: 'Adj-i',
           meaning: 'Difficult',
           jlptV: 'N3',
           jlptK: 'N3',

@@ -105,4 +105,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get exportButton => 'Xuất';
+
+  @override
+  String get noLyricsAvailable => 'No lyrics available.';
 }

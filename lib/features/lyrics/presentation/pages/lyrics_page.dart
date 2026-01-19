@@ -31,7 +31,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -387,6 +387,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                   '${context.l10n.grammarTab} ($grammarCount)',
                             ),
                             Tab(text: '${context.l10n.kanjiTab} ($kanjiCount)'),
+                            Tab(text: context.l10n.lyricsTab),
                           ],
                         );
                       },
@@ -417,6 +418,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                   _VocabList(vocabList: analysis.vocabs),
                                   _GrammarList(grammarList: analysis.grammar),
                                   _KanjiList(kanjiList: analysis.kanji),
+                                  _LyricsView(lyrics: analysis.lyrics),
                                 ],
                               );
                             },
@@ -655,6 +657,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                               final isJsonError =
                                   errorMsg.contains('JSON Parse Error') ||
                                       errorMsg.contains('FormatException');
+                              final isLyricsNotFound = errorMsg.contains(
+                                'LYRICS_NOT_FOUND',
+                              );
 
                               return Center(
                                 child: Column(
@@ -663,7 +668,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                     Icon(
                                       isNotJapanese
                                           ? Icons.translate_rounded
-                                          : Icons.error_outline,
+                                          : isLyricsNotFound
+                                              ? Icons.library_music_rounded
+                                              : Icons.error_outline,
                                       size: 48,
                                       color: AppColors.error,
                                     ),
@@ -671,7 +678,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                     Text(
                                       isNotJapanese
                                           ? 'Language Mismatch'
-                                          : 'Analysis Failed',
+                                          : isLyricsNotFound
+                                              ? 'Lyrics Unavailable'
+                                              : 'Analysis Failed',
                                       style: theme.textTheme.headlineSmall
                                           ?.copyWith(
                                         fontWeight: FontWeight.bold,
@@ -687,17 +696,20 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                         isJsonError
                                             ? 'Sometimes AI makes a mistake.\n'
                                                 'Please try again.'
-                                            : errorMsg.replaceAll(
-                                                'Exception: ',
-                                                '',
-                                              ),
+                                            : isLyricsNotFound
+                                                ? 'The AI could not find the full official lyrics for this song.\n'
+                                                    'Please try a different song or artist variation.'
+                                                : errorMsg.replaceAll(
+                                                    'Exception: ',
+                                                    '',
+                                                  ),
                                         textAlign: TextAlign.center,
                                         style: theme.textTheme.bodyMedium
                                             ?.copyWith(height: 1.4),
                                       ),
                                     ),
                                     const SizedBox(height: 32),
-                                    if (isNotJapanese)
+                                    if (isNotJapanese || isLyricsNotFound)
                                       ElevatedButton.icon(
                                         onPressed: () {
                                           // Clear Home fields
@@ -1138,6 +1150,16 @@ class _VocabItem extends ConsumerWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            if (vocab.partOfSpeech.isNotEmpty) ...[
+              const WidgetSpan(child: SizedBox(width: 8)),
+              TextSpan(
+                text: '[${vocab.partOfSpeech}]',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.sakuraDark,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
             const WidgetSpan(child: SizedBox(width: 8)),
             TextSpan(
               text: vocab.reading,
@@ -1691,6 +1713,38 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
                 child: Text(l10n.exportButton),
               ),
             ],
+    );
+  }
+}
+
+class _LyricsView extends StatelessWidget {
+  const _LyricsView({required this.lyrics});
+
+  final String lyrics;
+
+  @override
+  Widget build(BuildContext context) {
+    if (lyrics.isEmpty) {
+      return Center(
+        child: Text(
+          context.l10n.noLyricsAvailable,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textTertiary,
+              ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: SelectableText(
+        lyrics,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              height: 1.8,
+              fontSize: 16,
+            ),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 }

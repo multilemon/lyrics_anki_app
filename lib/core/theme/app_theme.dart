@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 
@@ -18,13 +17,22 @@ class AppTheme {
         error: AppColors.error,
         onSurface: AppColors.textPrimary,
       ),
-      textTheme: GoogleFonts.notoSansJpTextTheme().copyWith(
+      textTheme: TextTheme(
         displayLarge: AppTextStyles.display,
         headlineMedium: AppTextStyles.heading1,
         headlineSmall: AppTextStyles.heading2,
         bodyLarge: AppTextStyles.bodyLarge,
         bodyMedium: AppTextStyles.bodyMedium,
         labelSmall: AppTextStyles.label,
+      ).apply(
+        fontFamily: 'Noto Sans',
+        fontFamilyFallback: const [
+          'Noto Sans JP',
+          'Noto Sans Thai',
+          'Noto Sans Myanmar',
+          'Noto Sans SC',
+          'Noto Sans TC',
+        ],
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.cream,

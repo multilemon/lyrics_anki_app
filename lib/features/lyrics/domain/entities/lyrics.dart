@@ -10,6 +10,7 @@ class Vocab {
     required this.word,
     required this.reading,
     required this.meaning,
+    required this.partOfSpeech,
     required this.jlptV,
     required this.jlptK,
     required this.context,
@@ -23,6 +24,9 @@ class Vocab {
   final String reading;
   @HiveField(2)
   final String meaning;
+  @HiveField(7)
+  @JsonKey(name: 'part_of_speech')
+  final String partOfSpeech;
   @HiveField(3)
   @JsonKey(name: 'jlpt_v')
   final String jlptV;
@@ -121,6 +125,9 @@ class HistoryItem extends HiveObject {
 
   @HiveField(9)
   String? youtubeId;
+
+  @HiveField(10)
+  String? lyrics;
 }
 
 class SongNotFoundException implements Exception {
@@ -150,6 +157,7 @@ class AnalysisResult {
     this.song = '',
     this.artist = '',
     this.youtubeId,
+    this.lyrics = '',
   });
 
   final List<Vocab> vocabs;
@@ -158,4 +166,5 @@ class AnalysisResult {
   final String song;
   final String artist;
   final String? youtubeId;
+  final String lyrics;
 }

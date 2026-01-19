@@ -30,5 +30,9 @@
     "selectJlptLevel": "Pilih Level JLPT Anda:",
     "furiganaExplanation": "Kata-kata di atas level ini akan menyertakan furigana di bagian depan kartu.",
     "cancelButton": "Batal",
-    "exportButton": "Ekspor"
+    "exportButton": "Ekspor",
+    "noLyricsAvailable": "No lyrics available.",
+    "@noLyricsAvailable": {
+        "description": "Message shown when no lyrics are found"
+    }
 }

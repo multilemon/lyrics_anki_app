@@ -102,4 +102,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get exportButton => 'エクスポート';
+
+  @override
+  String get noLyricsAvailable => 'No lyrics available.';
 }

@@ -30,5 +30,9 @@
     "selectJlptLevel": "သင့် JLPT အဆင့်ကို ရွေးချယ်ပါ-",
     "furiganaExplanation": "ဒီအဆင့်အထက်ရှိ စကားလုံးများတွင် ကတ်၏ ရှေ့မျက်နှာပြင်၌ furigana ပါဝင်ပါမည်။",
     "cancelButton": "မလုပ်တော့ပါ",
-    "exportButton": "ပို့ရန်"
+    "exportButton": "ပို့ရန်",
+    "noLyricsAvailable": "No lyrics available.",
+    "@noLyricsAvailable": {
+        "description": "Message shown when no lyrics are found"
+    }
 }

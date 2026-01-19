@@ -103,4 +103,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get exportButton => 'ส่งออก';
+
+  @override
+  String get noLyricsAvailable => 'No lyrics available.';
 }

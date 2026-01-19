@@ -30,5 +30,9 @@
     "selectJlptLevel": "JLPT darajangizni tanlang:",
     "furiganaExplanation": "Ushbu darajadan yuqori soʻzlar kartaning old tomonida furiganani oʻz ichiga oladi.",
     "cancelButton": "Bekor qilish",
-    "exportButton": "Eksport"
+    "exportButton": "Eksport",
+    "noLyricsAvailable": "No lyrics available.",
+    "@noLyricsAvailable": {
+        "description": "Message shown when no lyrics are found"
+    }
 }

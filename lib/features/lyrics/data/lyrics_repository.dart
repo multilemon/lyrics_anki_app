@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:lyrics_anki_app/core/config/env.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
@@ -34,54 +33,71 @@ class LyricsRepository {
     String artist,
     String language,
   ) async {
-    final model = GenerativeModel(
-      model: 'gemini-3-flash-preview',
-      apiKey: Env.geminiApiKey,
+    final model = FirebaseAI.googleAI().generativeModel(
+      model: 'gemini-2.5-pro',
       generationConfig: GenerationConfig(
         candidateCount: 1,
         temperature: 0,
         topP: 1,
-        topK: 40,
+        topK: 1,
       ),
+      tools: [
+        Tool.googleSearch(),
+      ],
       systemInstruction: Content.system(
         '''
 **ROLE**: Senior Japanese Linguistic Data Engineer.
-**TARGET_LANGUAGE**: [Specify Target Language, e.g., Thai, English].
-**GOAL**: Absolute Exhaustive Analysis of Lyrics -> Structured JSON for Language Learners.
+**SOURCE_LANGUAGE**: Japanese.
+**PROFICIENCY_STANDARD**: JLPT.
+**GOAL**: Analyze lyrics -> Structured JSON.
 
-**WORKFLOW**:
-1. **Validation**: Check if primarily Japanese and if the song exists. If fail, return strictly `{"error": "NOT_JAPANESE"}` or `{"error": "NOT_FOUND"}`.
-2. **Search (Grounding)**: 
-   - Fetch Official Lyrics. Scan every single line (Line-by-Line Parsing).
-   - Fetch Official MV 11-char YouTube ID.
-3. **Verify (Data-Backed)**: Use Google Search to find official JLPT levels for every unit identified. 
-   - **jlpt_v**: Must reflect Official Usage Frequency. [DO NOT estimate by kanji].
-   - **jlpt_k**: Must reflect Official Kanji Grade.
-4. **Filter**: If verified official level is **N5**, DISCARD immediately. Only N4-N1 allowed for vocab and grammar.
+**INPUT PROCESSING**:
+1.  **Parse**: Identify "Song Title", "Artist", and "Target Language".
+2.  **Scope**: Ensure strictly Japanese song.
+
+**INPUT PROCESSING**:
+1.  **Parse**: Identify "Song Title", "Artist", and "Target Language" from the user prompt.
+2.  **Scope**: Ensure the request is for a Japanese song. If not, return `{"error": "NOT_JAPANESE"}`.
+
+**PIPELINE (STRICT EXECUTION)**:
+1.  **Lyric Retrieval & Integrity Check (CRITICAL)**:
+    -   **Search**: Perform a strict search using: `"[Song Title]" "[Artist]" 歌詞 フル site:uta-net.com OR site:j-lyric.net OR site:utaten.com`.
+    -   **Structural Verification**: 
+        -   You must read the *entire* text linearly.
+        -   **Anchor Check**: Be alert for repeating sections (Choruses) that start identically but end differently (e.g., "Happy End" by back number). You MUST extract both variations. **DO NOT merge them.**
+    -   **Validation**: If the retrieved text is incomplete or ambiguous, return `{"error": "LYRICS_NOT_FOUND"}`.
+    -   **Music Video**: Fetch the official YouTube ID (11 chars).
+
+2.  **Linguistic Extraction**: 
+    -   Scan the verified text for atomic units. 
+    -   Determine dictionary forms for accurate POS classification.
+
+3.  **Data Grounding**: 
+    -   Verify Vocab/Kanji levels against official JLPT standards via Search.
+    -   Verify Grammar levels against official JLPT standards via Search.
+    
+4.  **Format**: Minified JSON.
 
 **EXTRACTION_CONSTRAINTS**:
-- **Vocab (Target >50 entries)**: Break all compounds (Atomic). 
-  - **Index 5 (context)**: MUST be the exact, verbatim line from the lyrics. NO explanations.
-  - **Index 6 (nuance)**: Provide essential linguistic data in **TARGET_LANGUAGE**. 
-    - **Identify**: Grammatical Properties (Transitivity, Register, Honorifics) and Linguistic Nuance (Connotation, Intensity, Emotional undertones).
-    - **Technical Terms**: Use formal terminology of **TARGET_LANGUAGE**.
-    - **Neutrality**: NO plot summaries. NO gender-bias based on sentence endings. Return strictly `""` for common nouns/neutral verbs with no specific linguistic property.
-- **Grammar (N4-N1 ONLY)**: High Recall. All explanations and usage rules in **TARGET_LANGUAGE**.
-- **Kanji (STRICT ATOMIC)**:
-  - **Single Char ONLY**: 1 Char/entry. NO compounds (e.g., If "自分", create two entries: "自" and "分").
-  - **Coverage**: Every unique N4-N1 Kanji used in `vocab` and `grammar` arrays.
-  - **Readings**: Format: "On | Kun" (Katakana | Hiragana).
-  - **Meanings**: ALL standard definitions in **TARGET_LANGUAGE**.
-  - **Level Standard**: MUST be strictly based on official JLPT levels.
-- **Integrity**: Every character used in `vocab` and `grammar` MUST exist in the `kanji` list. No duplicates.
+- **Vocab (Exhaustive)**:
+  - **Index 2 (part_of_speech)**: Strict classification (N, V, Adj-i, Adj-na, Adv).
+    -   **Verbs**: Specify Group (V1, V2, V3).
+    -   **Suru-Nouns**: Must use "N, VS".
+  - **Index 6 (context)**: Verbatim lyric line.
+  - **Index 7 (nuance)**: Essential data in **TARGET_LANGUAGE**. 
+    -   **Silence Rule**: If standard/neutral, **RETURN STRICTLY `""`**.
+    -   **Translations**: "Transitive" -> "สกรรมกิริยา", etc.
+  
+- **Grammar**: Exhaustive coverage (N5-N1).
+- **Kanji (Exhaustive)**: Levels "N1"-"N5". Meanings in Target Lang.
 
 **FORMAT (STRICT MINIFIED JSON)**:
-- NO markdown, NO preamble, NO extra text.
-- VALID RFC 8259. Double quotes ONLY. No standalone hyphens `-`.
+- NO markdown. Valid RFC 8259.
 
 {
-"song":{"title":"","artist":"","youtube_id":""},
-"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance"]],
+"song":{"title":"","artist":"","youtube_id":"","target_language":""},
+"lyrics": "FULL_JAPANESE_LYRICS_TEXT_HERE",
+"vocab":[["word","reading","part_of_speech","meaning","jlpt_v","jlpt_k","context","nuance"]],
 "grammar":[["point","level","explanation","usage"]],
 "kanji":[["char","level","meanings","readings"]]
 }
@@ -138,7 +154,7 @@ class LyricsRepository {
       debugPrint('Analysis error: $e');
 
       // Check for 503 Overloaded
-      if (e is GenerativeAIException) {
+      if (e is FirebaseAIException) {
         final message = e.message.toLowerCase();
         if (message.contains('503') || message.contains('overloaded')) {
           throw ServerOverloadedException();
@@ -182,7 +198,8 @@ class LyricsRepository {
       ..vocabs = result.vocabs
       ..grammar = result.grammar
       ..kanji = result.kanji
-      ..youtubeId = result.youtubeId;
+      ..youtubeId = result.youtubeId
+      ..lyrics = result.lyrics;
 
     await saveToHistory(item);
   }
@@ -288,6 +305,7 @@ class LyricsRepository {
         song: songTitle,
         artist: artistName,
         youtubeId: youtubeId,
+        lyrics: parsed['lyrics']?.toString() ?? '',
       );
     } catch (e) {
       debugPrint('JSON Parse Error: $e');
@@ -336,6 +354,7 @@ class LyricsRepository {
       return Vocab(
         word: '',
         reading: '',
+        partOfSpeech: '',
         meaning: '',
         jlptV: '',
         jlptK: '',
@@ -347,11 +366,12 @@ class LyricsRepository {
     return Vocab(
       word: _safeString(array, 0),
       reading: _safeString(array, 1),
-      meaning: _safeString(array, 2),
-      jlptV: _safeString(array, 3),
-      jlptK: _safeString(array, 4),
-      context: _safeString(array, 5),
-      nuanceNote: _safeString(array, 6),
+      partOfSpeech: _safeString(array, 2),
+      meaning: _safeString(array, 3),
+      jlptV: _safeString(array, 4),
+      jlptK: _safeString(array, 5),
+      context: _safeString(array, 6),
+      nuanceNote: _safeString(array, 7),
     );
   }
 

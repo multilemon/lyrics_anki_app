@@ -30,5 +30,9 @@
     "selectJlptLevel": "JLPTレベルを選択:",
     "furiganaExplanation": "このレベル以上の単語には、カードの表面にふりがなが付きます。",
     "cancelButton": "キャンセル",
-    "exportButton": "エクスポート"
+    "exportButton": "エクスポート",
+    "noLyricsAvailable": "No lyrics available.",
+    "@noLyricsAvailable": {
+        "description": "Message shown when no lyrics are found"
+    }
 }

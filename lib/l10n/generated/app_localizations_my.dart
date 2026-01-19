@@ -104,4 +104,7 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get exportButton => 'ပို့ရန်';
+
+  @override
+  String get noLyricsAvailable => 'No lyrics available.';
 }

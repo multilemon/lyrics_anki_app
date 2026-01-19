@@ -128,5 +128,9 @@
     "exportButton": "Export",
     "@exportButton": {
         "description": "Export button text"
+    },
+    "noLyricsAvailable": "No lyrics available.",
+    "@noLyricsAvailable": {
+        "description": "Message shown when no lyrics are found"
     }
 }

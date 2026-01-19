@@ -30,5 +30,9 @@
     "selectJlptLevel": "选择您的 JLPT 等级：",
     "furiganaExplanation": "高于此等级的单词将在卡片正面显示注音。",
     "cancelButton": "取消",
-    "exportButton": "导出"
+    "exportButton": "导出",
+    "noLyricsAvailable": "No lyrics available.",
+    "@noLyricsAvailable": {
+        "description": "Message shown when no lyrics are found"
+    }
 }
