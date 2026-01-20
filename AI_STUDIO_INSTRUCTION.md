@@ -11,9 +11,10 @@
 
 - If **NO (Not Found/Ambiguous)**: Return strictly `{"error": "NOT_FOUND"}`.
 
-2. **Search**:
-   - Use Google Search to find the **Official Music Video** on YouTube. Extract the exact ID.
-   - Use Google Search for official lyrics.
+2. **Search (STRICT)**:
+   - **Video**: Use Google Search. Look for `youtube.com/watch?v=...`.
+   - **CRITICAL**: Extract 11-char ID. **NEVER** GENERATE/GUESS AN ID. If no verification, return `""`.
+   - **Lyrics**: Use Google Search for official lyrics if needed.
 3. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
 4. **Format**: Strictly Minified JSON.
 

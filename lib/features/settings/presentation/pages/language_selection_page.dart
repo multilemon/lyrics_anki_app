@@ -104,6 +104,13 @@ class LanguageSelectionPage extends ConsumerWidget {
             onChanged: (v) =>
                 ref.read(localeNotifierProvider.notifier).setLocale(v),
           ),
+          _LanguageTile(
+            label: '한국어 (Korean)',
+            value: const Locale('ko'),
+            groupValue: currentLocale,
+            onChanged: (v) =>
+                ref.read(localeNotifierProvider.notifier).setLocale(v),
+          ),
         ],
       ),
     );

@@ -5,6 +5,7 @@ import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:http/http.dart' as http;
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
@@ -52,40 +53,52 @@ class LyricsRepository {
 **PROFICIENCY_STANDARD**: JLPT.
 **GOAL**: 100% Verified Lyrics Analysis -> Minified JSON.
 
-**INPUT PROCESSING**:
-1.  **Parse**: Identify "Song Title", "Artist", and "Target Language".
-2.  **Scope**: If not Japanese, return `{"error": "NOT_JAPANESE"}`.
+**PROCESS**:
+1.  **VERIFY CONTEXT**:
+    -   You will be provided with `CONTEXT_LYRICS`.
+    -   **ACTION**: YOU MUST USE THIS TEXT for your analysis.
+    -   **CRITICAL**: DO NOT SEARCH for lyrics yourself. DO NOT use your internal knowledge of the song.
+    -   If `CONTEXT_LYRICS` is missing or empty, return `{"error": "LYRICS_NOT_FOUND"}` immediately.
 
-**PIPELINE (STRICT)**:
-1.  **Raw Lyric Retrieval (THE COPY-PASTE RULE)**: 
-    -   **Action**: Search `"[Song Title]" "[Artist]" 歌詞 uta-net` or `j-lyric`.
-    -   **Extraction**: Locate the lyrics in the search result. **COPY THE TEXT EXACTLY AS IS.**
-    -   **PROHIBITED**: 
-        -   DO NOT think about the song structure.
-        -   DO NOT use your internal memory.
-        -   DO NOT merge repeating lines.
-        -   DO NOT write "(Repeat)". 
-    -   **Ending Verification**: Check the *very last line* of the text you copied. Does it match the actual ending of the song in the search result? If not, keep copying until the end.
-    -   **Fail-Safe**: If you cannot find the text, return `{"error": "LYRICS_NOT_FOUND"}`.
+2.  **VERIFY LANGUAGE**:
+    -   Scan the `CONTEXT_LYRICS`.
+    -   If the text is NOT primarily Japanese, return `{"error": "NOT_JAPANESE"}`.
 
-2.  **Linguistic Extraction**: Scan the *copied text* (from Step 1) for vocab/grammar.
+3.  **SEARCH MEDIA (STRICT)**:
+    -   **TOOL USAGE**: You MUST use the Google Search tool.
+    -   **QUERY**: `"{Song Title}" "{Artist}" official music video youtube`
+    -   **VERIFICATION**: 
+        -   Look for a result from `youtube.com` or `youtu.be`.
+        -   Verify the video title matches the song/artist.
+    -   **EXTRACTION**: Extract the 11-char Video ID (e.g. `dQw4w9WgXcQ`).
+    -   **ANTI-HALLUCINATION**: 
+        -   **NEVER** GUESS or INVENT an ID. 
+        -   If strict verification fails or no result is found, return `""` (empty string).
+    -   **STORE**: Result in `song.youtube_id`.
 
-3.  **Data Grounding**: Verify Levels (N5-N1).
+4.  **ANALYZE (EXHAUSTIVE MODE)**:
+    -   **SCOPE**: You MUST analyze the lyrics **line-by-line** from start to finish.
+    -   **STRICT**: DO NOT SUMMARIZE. DO NOT SKIP repeated choruses if context differs.
+    -   Perform Linguistic Extraction on the `CONTEXT_LYRICS`.
 
 **EXTRACTION_CONSTRAINTS**:
 - **Vocab**:
+  - **Requirement**: Extract **ALL** non-trivial words (JLPT N5+) found in the lyrics.
   - **Index 2 (part_of_speech)**:
     -   **Verbs**: `V1` (Godan), `V2` (Ichidan), `V3` (Irregular).
     -   **Suru-Nouns**: MUST use "N, VS".
     -   **Others**: `N`, `Adj-i`, `Adj-na`, `Adv`.
-  - **Index 6 (context)**: Verbatim line from Step 1.
+  - **Index 6 (context)**: Verbatim line from `CONTEXT_LYRICS`.
   - **Index 7 (nuance)**: Essential data in **TARGET_LANGUAGE**.
     -   **Silence Rule**: If standard/neutral, **RETURN STRICTLY `""`**.
     -   **Mappings**: "Transitive"->"สกรรมกิริยา", "Intransitive"->"อกรรมกิริยา".
 
-- **Grammar**: Functional patterns (N5-N1). Explanations in **TARGET_LANGUAGE**.
+- **Grammar**:
+  - **Requirement**: Identify **ALL** functional patterns (N5-N1).
+  - Explanations in **TARGET_LANGUAGE**.
 
 - **Kanji**: 
+  - **Requirement**: List **ALL** Kanji chars found (level N5-N1).
   -   Atomic (1 Char/entry). 
   -   Levels: `N1`-`N5`. (Strictly).
   -   Meanings: In **TARGET_LANGUAGE**.
@@ -95,7 +108,7 @@ class LyricsRepository {
 
 {
 "song":{"title":"","artist":"","youtube_id":"","target_language":""},
-"lyrics": "FULL_RAW_COPIED_LYRICS_TEXT",
+"lyrics": "FULL_TEXT_FROM_CONTEXT_LYRICS",
 "vocab":[["word","reading","part_of_speech","meaning","jlpt_v","jlpt_k","context","nuance"]],
 "grammar":[["point","level","explanation","usage"]],
 "kanji":[["char","level","meanings","readings"]]
@@ -104,12 +117,48 @@ class LyricsRepository {
       ),
     );
 
-    final prompt =
-        'Analyze "$title" by "$artist" for Target Language: $language';
+    // Priority: Refine Query First
+    // We always attempt to refine the query (e.g. Romaji -> Japanese) to ensure
+    // the best chance of finding potential lyrics, even if it adds latency.
+    debugPrint(
+      'LRCLIB: Refining query for "$title - $artist"...',
+    );
+    final refinedQuery = await _refineSearchQuery(title, artist);
+
+    final queryToUse = (refinedQuery != null && refinedQuery.isNotEmpty)
+        ? refinedQuery
+        : '$title $artist';
+
+    debugPrint('LRCLIB: Searching with query: "$queryToUse"');
+    final fetchedLyrics = await _fetchLyricsFromLrclib(queryToUse);
+
+    debugPrint(
+      'LRCLIB: ${fetchedLyrics != null ? "Found lyrics" : "Not found"}',
+    );
+
+    final prompt = StringBuffer()
+      ..writeln('Analyze Request:')
+      ..writeln('User Input: "$title" by "$artist"');
+
+    if (refinedQuery != null && refinedQuery.isNotEmpty) {
+      prompt
+        ..writeln('Refined Official Metadata: "$refinedQuery"')
+        ..writeln(
+            'NOTE: Prefer the Refined Metadata for the "song" JSON output.');
+    }
+
+    prompt.writeln('Target Language: $language');
+
+    if (fetchedLyrics != null) {
+      prompt
+        ..writeln('\nCONTEXT_LYRICS (STRICT SOURCE):')
+        ..writeln(fetchedLyrics);
+    }
+
     debugPrint('AI Prompt: $prompt');
 
     try {
-      final content = [Content.text(prompt)];
+      final content = [Content.text(prompt.toString())];
 
       final stopwatch = Stopwatch()..start();
       final response = await model.generateContent(content);
@@ -431,5 +480,74 @@ class LyricsRepository {
     }
 
     return clean;
+  }
+
+  Future<String?> _fetchLyricsFromLrclib(String query) async {
+    try {
+      final uri = Uri.https('lrclib.net', '/api/search', {
+        'q': query,
+      });
+
+      debugPrint('Fetching lyrics from: $uri');
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final list = jsonDecode(response.body) as List<dynamic>;
+        if (list.isEmpty) return null;
+
+        // Find the first non-instrumental track if possible,
+        // or just the first one
+        final match = list.firstWhere(
+          (e) => (e as Map<String, dynamic>)['instrumental'] == false,
+          orElse: () => list.first,
+        ) as Map<String, dynamic>;
+
+        final plainLyrics = match['plainLyrics'] as String?;
+        final syncedLyrics = match['syncedLyrics'] as String?;
+
+        return (plainLyrics?.isNotEmpty ?? false) ? plainLyrics : syncedLyrics;
+      } else {
+        debugPrint('LRCLIB Error: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch from LRCLIB: $e');
+      return null;
+    }
+  }
+
+  Future<String?> _refineSearchQuery(String title, String artist) async {
+    try {
+      // Use a lightweight model instance for simple text manipulation
+      final model = FirebaseAI.googleAI().generativeModel(
+        model: 'gemini-2.5-pro',
+        generationConfig: GenerationConfig(
+          candidateCount: 1,
+          temperature: 0,
+        ),
+      );
+
+      final prompt =
+          'Role: Query Optimizer. Task: Convert "$title" by "$artist" into '
+          'the best official search query (using original language like '
+          'Japanese if applicable) for lyrics databases. '
+          'Output: ONLY the search string.';
+
+      final response = await model.generateContent([Content.text(prompt)]);
+      final rawText = response.text;
+      debugPrint('Refinement Raw Response: $rawText');
+
+      if (rawText == null) return null;
+
+      // Clean up the response (remove quotes, markdown)
+      var clean = rawText.trim();
+      clean = clean.replaceAll('"', '').replaceAll("'", '');
+      clean = clean.replaceAll('`', ''); // Remove code block ticks
+
+      return clean.trim();
+    } catch (e) {
+      debugPrint('Query refinement failed: $e');
+      return null;
+    }
   }
 }
