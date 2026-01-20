@@ -136,6 +136,10 @@ class LyricsRepository {
       'LRCLIB: ${fetchedLyrics != null ? "Found lyrics" : "Not found"}',
     );
 
+    if (fetchedLyrics == null) {
+      throw SongNotFoundException(title, artist);
+    }
+
     final prompt = StringBuffer()
       ..writeln('Analyze Request:')
       ..writeln('User Input: "$title" by "$artist"');
@@ -149,11 +153,9 @@ class LyricsRepository {
 
     prompt.writeln('Target Language: $language');
 
-    if (fetchedLyrics != null) {
-      prompt
-        ..writeln('\nCONTEXT_LYRICS (STRICT SOURCE):')
-        ..writeln(fetchedLyrics);
-    }
+    prompt
+      ..writeln('\nCONTEXT_LYRICS (STRICT SOURCE):')
+      ..writeln(fetchedLyrics);
 
     debugPrint('AI Prompt: $prompt');
 
@@ -520,7 +522,7 @@ class LyricsRepository {
     try {
       // Use a lightweight model instance for simple text manipulation
       final model = FirebaseAI.googleAI().generativeModel(
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         generationConfig: GenerationConfig(
           candidateCount: 1,
           temperature: 0,
@@ -528,10 +530,11 @@ class LyricsRepository {
       );
 
       final prompt =
-          'Role: Query Optimizer. Task: Convert "$title" by "$artist" into '
-          'the best official search query (using original language like '
-          'Japanese if applicable) for lyrics databases. '
-          'Output: ONLY the search string.';
+          'Role: Metadata Normalizer. Task: Convert "$title" by "$artist" into '
+          'the OFFICIAL "Artist Title" (or "Title Artist") in the original language '
+          '(e.g. Japanese). '
+          'Constraints: DO NOT include "Lyrics", "歌詞", "MV", or "Official". '
+          'Output: ONLY the refined string.';
 
       final response = await model.generateContent([Content.text(prompt)]);
       final rawText = response.text;
