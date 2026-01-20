@@ -4,6 +4,7 @@ import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/pages/language_selection_page.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -58,6 +59,38 @@ class SettingsPage extends ConsumerWidget {
             },
           ),
           // END TEMPORARY FEATURE
+          const SizedBox(height: 32),
+          SafeArea(
+            child: Center(
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final versionAsync = ref.watch(versionProvider);
+                  return versionAsync.when(
+                    data: (version) => Text(
+                      version,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontFamily: 'Outfit',
+                      ),
+                    ),
+                    loading: () => Text(
+                      'Loading version...',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    error: (e, st) => Text(
+                      'Error: $e',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.error,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );

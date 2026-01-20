@@ -1,6 +1,6 @@
 name: lyrics_anki_app
 description: A Very Good Project created by Very Good CLI.
-version: 1.0.0+1
+version: 1.0.0+20260121
 publish_to: none
 
 environment:
@@ -25,6 +25,7 @@ dependencies:
   http: ^1.6.0
   intl: ">=0.19.0 <0.21.0"
   json_annotation: ^4.8.1
+  package_info_plus: ^9.0.0
   path: ^1.9.1
   path_provider: ^2.1.2
   qr_flutter: ^4.1.0
