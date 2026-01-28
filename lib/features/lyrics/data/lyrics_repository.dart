@@ -41,10 +41,8 @@ class LyricsRepository {
         temperature: 0,
         topP: 0.95,
         topK: 1,
+        responseMimeType: 'application/json',
       ),
-      tools: [
-        Tool.googleSearch(),
-      ],
       systemInstruction: Content.system(
         // ignore: unnecessary_raw_strings
         r'''
@@ -527,13 +525,16 @@ class LyricsRepository {
           candidateCount: 1,
           temperature: 0,
         ),
+        tools: [
+          Tool.googleSearch(),
+        ],
       );
 
       final prompt =
           'Role: Metadata Normalizer. Task: Convert "$title" by "$artist" into '
           'the OFFICIAL "Artist Title" (or "Title Artist") in the original language '
           '(e.g. Japanese). '
-          'Constraints: DO NOT include "Lyrics", "歌詞", "MV", or "Official". '
+          'Constraints: DO NOT include "Lyrics", "歌詞", "MV", "Official", or any brackets symbols. '
           'Output: ONLY the refined string.';
 
       final response = await model.generateContent([Content.text(prompt)]);
