@@ -93,6 +93,25 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                              if (!analysis.isComplete) ...[
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: 120,
+                                  child: LinearProgressIndicator(
+                                    minHeight: 2,
+                                    color: AppColors.sakuraDark,
+                                    backgroundColor:
+                                        AppColors.sakuraDark.withOpacity(0.3),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  context.l10n.analysisInProgress,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textTertiary,
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 24),
                             ],
                           ),
@@ -105,7 +124,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                       builder: (context, ref, child) {
                         final analysis =
                             ref.watch(lyricsNotifierProvider).asData?.value;
-                        if (analysis == null) return const SizedBox.shrink();
+                        if (analysis == null || !analysis.isComplete) {
+                          return const SizedBox.shrink();
+                        }
 
                         final selected = ref.watch(selectionManagerProvider);
 
@@ -381,13 +402,13 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                           unselectedLabelColor: AppColors.textSecondary,
                           indicatorColor: AppColors.sakuraDark,
                           tabs: [
+                            Tab(text: context.l10n.lyricsTab),
                             Tab(text: '${context.l10n.vocabTab} ($vocabCount)'),
                             Tab(
                               text:
                                   '${context.l10n.grammarTab} ($grammarCount)',
                             ),
                             Tab(text: '${context.l10n.kanjiTab} ($kanjiCount)'),
-                            Tab(text: context.l10n.lyricsTab),
                           ],
                         );
                       },
@@ -412,13 +433,24 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                 );
                               }
 
+                              final isLoading = !analysis.isComplete;
+
                               return TabBarView(
                                 controller: _tabController,
                                 children: [
-                                  _VocabList(vocabList: analysis.vocabs),
-                                  _GrammarList(grammarList: analysis.grammar),
-                                  _KanjiList(kanjiList: analysis.kanji),
                                   _LyricsView(lyrics: analysis.lyrics),
+                                  _VocabList(
+                                    vocabList: analysis.vocabs,
+                                    isLoading: isLoading,
+                                  ),
+                                  _GrammarList(
+                                    grammarList: analysis.grammar,
+                                    isLoading: isLoading,
+                                  ),
+                                  _KanjiList(
+                                    kanjiList: analysis.kanji,
+                                    isLoading: isLoading,
+                                  ),
                                 ],
                               );
                             },
@@ -1087,8 +1119,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
 }
 
 class _VocabList extends StatefulWidget {
-  const _VocabList({required this.vocabList});
+  const _VocabList({required this.vocabList, required this.isLoading});
   final List<Vocab> vocabList;
+  final bool isLoading;
 
   @override
   State<_VocabList> createState() => _VocabListState();
@@ -1104,6 +1137,11 @@ class _VocabListState extends State<_VocabList>
     super.build(context);
     final theme = Theme.of(context);
     if (widget.vocabList.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.sakura),
+        );
+      }
       return Center(
         child: Text(
           'No vocabulary found.',
@@ -1223,8 +1261,9 @@ class _VocabItem extends ConsumerWidget {
 }
 
 class _GrammarList extends StatefulWidget {
-  const _GrammarList({required this.grammarList});
+  const _GrammarList({required this.grammarList, required this.isLoading});
   final List<Grammar> grammarList;
+  final bool isLoading;
 
   @override
   State<_GrammarList> createState() => _GrammarListState();
@@ -1241,6 +1280,11 @@ class _GrammarListState extends State<_GrammarList>
     final theme = Theme.of(context);
 
     if (widget.grammarList.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.matcha),
+        );
+      }
       return Center(
         child: Text(
           'No grammar points found.',
@@ -1322,8 +1366,9 @@ class _GrammarItem extends ConsumerWidget {
 }
 
 class _KanjiList extends StatefulWidget {
-  const _KanjiList({required this.kanjiList});
+  const _KanjiList({required this.kanjiList, required this.isLoading});
   final List<Kanji> kanjiList;
+  final bool isLoading;
 
   @override
   State<_KanjiList> createState() => _KanjiListState();
@@ -1340,6 +1385,11 @@ class _KanjiListState extends State<_KanjiList>
     final theme = Theme.of(context);
 
     if (widget.kanjiList.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.textPrimary),
+        );
+      }
       return Center(
         child: Text(
           'No kanji found.',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,35 +32,34 @@ class LyricsNotifier extends _$LyricsNotifier {
     _lastArtist = artist;
     _lastLanguage = language;
     state = const AsyncValue.loading();
-    final result = await AsyncValue.guard(() async {
-      final repository = ref.read(lyricsRepositoryProvider);
 
-      // Update repository to handle structured input
-      final result = await repository.analyzeSong(title, artist, language);
+    final repository = ref.read(lyricsRepositoryProvider);
+    AnalysisResult? lastResult;
 
-      // Debug print
-      // print('Analysis Result: ${result.map((e) => e.toJson()).toList()}');
+    try {
+      final stream = repository.analyzeSong(title, artist, language);
 
-      // Validate result before saving
-      if (result.vocabs.isEmpty &&
-          result.grammar.isEmpty &&
-          result.kanji.isEmpty) {
-        // Don't save empty results (likely errors)
-        return result;
+      await for (final result in stream) {
+        state = AsyncValue.data(result);
+        lastResult = result;
       }
 
-      // Save to History
-      await repository.saveAnalysisResult(result, language);
-
-      return result;
-    });
-
-    // Directly assign the AsyncValue result to state.
-    // If it's an error, this propagates the error state correctly without throwing.
-    state = result;
-
-    // Return the value if it exists, or null. This avoids throwing if error.
-    return result.valueOrNull;
+      // Check final result logic
+      if (lastResult != null) {
+        if (lastResult.vocabs.isNotEmpty ||
+            lastResult.grammar.isNotEmpty ||
+            lastResult.kanji.isNotEmpty) {
+          await repository.saveAnalysisResult(lastResult, language);
+        }
+      }
+      return lastResult;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      // Return null or rethrow? Future expects nullable result.
+      // Usually we don't rethrow if we set state to error in Riverpod,
+      // but the caller might await it.
+      return null;
+    }
   }
 
   void loadFromHistory(HistoryItem item) {

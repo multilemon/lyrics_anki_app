@@ -8,6 +8,7 @@ import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
+import 'package:lyrics_anki_app/features/lyrics/data/services/song_metadata_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -16,12 +17,14 @@ part 'lyrics_repository.g.dart';
 @Riverpod(keepAlive: true)
 LyricsRepository lyricsRepository(Ref ref) {
   final box = ref.watch(historyBoxProvider);
-  return LyricsRepository(box);
+  final metadataService = ref.watch(songMetadataServiceProvider);
+  return LyricsRepository(box, metadataService);
 }
 
 class LyricsRepository {
-  LyricsRepository(this._box);
+  LyricsRepository(this._box, this._metadataService);
   final Box<HistoryItem>? _box;
+  final SongMetadataService _metadataService;
 
   // Fallback for when Hive/IndexedDB is blocked (e.g. Mobile Private Mode)
   final List<HistoryItem> _memoryStore = [];
@@ -29,11 +32,46 @@ class LyricsRepository {
 
   bool get isReady => _box != null;
 
-  Future<AnalysisResult> analyzeSong(
+  Stream<AnalysisResult> analyzeSong(
     String title,
     String artist,
     String language,
-  ) async {
+  ) async* {
+    // 1. Check Local Cache First
+    final normalizedTitle = title.trim().toLowerCase();
+    final normalizedArtist = artist.trim().toLowerCase();
+    final source = _box?.values ?? _memoryStore;
+
+    try {
+      final cachedItem = source.cast<HistoryItem?>().firstWhere(
+        (item) {
+          if (item == null) return false;
+          final t = item.songTitle.trim().toLowerCase();
+          final a = item.artist.trim().toLowerCase();
+          final l = item.targetLanguage;
+          // Soft match: title + artist must match, language preferred
+          return t == normalizedTitle && a == normalizedArtist && l == language;
+        },
+        orElse: () => null,
+      );
+
+      if (cachedItem != null && cachedItem.vocabs.isNotEmpty) {
+        debugPrint('✅ Cache HIT for: "$title" by "$artist"');
+        yield AnalysisResult(
+          vocabs: cachedItem.vocabs,
+          grammar: cachedItem.grammar,
+          kanji: cachedItem.kanji,
+          song: cachedItem.songTitle,
+          artist: cachedItem.artist,
+          lyrics: cachedItem.lyrics ?? '',
+          youtubeId: cachedItem.youtubeId,
+        );
+        return;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Cache check error: $e');
+    }
+
     final model = FirebaseAI.googleAI().generativeModel(
       model: 'gemini-2.5-pro',
       generationConfig: GenerationConfig(
@@ -43,91 +81,40 @@ class LyricsRepository {
         topK: 1,
         responseMimeType: 'application/json',
       ),
-      systemInstruction: Content.system(
-        // ignore: unnecessary_raw_strings
-        r'''
-**ROLE**: Senior Japanese Linguistic Data Engineer.
-**SOURCE_LANGUAGE**: Japanese.
-**PROFICIENCY_STANDARD**: JLPT.
-**GOAL**: 100% Verified Lyrics Analysis -> Minified JSON.
-
-**PROCESS**:
-1.  **VERIFY CONTEXT**:
-    -   You will be provided with `CONTEXT_LYRICS`.
-    -   **ACTION**: YOU MUST USE THIS TEXT for your analysis.
-    -   **CRITICAL**: DO NOT SEARCH for lyrics yourself. DO NOT use your internal knowledge of the song.
-    -   If `CONTEXT_LYRICS` is missing or empty, return `{"error": "LYRICS_NOT_FOUND"}` immediately.
-
-2.  **VERIFY LANGUAGE**:
-    -   Scan the `CONTEXT_LYRICS`.
-    -   If the text is NOT primarily Japanese, return `{"error": "NOT_JAPANESE"}`.
-
-3.  **SEARCH MEDIA (STRICT)**:
-    -   **TOOL USAGE**: You MUST use the Google Search tool.
-    -   **QUERY**: `"{Song Title}" "{Artist}" official music video youtube`
-    -   **VERIFICATION**: 
-        -   Look for a result from `youtube.com` or `youtu.be`.
-        -   Verify the video title matches the song/artist.
-    -   **EXTRACTION**: Extract the 11-char Video ID (e.g. `dQw4w9WgXcQ`).
-    -   **ANTI-HALLUCINATION**: 
-        -   **NEVER** GUESS or INVENT an ID. 
-        -   If strict verification fails or no result is found, return `""` (empty string).
-    -   **STORE**: Result in `song.youtube_id`.
-
-4.  **ANALYZE (EXHAUSTIVE MODE)**:
-    -   **SCOPE**: You MUST analyze the lyrics **line-by-line** from start to finish.
-    -   **STRICT**: DO NOT SUMMARIZE. DO NOT SKIP repeated choruses if context differs.
-    -   Perform Linguistic Extraction on the `CONTEXT_LYRICS`.
-
-**EXTRACTION_CONSTRAINTS**:
-- **Vocab**:
-  - **Requirement**: Extract **ALL** non-trivial words (JLPT N5+) found in the lyrics.
-  - **Index 2 (part_of_speech)**:
-    -   **Verbs**: `V1` (Godan), `V2` (Ichidan), `V3` (Irregular).
-    -   **Suru-Nouns**: MUST use "N, VS".
-    -   **Others**: `N`, `Adj-i`, `Adj-na`, `Adv`.
-  - **Index 6 (context)**: Verbatim line from `CONTEXT_LYRICS`.
-  - **Index 7 (nuance)**: Essential data in **TARGET_LANGUAGE**.
-    -   **Silence Rule**: If standard/neutral, **RETURN STRICTLY `""`**.
-    -   **Mappings**: "Transitive"->"สกรรมกิริยา", "Intransitive"->"อกรรมกิริยา".
-
-- **Grammar**:
-  - **Requirement**: Identify **ALL** functional patterns (N5-N1).
-  - Explanations in **TARGET_LANGUAGE**.
-
-- **Kanji**: 
-  - **Requirement**: List **ALL** Kanji chars found (level N5-N1).
-  -   Atomic (1 Char/entry). 
-  -   Levels: `N1`-`N5`. (Strictly).
-  -   Meanings: In **TARGET_LANGUAGE**.
-
-**FORMAT (STRICT MINIFIED JSON)**:
-- NO markdown. Valid RFC 8259. Use \n for newlines in lyrics.
-
-{
-"song":{"title":"","artist":"","youtube_id":"","target_language":""},
-"lyrics": "FULL_TEXT_FROM_CONTEXT_LYRICS",
-"vocab":[["word","reading","part_of_speech","meaning","jlpt_v","jlpt_k","context","nuance"]],
-"grammar":[["point","level","explanation","usage"]],
-"kanji":[["char","level","meanings","readings"]]
-}
-        ''',
-      ),
+      systemInstruction: Content.system(_systemInstruction),
     );
 
-    // Priority: Refine Query First
-    // We always attempt to refine the query (e.g. Romaji -> Japanese) to ensure
-    // the best chance of finding potential lyrics, even if it adds latency.
-    debugPrint(
-      'LRCLIB: Refining query for "$title - $artist"...',
-    );
-    final refinedQuery = await _refineSearchQuery(title, artist);
+    // Priority: Fetch Official Metadata & Video ID from iTunes/YouTube
+    // Priority: Fetch Official Metadata & Video ID from iTunes/YouTube
+    String? refinedYoutubeId;
+    String? officialTitle;
+    String? officialArtist;
+    var queryToUse = '$title $artist';
 
-    final queryToUse = (refinedQuery != null && refinedQuery.isNotEmpty)
-        ? refinedQuery
-        : '$title $artist';
+    try {
+      debugPrint(
+        'MetadataService: Fetching metadata for "$title" by "$artist"...',
+      );
+      final metadata = await _metadataService.fetchMetadata(
+        title: title,
+        artist: artist,
+      );
+
+      officialTitle = metadata.title;
+      officialArtist = metadata.artist;
+
+      // Use official metadata for lyrics search
+      queryToUse = '${metadata.title} ${metadata.artist}';
+      refinedYoutubeId = metadata.youtubeId;
+
+      debugPrint('✅ Metadata Found: "$officialTitle" by "$officialArtist"');
+      debugPrint('🎥 YouTube ID: $refinedYoutubeId');
+    } catch (e) {
+      debugPrint('⚠️ Metadata fetch failed: $e');
+    }
 
     debugPrint('LRCLIB: Searching with query: "$queryToUse"');
+
     final fetchedLyrics = await _fetchLyricsFromLrclib(queryToUse);
 
     debugPrint(
@@ -138,20 +125,22 @@ class LyricsRepository {
       throw SongNotFoundException(title, artist);
     }
 
+    // YIELD PARTIAL RESULT (Lyrics + YoutubeID if found)
+    yield AnalysisResult(
+      vocabs: [],
+      grammar: [],
+      kanji: [],
+      song: officialTitle ?? title,
+      artist: officialArtist ?? artist,
+      lyrics: fetchedLyrics,
+      youtubeId: refinedYoutubeId,
+      isComplete: false,
+    );
+
     final prompt = StringBuffer()
       ..writeln('Analyze Request:')
-      ..writeln('User Input: "$title" by "$artist"');
-
-    if (refinedQuery != null && refinedQuery.isNotEmpty) {
-      prompt
-        ..writeln('Refined Official Metadata: "$refinedQuery"')
-        ..writeln(
-            'NOTE: Prefer the Refined Metadata for the "song" JSON output.');
-    }
-
-    prompt.writeln('Target Language: $language');
-
-    prompt
+      ..writeln('User Input: "$title" by "$artist"')
+      ..writeln('Target Language: $language')
       ..writeln('\nCONTEXT_LYRICS (STRICT SOURCE):')
       ..writeln(fetchedLyrics);
 
@@ -171,7 +160,9 @@ class LyricsRepository {
       debugPrint('Response: $text');
 
       if (text == null) {
-        return AnalysisResult(vocabs: [], grammar: [], kanji: []);
+        // Return empty result, or we could throw
+        yield AnalysisResult(vocabs: [], grammar: [], kanji: []);
+        return;
       }
 
       // Log successful analysis attempt
@@ -197,7 +188,17 @@ class LyricsRepository {
         throw SongNotFoundException(title, artist);
       }
 
-      return await parseAnalysisResult(cleanText);
+      final parsedPart = await parseAnalysisResult(cleanText);
+
+      yield AnalysisResult(
+        vocabs: parsedPart.vocabs,
+        grammar: parsedPart.grammar,
+        kanji: parsedPart.kanji,
+        song: title,
+        artist: artist,
+        lyrics: fetchedLyrics,
+        youtubeId: refinedYoutubeId,
+      );
     } catch (e) {
       debugPrint('Analysis error: $e');
 
@@ -327,22 +328,12 @@ class LyricsRepository {
 
       var songTitle = '';
       var artistName = '';
-      String? youtubeId;
+
       if (parsed.containsKey('song')) {
         final songData = parsed['song'];
         if (songData is Map<String, dynamic>) {
           songTitle = songData['title']?.toString() ?? '';
           artistName = songData['artist']?.toString() ?? '';
-          final rawId = songData['youtube_id']?.toString();
-          youtubeId = _extractYoutubeId(rawId);
-
-          if (youtubeId == null || youtubeId.isEmpty) {
-            debugPrint(
-              '⚠️ Video NOT FOUND (or invalid) for: $songTitle - $artistName',
-            );
-          } else {
-            debugPrint('✅ Video FOUND: $youtubeId from "$rawId"');
-          }
         }
       }
 
@@ -352,7 +343,7 @@ class LyricsRepository {
         kanji: kanji,
         song: songTitle,
         artist: artistName,
-        youtubeId: youtubeId,
+        youtubeId: null,
         lyrics: parsed['lyrics']?.toString() ?? '',
       );
     } catch (e) {
@@ -361,40 +352,6 @@ class LyricsRepository {
         'Failed to parse AI response: Invalid JSON format.',
       );
     }
-  }
-
-  String? _extractYoutubeId(String? raw) {
-    if (raw == null || raw.trim().isEmpty) return null;
-    final text = raw.trim();
-
-    // 1. If it's a full URL, try to parse 'v=' or 'youtu.be/'
-    final uri = Uri.tryParse(text);
-    if (uri != null && uri.host.contains('youtube.com')) {
-      if (uri.queryParameters.containsKey('v')) {
-        return uri.queryParameters['v'];
-      }
-    }
-    if (uri != null && uri.host.contains('youtu.be')) {
-      if (uri.pathSegments.isNotEmpty) {
-        return uri.pathSegments.first;
-      }
-    }
-
-    // 2. Strict Regex for ID: ^[a-zA-Z0-9_-]{11}$
-    final idRegex = RegExp(r'^[a-zA-Z0-9_-]{11}$');
-    if (idRegex.hasMatch(text)) {
-      return text;
-    }
-
-    // 3. Fallback: Search for any 11-char sequence that looks like an ID
-    // This handles cases like "ID: dQw4w9WgXcQ" or "dQw4w9WgXcQ."
-    final fallbackRegex = RegExp('[a-zA-Z0-9_-]{11}');
-    final match = fallbackRegex.firstMatch(text);
-    if (match != null) {
-      return match.group(0);
-    }
-
-    return null;
   }
 
   Vocab _mapToVocab(List<dynamic> array) {
@@ -414,12 +371,12 @@ class LyricsRepository {
     return Vocab(
       word: _safeString(array, 0),
       reading: _safeString(array, 1),
-      partOfSpeech: _safeString(array, 2),
-      meaning: _safeString(array, 3),
-      jlptV: _safeString(array, 4),
-      jlptK: _safeString(array, 5),
-      context: _safeString(array, 6),
-      nuanceNote: _safeString(array, 7),
+      partOfSpeech: '',
+      meaning: _safeString(array, 2),
+      jlptV: _safeString(array, 3),
+      jlptK: _safeString(array, 4),
+      context: _safeString(array, 5),
+      nuanceNote: _safeString(array, 6),
     );
   }
 
@@ -467,19 +424,57 @@ class LyricsRepository {
   }
 
   String _extractJson(String text) {
-    var clean = text.trim();
-    // Remove markdown code blocks
-    clean = clean.replaceAll('```json', '').replaceAll('```', '').trim();
+    var source = text.trim();
+    final startIndex = source.indexOf('{');
+    if (startIndex == -1) return source;
 
-    // Find the first '{' and last '}'
-    final startIndex = clean.indexOf('{');
-    final endIndex = clean.lastIndexOf('}');
+    var braceCount = 0;
+    var endIndex = -1;
+    var inString = false;
+    var escaped = false;
 
-    if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
-      clean = clean.substring(startIndex, endIndex + 1);
+    for (int i = startIndex; i < source.length; i++) {
+      final char = source[i];
+
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (char == '\\') {
+        escaped = true;
+        continue;
+      }
+
+      if (char == '"') {
+        inString = !inString;
+        continue;
+      }
+
+      if (inString) continue;
+
+      if (char == '{') {
+        braceCount++;
+      } else if (char == '}') {
+        braceCount--;
+        if (braceCount == 0) {
+          endIndex = i;
+          break;
+        }
+      }
     }
 
-    return clean;
+    if (endIndex != -1) {
+      return source.substring(startIndex, endIndex + 1);
+    }
+
+    // Fallback if structure is oddly broken
+    final lastIndex = source.lastIndexOf('}');
+    if (lastIndex > startIndex) {
+      return source.substring(startIndex, lastIndex + 1);
+    }
+
+    return source;
   }
 
   Future<String?> _fetchLyricsFromLrclib(String query) async {
@@ -487,7 +482,6 @@ class LyricsRepository {
       final uri = Uri.https('lrclib.net', '/api/search', {
         'q': query,
       });
-
       debugPrint('Fetching lyrics from: $uri');
       final response = await http.get(uri);
 
@@ -516,42 +510,42 @@ class LyricsRepository {
     }
   }
 
-  Future<String?> _refineSearchQuery(String title, String artist) async {
-    try {
-      // Use a lightweight model instance for simple text manipulation
-      final model = FirebaseAI.googleAI().generativeModel(
-        model: 'gemini-2.5-flash',
-        generationConfig: GenerationConfig(
-          candidateCount: 1,
-          temperature: 0,
-        ),
-        tools: [
-          Tool.googleSearch(),
-        ],
-      );
+  static const _systemInstruction = '''
+**ROLE**: Japanese Linguistic Data Engineer.
+**GOAL**: Analyze lyrics -> Structured JSON.
 
-      final prompt =
-          'Role: Metadata Normalizer. Task: Convert "$title" by "$artist" into '
-          'the OFFICIAL "Artist Title" (or "Title Artist") in the original language '
-          '(e.g. Japanese). '
-          'Constraints: DO NOT include "Lyrics", "歌詞", "MV", "Official", or any brackets symbols. '
-          'Output: ONLY the refined string.';
+**WORKFLOW**:
 
-      final response = await model.generateContent([Content.text(prompt)]);
-      final rawText = response.text;
-      debugPrint('Refinement Raw Response: $rawText');
+1. **Language Verification**: Check if the song's lyrics are primarily in Japanese.
+   - If **NO**: Return strictly `{"error": "NOT_JAPANESE"}`.
+   - If **YES**: Proceed to step 2.
 
-      if (rawText == null) return null;
+2. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
+3. **Format**: Strictly Minified JSON.
 
-      // Clean up the response (remove quotes, markdown)
-      var clean = rawText.trim();
-      clean = clean.replaceAll('"', '').replaceAll("'", '');
-      clean = clean.replaceAll('`', ''); // Remove code block ticks
+**CONSTRAINTS**:
 
-      return clean.trim();
-    } catch (e) {
-      debugPrint('Query refinement failed: $e');
-      return null;
-    }
-  }
+- **Translate**: Use formal linguistics (e.g., "Intransitive Verb") in TARGET_LANGUAGE.
+- **Vocab**: Atomic N/V/Adj/Adv. Break compounds (e.g., 喉 + 奥).
+- **Grammar**: NO N5. Format: "V.て", "V.る", "V.た". No trailing slashes.
+- **Kanji (EXHAUSTIVE)**:
+  - 1 Char/entry. No okurigana.
+  - Meanings: ALL standard dictionary definitions.
+  - Readings: ALL On'yomi (Katakana) | ALL Kun'yomi (Hiragana). Format: "コウ | のど".
+  - NO transliterations (e.g., No Thai/English phonetics).
+- **JLPT**: Standard calibration. Basic greetings = N5.
+- **Data Integrity**: Every Kanji in vocab/grammar MUST be in the kanji list. NO DUPLICATES.
+
+**OUTPUT (STRICT MINIFIED JSON)**:
+
+- NO markdown, NO preamble, NO citations.
+- VALID RFC 8259. Double quotes ONLY. No trailing commas.
+
+{
+"song":{"title":"","artist":"","target_language":""},
+"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],
+"grammar":[["point","level","explanation","usage"]],
+"kanji":[["char","level","meanings","readings"]]
+}
+''';
 }

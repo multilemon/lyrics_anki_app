@@ -158,6 +158,7 @@ class AnalysisResult {
     this.artist = '',
     this.youtubeId,
     this.lyrics = '',
+    this.isComplete = true,
   });
 
   final List<Vocab> vocabs;
@@ -167,4 +168,5 @@ class AnalysisResult {
   final String artist;
   final String? youtubeId;
   final String lyrics;
+  final bool isComplete;
 }
