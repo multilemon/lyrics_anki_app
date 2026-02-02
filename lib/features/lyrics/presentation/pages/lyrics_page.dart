@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:file_saver/file_saver.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
@@ -438,7 +439,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                               return TabBarView(
                                 controller: _tabController,
                                 children: [
-                                  _LyricsView(lyrics: analysis.lyrics),
+                                  _LyricsView(analysis: analysis),
                                   _VocabList(
                                     vocabList: analysis.vocabs,
                                     isLoading: isLoading,
@@ -1767,14 +1768,189 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
   }
 }
 
-class _LyricsView extends StatelessWidget {
-  const _LyricsView({required this.lyrics});
+class _Match {
+  _Match(this.start, this.end, this.data, this.index, this.type);
+  final int start;
+  final int end;
+  final dynamic data;
+  final int index;
+  final String type;
+}
 
-  final String lyrics;
+class _LyricsView extends StatelessWidget {
+  const _LyricsView({required this.analysis});
+
+  final AnalysisResult analysis;
+
+  Color _getColor(String type) {
+    switch (type) {
+      case 'vocab':
+        return AppColors.sakuraDark;
+      case 'grammar':
+        return AppColors.matchaDark; // Darker green for text readability
+      case 'kanji':
+        return const Color(0xFF8D6E63);
+      default:
+        return AppColors.textPrimary;
+    }
+  }
+
+  void _showPopup(BuildContext context, _Match match) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        Widget content;
+        String title;
+        if (match.type == 'vocab') {
+          title = 'Vocabulary';
+          content = _VocabItem(index: match.index, vocab: match.data as Vocab);
+        } else if (match.type == 'grammar') {
+          title = 'Grammar';
+          content =
+              _GrammarItem(index: match.index, grammar: match.data as Grammar);
+        } else {
+          title = 'Kanji';
+          content = _KanjiItem(index: match.index, kanji: match.data as Kanji);
+        }
+
+        return AlertDialog(
+          title: Text(title, style: Theme.of(context).textTheme.titleLarge),
+          content: SingleChildScrollView(child: content),
+          backgroundColor: AppColors.white,
+          surfaceTintColor: Colors.transparent,
+          scrollable: true,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Close',
+                style: TextStyle(color: AppColors.sakuraDark),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<TextSpan> _buildSpans(BuildContext context) {
+    final lyrics = analysis.lyrics;
+    final spans = <TextSpan>[];
+    if (lyrics.isEmpty) return spans;
+
+    final matches = <_Match>[];
+
+    String cleanText(String input, String type) {
+      if (type != 'grammar') return input.trim();
+      // Remove structural markers like "V.", "Adj.", "~", etc.
+      return input
+          .replaceAll(RegExp(r'^[A-Za-z]+\.'), '') // Remove "V.", "N." prefix
+          .replaceAll('~', '') // Remove tilde
+          .replaceAll('～', '') // Remove full-width tilde
+          .trim();
+    }
+
+    void addMatches(
+      List<dynamic> items,
+      String type,
+      String Function(dynamic) getText,
+    ) {
+      for (var i = 0; i < items.length; i++) {
+        final rawText = getText(items[i]);
+        // Try exact match first
+        var text = rawText.trim();
+
+        // If it's grammar, try the cleaner version if exact match fails
+        if (type == 'grammar' && !lyrics.contains(text)) {
+          text = cleanText(rawText, type);
+        }
+
+        if (text.isEmpty) continue;
+
+        var start = 0;
+        while (true) {
+          final idx = lyrics.indexOf(text, start);
+          if (idx == -1) break;
+          matches.add(_Match(idx, idx + text.length, items[i], i, type));
+          start = idx + 1;
+        }
+      }
+    }
+
+    addMatches(analysis.vocabs, 'vocab', (d) => (d as Vocab).word);
+    addMatches(analysis.grammar, 'grammar', (d) => (d as Grammar).point);
+    addMatches(analysis.kanji, 'kanji', (d) => (d as Kanji).char);
+
+    // Sort: Start Time asc, Length desc (Longest match wins)
+    matches.sort((a, b) {
+      if (a.start != b.start) return a.start.compareTo(b.start);
+      return b.end.compareTo(a.end);
+    });
+
+    final validMatches = <_Match>[];
+    var lastEnd = 0;
+    for (final m in matches) {
+      if (m.start >= lastEnd) {
+        validMatches.add(m);
+        lastEnd = m.end;
+      }
+    }
+
+    var currentIndex = 0;
+    final theme = Theme.of(context);
+    final baseStyle = theme.textTheme.bodyLarge?.copyWith(
+      height: 1.8,
+      fontSize: 16,
+    );
+
+    for (final m in validMatches) {
+      if (m.start > currentIndex) {
+        spans.add(
+          TextSpan(
+            text: lyrics.substring(currentIndex, m.start),
+            style: baseStyle,
+          ),
+        );
+      }
+
+      final color = _getColor(m.type);
+      spans.add(
+        TextSpan(
+          text: lyrics.substring(m.start, m.end),
+          style: baseStyle?.copyWith(
+            color: color,
+            backgroundColor: color.withValues(alpha: 0.15),
+            fontWeight: FontWeight.bold,
+            decoration: TextDecoration.underline,
+            decorationColor: color,
+            decorationStyle: TextDecorationStyle.solid,
+            decorationThickness: 2,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () => _showPopup(context, m),
+        ),
+      );
+
+      currentIndex = m.end;
+    }
+
+    if (currentIndex < lyrics.length) {
+      spans.add(
+        TextSpan(
+          text: lyrics.substring(currentIndex),
+          style: baseStyle,
+        ),
+      );
+    }
+
+    return spans;
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (lyrics.isEmpty) {
+    if (analysis.lyrics.isEmpty) {
       return Center(
         child: Text(
           context.l10n.noLyricsAvailable,
@@ -1787,12 +1963,8 @@ class _LyricsView extends StatelessWidget {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: SelectableText(
-        lyrics,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              height: 1.8,
-              fontSize: 16,
-            ),
+      child: SelectableText.rich(
+        TextSpan(children: _buildSpans(context)),
         textAlign: TextAlign.center,
       ),
     );
