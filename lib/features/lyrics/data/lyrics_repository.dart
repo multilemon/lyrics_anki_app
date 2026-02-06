@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_ai/firebase_ai.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
@@ -56,7 +55,6 @@ class LyricsRepository {
       );
 
       if (cachedItem != null && cachedItem.vocabs.isNotEmpty) {
-        debugPrint('✅ Cache HIT for: "$title" by "$artist"');
         yield AnalysisResult(
           vocabs: cachedItem.vocabs,
           grammar: cachedItem.grammar,
@@ -69,7 +67,7 @@ class LyricsRepository {
         return;
       }
     } catch (e) {
-      debugPrint('⚠️ Cache check error: $e');
+      // Ignore cache check error
     }
 
     final model = FirebaseAI.googleAI().generativeModel(
@@ -92,9 +90,6 @@ class LyricsRepository {
     var queryToUse = '$title $artist';
 
     try {
-      debugPrint(
-        'MetadataService: Fetching metadata for "$title" by "$artist"...',
-      );
       final metadata = await _metadataService.fetchMetadata(
         title: title,
         artist: artist,
@@ -106,20 +101,11 @@ class LyricsRepository {
       // Use official metadata for lyrics search
       queryToUse = '${metadata.title} ${metadata.artist}';
       refinedYoutubeId = metadata.youtubeId;
-
-      debugPrint('✅ Metadata Found: "$officialTitle" by "$officialArtist"');
-      debugPrint('🎥 YouTube ID: $refinedYoutubeId');
     } catch (e) {
-      debugPrint('⚠️ Metadata fetch failed: $e');
+      // Ignore metadata fetch error
     }
 
-    debugPrint('LRCLIB: Searching with query: "$queryToUse"');
-
     final fetchedLyrics = await _fetchLyricsFromLrclib(queryToUse);
-
-    debugPrint(
-      'LRCLIB: ${fetchedLyrics != null ? "Found lyrics" : "Not found"}',
-    );
 
     if (fetchedLyrics == null) {
       throw SongNotFoundException(title, artist);
@@ -144,8 +130,6 @@ class LyricsRepository {
       ..writeln('\nCONTEXT_LYRICS (STRICT SOURCE):')
       ..writeln(fetchedLyrics);
 
-    debugPrint('AI Prompt: $prompt');
-
     try {
       final content = [Content.text(prompt.toString())];
 
@@ -153,11 +137,7 @@ class LyricsRepository {
       final response = await model.generateContent(content);
       stopwatch.stop();
 
-      debugPrint('⏱️ AI Analysis took: ${stopwatch.elapsedMilliseconds}ms');
-
       final text = response.text;
-
-      debugPrint('Response: $text');
 
       if (text == null) {
         // Return empty result, or we could throw
@@ -199,9 +179,18 @@ class LyricsRepository {
         lyrics: fetchedLyrics,
         youtubeId: refinedYoutubeId,
       );
-    } catch (e) {
-      debugPrint('Analysis error: $e');
 
+      unawaited(
+        analyticsService.logAnalysisComplete(
+          songTitle: title,
+          artist: artist,
+          vocabCount: parsedPart.vocabs.length,
+          grammarCount: parsedPart.grammar.length,
+          kanjiCount: parsedPart.kanji.length,
+          durationMs: stopwatch.elapsedMilliseconds,
+        ),
+      );
+    } catch (e) {
       // Check for 503 Overloaded
       if (e is FirebaseAIException) {
         final message = e.message.toLowerCase();
@@ -347,7 +336,6 @@ class LyricsRepository {
         lyrics: parsed['lyrics']?.toString() ?? '',
       );
     } catch (e) {
-      debugPrint('JSON Parse Error: $e');
       throw const FormatException(
         'Failed to parse AI response: Invalid JSON format.',
       );
@@ -482,7 +470,7 @@ class LyricsRepository {
       final uri = Uri.https('lrclib.net', '/api/search', {
         'q': query,
       });
-      debugPrint('Fetching lyrics from: $uri');
+
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -501,11 +489,9 @@ class LyricsRepository {
 
         return (plainLyrics?.isNotEmpty ?? false) ? plainLyrics : syncedLyrics;
       } else {
-        debugPrint('LRCLIB Error: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      debugPrint('Failed to fetch from LRCLIB: $e');
       return null;
     }
   }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_ai/firebase_ai.dart';
-import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/song_metadata.dart';
@@ -22,11 +22,6 @@ class SongMetadataService {
     // 1. Fetch Video using AI Google Search
     // We treat the "normalization" and "YouTube ID fetch" as a single AI step.
     try {
-      final searchParams = '$title $artist';
-      debugPrint(
-        'SongMetadataService: AI Searching for "$searchParams"...',
-      );
-
       final model = FirebaseAI.googleAI().generativeModel(
         model: 'gemini-2.5-flash',
         tools: [Tool.googleSearch()],
@@ -64,17 +59,10 @@ Do NOT use markdown.
       final youtubeId = _extractYoutubeId(youtubeUrl) ?? '';
 
       if (youtubeId.isEmpty) {
-        debugPrint(
-          'AI could not find a valid VIDEO ID from URL: $youtubeUrl',
-        );
         // throw Exception(
         //   'AI could not find a valid VIDEO ID from URL: $youtubeUrl',
         // );
       }
-
-      debugPrint(
-        'SongMetadataService: Found YouTube ID via AI: $youtubeId',
-      );
 
       return SongMetadata(
         title: json['title']?.toString() ?? title,
@@ -82,7 +70,6 @@ Do NOT use markdown.
         youtubeId: youtubeId,
       );
     } catch (e) {
-      debugPrint('SongMetadataService: AI YouTube search failed: $e');
       rethrow;
     }
   }

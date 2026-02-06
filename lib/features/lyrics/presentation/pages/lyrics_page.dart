@@ -1803,14 +1803,31 @@ class _LyricsView extends StatelessWidget {
         String title;
         if (match.type == 'vocab') {
           title = 'Vocabulary';
-          content = _VocabItem(index: match.index, vocab: match.data as Vocab);
+          final v = match.data as Vocab;
+          content = _VocabItem(index: match.index, vocab: v);
+          analyticsService.logItemView(
+            type: 'vocab',
+            item: v.word,
+            source: 'lyrics_highlight',
+          );
         } else if (match.type == 'grammar') {
           title = 'Grammar';
-          content =
-              _GrammarItem(index: match.index, grammar: match.data as Grammar);
+          final g = match.data as Grammar;
+          content = _GrammarItem(index: match.index, grammar: g);
+          analyticsService.logItemView(
+            type: 'grammar',
+            item: g.point,
+            source: 'lyrics_highlight',
+          );
         } else {
           title = 'Kanji';
-          content = _KanjiItem(index: match.index, kanji: match.data as Kanji);
+          final k = match.data as Kanji;
+          content = _KanjiItem(index: match.index, kanji: k);
+          analyticsService.logItemView(
+            type: 'kanji',
+            item: k.char,
+            source: 'lyrics_highlight',
+          );
         }
 
         return AlertDialog(
