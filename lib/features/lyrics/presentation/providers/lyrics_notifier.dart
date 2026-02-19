@@ -65,11 +65,20 @@ class LyricsNotifier extends _$LyricsNotifier {
       }
 
       // Check final result logic
+      // Check final result logic
       if (lastResult != null) {
-        if (lastResult.vocabs.isNotEmpty ||
+        final hasJapaneseData = lastResult.vocabs.isNotEmpty ||
             lastResult.grammar.isNotEmpty ||
-            lastResult.kanji.isNotEmpty) {
-          await repository.saveAnalysisResult(lastResult, language);
+            lastResult.kanji.isNotEmpty;
+        final hasEnglishData = (lastResult.enVocab?.isNotEmpty ?? false) ||
+            (lastResult.enGrammar?.isNotEmpty ?? false);
+
+        if (hasJapaneseData || hasEnglishData) {
+          await repository.saveAnalysisResult(
+            lastResult,
+            language,
+            learningMode: learningMode,
+          );
         }
       }
       return lastResult;
@@ -83,23 +92,18 @@ class LyricsNotifier extends _$LyricsNotifier {
   }
 
   void loadFromHistory(HistoryItem item) {
-    // Best effort to restore mode from history item content
-    // If enVocab is present (future), it's reverse mode.
-    // For now, if we don't have enVocab in history, we assume Japanese.
-    // However, if we added a mode field to history, we should use it.
-    // Since we don't have it yet, we default to Japanese or existing logic.
-
-    // We can infer from targetLanguage maybe?
-    // If target is "Japanese" -> Reverse Mode?
-    // No, existing logic: target Language is what user WANTS to learn?
-    // In original app: Target Language was output language.
-    // In Reverse Mode: Target is English/Korean.
-
-    // Actually, let's just leave _lastMode as is or default to Japanese if unsure.
-    // But to be safe for "Retry", we should probably update it if we can.
-    // If we can't be sure, maybe don't touch it, or set to Japanese?
-    // Let's set it to Japanese as default for now since history items are mostly Japanese.
-    _lastMode = LearningMode.japanese;
+    if (item.learningModeIndex != null) {
+      _lastMode = LearningMode.values[item.learningModeIndex!];
+    } else {
+      // Legacy Fallback
+      if (item.targetLanguage.toLowerCase() == 'korean') {
+        _lastMode = LearningMode.korean;
+      } else if (item.enVocab != null && item.enVocab!.isNotEmpty) {
+        _lastMode = LearningMode.english;
+      } else {
+        _lastMode = LearningMode.japanese;
+      }
+    }
 
     state = AsyncValue.data(
       AnalysisResult(
@@ -187,6 +191,7 @@ class SelectionManager extends _$SelectionManager {
     String level, {
     required bool select,
   }) {
+    // Japanese Levels (JLPT)
     final vocabIndices = <int>{};
     for (var i = 0; i < analysis.vocabs.length; i++) {
       if (analysis.vocabs[i].jlptV.toUpperCase() == level.toUpperCase()) {
@@ -198,6 +203,16 @@ class SelectionManager extends _$SelectionManager {
     for (var i = 0; i < analysis.grammar.length; i++) {
       if (analysis.grammar[i].level.toUpperCase() == level.toUpperCase()) {
         grammarIndices.add(i);
+      }
+    }
+
+    // English/Korean Levels (CEFR) - Only Grammar has level currently
+    if (analysis.enGrammar != null) {
+      for (var i = 0; i < analysis.enGrammar!.length; i++) {
+        if (analysis.enGrammar![i].cefrLevel.toUpperCase() ==
+            level.toUpperCase()) {
+          grammarIndices.add(i);
+        }
       }
     }
 
@@ -225,10 +240,13 @@ class SelectionManager extends _$SelectionManager {
 
   void toggleAll(AnalysisResult analysis, {required bool select}) {
     if (select) {
+      final vocabCount = analysis.enVocab?.length ?? analysis.vocabs.length;
+      final grammarCount =
+          analysis.enGrammar?.length ?? analysis.grammar.length;
+
       state = SelectionState(
-        vocabIndices: List.generate(analysis.vocabs.length, (i) => i).toSet(),
-        grammarIndices:
-            List.generate(analysis.grammar.length, (i) => i).toSet(),
+        vocabIndices: List.generate(vocabCount, (i) => i).toSet(),
+        grammarIndices: List.generate(grammarCount, (i) => i).toSet(),
         kanjiIndices: List.generate(analysis.kanji.length, (i) => i).toSet(),
       );
     } else {

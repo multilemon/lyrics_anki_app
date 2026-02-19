@@ -140,7 +140,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ipaType => 'IPA';
 
   @override
-  String get structureType => 'Structure';
+  String get structureType => '구조';
 
   @override
   String get songTitleHintEn => 'e.g. Shape of You';

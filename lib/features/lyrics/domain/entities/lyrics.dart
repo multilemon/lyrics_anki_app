@@ -148,6 +148,7 @@ class HistoryItem extends HiveObject {
     required this.analyzedAt,
     this.tags = const [],
     this.targetLanguage = 'English',
+    this.learningModeIndex,
   });
   @HiveField(0)
   late String songTitle;
@@ -190,6 +191,9 @@ class HistoryItem extends HiveObject {
 
   @HiveField(13)
   String? overallCefr;
+
+  @HiveField(14)
+  int? learningModeIndex;
 }
 
 class SongNotFoundException implements Exception {

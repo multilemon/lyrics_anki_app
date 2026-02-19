@@ -139,10 +139,11 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                             return const SizedBox.shrink();
                           }
 
-                          final selected = ref.watch(selectionManagerProvider);
-                          // ... existing filter logic ...
-
                           bool isLevelSelected(String level) {
+                            final selected =
+                                ref.watch(selectionManagerProvider);
+
+                            // JLPT Check
                             final vocabIndices = <int>[];
                             for (var i = 0; i < analysis.vocabs.length; i++) {
                               if (analysis.vocabs[i].jlptV
@@ -163,6 +164,21 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                               }
                             }
 
+                            // CEFR Check (English/Korean) - Only Grammar has level
+                            final enGrammarIndices = <int>[];
+                            if (analysis.enGrammar != null) {
+                              for (var i = 0;
+                                  i < analysis.enGrammar!.length;
+                                  i++) {
+                                if (analysis.enGrammar![i].cefrLevel
+                                        .trim()
+                                        .toUpperCase() ==
+                                    level.toUpperCase()) {
+                                  enGrammarIndices.add(i);
+                                }
+                              }
+                            }
+
                             final kanjiIndices = <int>[];
                             for (var i = 0; i < analysis.kanji.length; i++) {
                               if (analysis.kanji[i].level
@@ -175,6 +191,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
 
                             if (vocabIndices.isEmpty &&
                                 grammarIndices.isEmpty &&
+                                enGrammarIndices.isEmpty &&
                                 kanjiIndices.isEmpty) {
                               return false;
                             }
@@ -182,7 +199,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                             final vocabSelected = vocabIndices
                                 .every(selected.vocabIndices.contains);
                             final grammarSelected = grammarIndices
-                                .every(selected.grammarIndices.contains);
+                                    .every(selected.grammarIndices.contains) &&
+                                enGrammarIndices
+                                    .every(selected.grammarIndices.contains);
                             final kanjiSelected = kanjiIndices
                                 .every(selected.kanjiIndices.contains);
 
@@ -192,16 +211,26 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                           }
 
                           bool isAllSelected() {
-                            if (analysis.vocabs.isEmpty &&
-                                analysis.grammar.isEmpty &&
-                                analysis.kanji.isEmpty) {
+                            final selected =
+                                ref.watch(selectionManagerProvider);
+
+                            // Check if empty content (considering both modes)
+                            final hasVocab = analysis.vocabs.isNotEmpty ||
+                                (analysis.enVocab?.isNotEmpty ?? false);
+                            final hasGrammar = analysis.grammar.isNotEmpty ||
+                                (analysis.enGrammar?.isNotEmpty ?? false);
+                            final hasKanji = analysis.kanji.isNotEmpty;
+
+                            if (!hasVocab && !hasGrammar && !hasKanji) {
                               return false;
                             }
 
                             final vocabAll = selected.vocabIndices.length ==
-                                analysis.vocabs.length;
+                                (analysis.enVocab?.length ??
+                                    analysis.vocabs.length);
                             final grammarAll = selected.grammarIndices.length ==
-                                analysis.grammar.length;
+                                (analysis.enGrammar?.length ??
+                                    analysis.grammar.length);
                             final kanjiAll = selected.kanjiIndices.length ==
                                 analysis.kanji.length;
 
@@ -211,14 +240,18 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                           final presentLevels = <String>{};
                           var hasOther = false;
 
+                          // Determine target levels based on mode
+                          final targetLevels = isReverseLearning
+                              ? ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+                              : ['N1', 'N2', 'N3', 'N4', 'N5'];
+
                           void checkLevels(
                             List<dynamic> items,
                             String Function(dynamic) getLevel,
                           ) {
                             for (final item in items) {
                               final lvl = getLevel(item).trim().toUpperCase();
-                              if (['N1', 'N2', 'N3', 'N4', 'N5']
-                                  .contains(lvl)) {
+                              if (targetLevels.contains(lvl)) {
                                 presentLevels.add(lvl);
                               } else {
                                 hasOther = true;
@@ -226,14 +259,34 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                             }
                           }
 
-                          checkLevels(
-                              analysis.vocabs, (d) => (d as Vocab).jlptV);
-                          checkLevels(
-                            analysis.grammar,
-                            (d) => (d as Grammar).level,
-                          );
-                          checkLevels(
-                              analysis.kanji, (d) => (d as Kanji).level);
+                          if (isReverseLearning) {
+                            if (analysis.enGrammar != null) {
+                              checkLevels(
+                                analysis.enGrammar!,
+                                (d) => (d as EnGrammar).cefrLevel,
+                              );
+                            }
+                            // Note: EnVocab has no level, so we don't check it for levels
+                            // Assuming non-level items (like vocab) just get selected/deselected by "All"
+                            // or if we decide to handle "Other" for them.
+                            // Currently EnVocab behaves as "Other" implicitly if we only filter by grammar levels?
+                            // Actually, if we filter by A1, we select A1 Grammar. Vocab is untouched?
+                            // SelectionManager toggleLevel checks EnGrammar.
+                            // So Vocab is effectively independent of level chips.
+                          } else {
+                            checkLevels(
+                              analysis.vocabs,
+                              (d) => (d as Vocab).jlptV,
+                            );
+                            checkLevels(
+                              analysis.grammar,
+                              (d) => (d as Grammar).level,
+                            );
+                            checkLevels(
+                              analysis.kanji,
+                              (d) => (d as Kanji).level,
+                            );
+                          }
 
                           return SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
@@ -250,13 +303,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                   },
                                 ),
                                 const SizedBox(width: 8),
-                                for (final level in [
-                                  'N1',
-                                  'N2',
-                                  'N3',
-                                  'N4',
-                                  'N5',
-                                ])
+                                for (final level in targetLevels)
                                   if (presentLevels.contains(level)) ...[
                                     _FilterChip(
                                       label: level,
@@ -279,6 +326,37 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                   _FilterChip(
                                     label: context.l10n.otherFilter,
                                     value: (() {
+                                      final selected =
+                                          ref.watch(selectionManagerProvider);
+
+                                      if (isReverseLearning) {
+                                        // For Reverse/Korean, "Other" might mean Grammar without level,
+                                        // OR conceptually it could include all EnVocab since they have no level??
+                                        // For now, let's treat EnGrammar without valid CEFR as "Other".
+                                        // And ignore EnVocab for "Other" logic to keep it simple, same as level chips.
+
+                                        final nonLevelGrammar = <int>[];
+                                        if (analysis.enGrammar != null) {
+                                          for (var i = 0;
+                                              i < analysis.enGrammar!.length;
+                                              i++) {
+                                            final lvl = analysis
+                                                .enGrammar![i].cefrLevel
+                                                .trim()
+                                                .toUpperCase();
+                                            if (!targetLevels.contains(lvl)) {
+                                              nonLevelGrammar.add(i);
+                                            }
+                                          }
+                                        }
+
+                                        if (nonLevelGrammar.isEmpty)
+                                          return false;
+                                        return nonLevelGrammar.every(
+                                            selected.grammarIndices.contains);
+                                      }
+
+                                      // Japanese Logic
                                       final nonLevelVocab = <int>[];
                                       for (var i = 0;
                                           i < analysis.vocabs.length;
@@ -286,8 +364,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                         final lvl = analysis.vocabs[i].jlptV
                                             .trim()
                                             .toUpperCase();
-                                        if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                            .contains(lvl)) {
+                                        if (!targetLevels.contains(lvl)) {
                                           nonLevelVocab.add(i);
                                         }
                                       }
@@ -299,8 +376,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                         final lvl = analysis.grammar[i].level
                                             .trim()
                                             .toUpperCase();
-                                        if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                            .contains(lvl)) {
+                                        if (!targetLevels.contains(lvl)) {
                                           nonLevelGrammar.add(i);
                                         }
                                       }
@@ -312,8 +388,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                         final lvl = analysis.kanji[i].level
                                             .trim()
                                             .toUpperCase();
-                                        if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                            .contains(lvl)) {
+                                        if (!targetLevels.contains(lvl)) {
                                           nonLevelKanji.add(i);
                                         }
                                       }
@@ -325,78 +400,98 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                       }
 
                                       final vocabAll = nonLevelVocab.every(
-                                          selected.vocabIndices.contains);
+                                        selected.vocabIndices.contains,
+                                      );
                                       final grammarAll = nonLevelGrammar.every(
                                         selected.grammarIndices.contains,
                                       );
                                       final kanjiAll = nonLevelKanji.every(
-                                          selected.kanjiIndices.contains);
+                                        selected.kanjiIndices.contains,
+                                      );
 
                                       return vocabAll && grammarAll && kanjiAll;
                                     })(),
                                     onChanged: (val) {
-                                      final targetIndices = <int>[];
-                                      for (var i = 0;
-                                          i < analysis.vocabs.length;
-                                          i++) {
-                                        final lvl = analysis.vocabs[i].jlptV
-                                            .trim()
-                                            .toUpperCase();
-                                        if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                            .contains(lvl)) {
-                                          targetIndices.add(i);
+                                      if (isReverseLearning) {
+                                        if (analysis.enGrammar != null) {
+                                          for (var i = 0;
+                                              i < analysis.enGrammar!.length;
+                                              i++) {
+                                            final lvl = analysis
+                                                .enGrammar![i].cefrLevel
+                                                .trim()
+                                                .toUpperCase();
+                                            if (!targetLevels.contains(lvl)) {
+                                              ref
+                                                  .read(selectionManagerProvider
+                                                      .notifier)
+                                                  .toggle(
+                                                    SelectionType.grammar,
+                                                    i,
+                                                    force: val,
+                                                  );
+                                            }
+                                          }
                                         }
-                                      }
+                                      } else {
+                                        // Japanese logic
+                                        final targetIndices = <int>[];
+                                        for (var i = 0;
+                                            i < analysis.vocabs.length;
+                                            i++) {
+                                          final lvl = analysis.vocabs[i].jlptV
+                                              .trim()
+                                              .toUpperCase();
+                                          if (!targetLevels.contains(lvl)) {
+                                            targetIndices.add(i);
+                                          }
+                                        }
 
-                                      for (final idx in targetIndices) {
-                                        ref
-                                            .read(
-                                              selectionManagerProvider.notifier,
-                                            )
-                                            .toggle(
-                                              SelectionType.vocab,
-                                              idx,
-                                              force: val,
-                                            );
-                                      }
-                                      for (var i = 0;
-                                          i < analysis.grammar.length;
-                                          i++) {
-                                        final lvl = analysis.grammar[i].level
-                                            .trim()
-                                            .toUpperCase();
-                                        if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                            .contains(lvl)) {
+                                        for (final idx in targetIndices) {
                                           ref
-                                              .read(
-                                                selectionManagerProvider
-                                                    .notifier,
-                                              )
+                                              .read(selectionManagerProvider
+                                                  .notifier)
                                               .toggle(
-                                                SelectionType.grammar,
-                                                i,
+                                                SelectionType.vocab,
+                                                idx,
                                                 force: val,
                                               );
                                         }
-                                      }
-                                      for (var i = 0;
-                                          i < analysis.kanji.length;
-                                          i++) {
-                                        final lvl = analysis.kanji[i].level
-                                            .trim()
-                                            .toUpperCase();
-                                        if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                            .contains(lvl)) {
-                                          ref
-                                              .read(
-                                                selectionManagerProvider
-                                                    .notifier,
-                                              )
-                                              .toggle(
-                                                SelectionType.kanji,
-                                                i,
-                                                force: val,
-                                              );
+
+                                        for (var i = 0;
+                                            i < analysis.grammar.length;
+                                            i++) {
+                                          final lvl = analysis.grammar[i].level
+                                              .trim()
+                                              .toUpperCase();
+                                          if (!targetLevels.contains(lvl)) {
+                                            ref
+                                                .read(selectionManagerProvider
+                                                    .notifier)
+                                                .toggle(
+                                                  SelectionType.grammar,
+                                                  i,
+                                                  force: val,
+                                                );
+                                          }
+                                        }
+
+                                        for (var i = 0;
+                                            i < analysis.kanji.length;
+                                            i++) {
+                                          final lvl = analysis.kanji[i].level
+                                              .trim()
+                                              .toUpperCase();
+                                          if (!targetLevels.contains(lvl)) {
+                                            ref
+                                                .read(selectionManagerProvider
+                                                    .notifier)
+                                                .toggle(
+                                                  SelectionType.kanji,
+                                                  i,
+                                                  force: val,
+                                                );
+                                          }
                                         }
                                       }
                                     },
@@ -413,18 +508,12 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                         builder: (context, ref, _) {
                           final analysis =
                               ref.watch(lyricsNotifierProvider).asData?.value;
-                          final notifier =
-                              ref.read(lyricsNotifierProvider.notifier);
-                          final currentMode = notifier.currentMode;
-
-                          final bool isReverseLearning;
-                          if (analysis != null) {
-                            isReverseLearning = analysis.enVocab != null;
-                          } else {
-                            isReverseLearning =
-                                currentMode == LearningMode.english ||
-                                    currentMode == LearningMode.korean;
+                          if (analysis == null || !analysis.isComplete) {
+                            return const SizedBox.shrink();
                           }
+
+                          final bool isReverseLearning =
+                              analysis.enVocab != null;
 
                           // Calculate counts based on learning mode
                           final int vocabCount;
@@ -432,14 +521,14 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                           final int kanjiCount;
 
                           if (isReverseLearning) {
-                            vocabCount = analysis?.enVocab?.length ?? 0;
-                            grammarCount = analysis?.enGrammar?.length ?? 0;
+                            vocabCount = analysis.enVocab?.length ?? 0;
+                            grammarCount = analysis.enGrammar?.length ?? 0;
                             kanjiCount =
                                 0; // Not applicable for reverse learning
                           } else {
-                            vocabCount = analysis?.vocabs.length ?? 0;
-                            grammarCount = analysis?.grammar.length ?? 0;
-                            kanjiCount = analysis?.kanji.length ?? 0;
+                            vocabCount = analysis.vocabs.length;
+                            grammarCount = analysis.grammar.length;
+                            kanjiCount = analysis.kanji.length;
                           }
 
                           // Prepare labels
@@ -605,7 +694,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                               // Navigate to Home (Index 0)
                                               ref
                                                   .read(
-                                                      navIndexProvider.notifier)
+                                                    navIndexProvider.notifier,
+                                                  )
                                                   .state = 0;
                                               // Also clear current lyrics state
                                               ref.invalidate(
@@ -627,7 +717,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                               ),
                                             ),
                                             icon: const Icon(
-                                                Icons.refresh_rounded),
+                                              Icons.refresh_rounded,
+                                            ),
                                             label: const Text('Try Again'),
                                           ),
                                         ],
@@ -742,7 +833,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                                   .state++;
                                               ref
                                                   .read(
-                                                      navIndexProvider.notifier)
+                                                    navIndexProvider.notifier,
+                                                  )
                                                   .state = 0;
                                               ref.invalidate(
                                                 lyricsNotifierProvider,
@@ -915,8 +1007,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                 builder: (context, ref, child) {
                   final analysis =
                       ref.watch(lyricsNotifierProvider).asData?.value;
-                  if (analysis?.youtubeId == null)
+                  if (analysis?.youtubeId == null) {
                     return const SizedBox.shrink();
+                  }
 
                   final size = MediaQuery.of(context).size;
                   const videoWidth = 300.0;
@@ -1133,7 +1226,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                           selectedKanji.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Select items to export')),
+                            content: Text('Select items to export'),
+                          ),
                         );
                         return;
                       }
@@ -2022,7 +2116,10 @@ class _LyricsView extends StatelessWidget {
     }
     if (analysis.enGrammar != null) {
       addMatches(
-          analysis.enGrammar!, 'grammar', (d) => (d as EnGrammar).structure);
+        analysis.enGrammar!,
+        'grammar',
+        (d) => (d as EnGrammar).structure,
+      );
     }
 
     // Sort: Start Time asc, Length desc (Longest match wins)
@@ -2320,8 +2417,9 @@ class _EnGrammarItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    // TODO: Implement selection for EnGrammar
-    final isSelected = false;
+    final isSelected = ref.watch(
+      selectionManagerProvider.select((s) => s.grammarIndices.contains(index)),
+    );
 
     return _ResultCard(
       title: Text(
@@ -2358,7 +2456,9 @@ class _EnGrammarItem extends ConsumerWidget {
           : const _Tag(label: 'Other', color: AppColors.textTertiary),
       isSelected: isSelected,
       onToggle: () {
-        // TODO: Implement toggle
+        ref
+            .read(selectionManagerProvider.notifier)
+            .toggle(SelectionType.grammar, index);
       },
       themeColor: AppColors.matcha,
     );

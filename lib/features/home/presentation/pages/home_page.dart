@@ -35,7 +35,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   final _titleController = TextEditingController();
   final _artistController = TextEditingController();
   String _selectedLanguage = 'English';
-  LearningMode _learningMode = LearningMode.japanese;
 
   @override
   void initState() {
@@ -51,9 +50,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       final savedModeIndex = box?.get('learning_mode_index');
       if (savedModeIndex != null && savedModeIndex is int) {
-        setState(() {
-          _learningMode = LearningMode.values[savedModeIndex];
-        });
+        ref.read(learningModeProvider.notifier).state =
+            LearningMode.values[savedModeIndex];
       }
     });
   }
@@ -68,6 +66,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _handleAnalyze() {
     final title = _titleController.text.trim();
     final artist = _artistController.text.trim();
+    final learningMode = ref.read(learningModeProvider);
 
     if (title.isEmpty || artist.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -86,7 +85,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       title,
       artist,
       _selectedLanguage,
-      learningMode: _learningMode,
+      learningMode: learningMode,
     );
   }
 
@@ -94,14 +93,25 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (widget.onHistoryItemClick != null) {
       widget.onHistoryItemClick!(item);
     } else {
-      // Default to Japanese if loading from history in this context
-      // Ideally HistoryItem should store the mode,
-      // but for now we follow the item's data
+      // Restore mode from item logic if needed, or just pass it
+      // For now, onNavigateToAnalyze usually just checks args
+      LearningMode mode = LearningMode.japanese;
+      if (item.learningModeIndex != null) {
+        mode = LearningMode.values[item.learningModeIndex!];
+      } else {
+        // Fallback
+        if (item.targetLanguage.toLowerCase() == 'korean') {
+          mode = LearningMode.korean;
+        } else if (item.enVocab != null && item.enVocab!.isNotEmpty) {
+          mode = LearningMode.english;
+        }
+      }
+
       widget.onNavigateToAnalyze(
         item.songTitle,
         item.artist,
         item.targetLanguage,
-        learningMode: LearningMode.japanese,
+        learningMode: mode,
       );
     }
   }
@@ -114,6 +124,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       _artistController.clear();
     });
 
+    final learningMode = ref.watch(learningModeProvider);
     final theme = Theme.of(context);
     final l10n = context.l10n;
 
@@ -181,22 +192,22 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                         // Learning Mode Toggle
                         _ModeSelector(
-                          selectedMode: _learningMode,
+                          selectedMode: learningMode,
                           onModeChanged: (mode) {
-                            setState(() {
-                              _learningMode = mode;
-                              // Clear inputs when switching mode
-                              _titleController.clear();
-                              _artistController.clear();
-                            });
+                            ref.read(learningModeProvider.notifier).state =
+                                mode;
+                            // Clear inputs when switching mode
+                            _titleController.clear();
+                            _artistController.clear();
+
                             ref.read(settingsBoxProvider)?.put(
                                   'learning_mode_index',
-                                  _learningMode.index,
+                                  mode.index,
                                 );
                           },
                         ),
 
-                        if (_learningMode != LearningMode.japanese) ...[
+                        if (learningMode != LearningMode.japanese) ...[
                           const SizedBox(height: 8),
                           Text(
                             l10n.reverseLearningDescription,
@@ -215,9 +226,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           controller: _titleController,
                           decoration: InputDecoration(
                             labelText: l10n.songTitleLabel,
-                            hintText: _learningMode == LearningMode.english
+                            hintText: learningMode == LearningMode.english
                                 ? l10n.songTitleHintEn
-                                : _learningMode == LearningMode.korean
+                                : learningMode == LearningMode.korean
                                     ? l10n.songTitleHintKo
                                     : l10n.songTitleHint,
                             prefixIcon: const Icon(Icons.music_note),
@@ -230,9 +241,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           controller: _artistController,
                           decoration: InputDecoration(
                             labelText: l10n.artistNameLabel,
-                            hintText: _learningMode == LearningMode.english
+                            hintText: learningMode == LearningMode.english
                                 ? l10n.artistNameHintEn
-                                : _learningMode == LearningMode.korean
+                                : learningMode == LearningMode.korean
                                     ? l10n.artistNameHintKo
                                     : l10n.artistNameHint,
                             prefixIcon: const Icon(Icons.person),
@@ -240,7 +251,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
 
                         // Target Language Selector - Hide in Reverse/Korean Learning Mode
-                        if (_learningMode == LearningMode.japanese) ...[
+                        if (learningMode == LearningMode.japanese) ...[
                           const SizedBox(height: 16),
                           InkWell(
                             onTap: () async {
@@ -425,7 +436,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       ),
                                     ),
                                     subtitle: Text(
-                                      '$artist • ${item.targetLanguage}',
+                                      (item.learningModeIndex == 1 ||
+                                              item.learningModeIndex == 2)
+                                          ? artist
+                                          : '$artist • ${item.targetLanguage}',
                                       style:
                                           theme.textTheme.bodyMedium?.copyWith(
                                         color: AppColors.sakuraDark,

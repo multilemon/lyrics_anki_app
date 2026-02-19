@@ -189,15 +189,17 @@ class LyricsRepository {
         throw SongNotFoundException(title, artist);
       }
 
-      final parsedPart = await parseAnalysisResult(cleanText,
-          isReverseLearning: isReverseLearning);
+      final parsedPart = await parseAnalysisResult(
+        cleanText,
+        isReverseLearning: isReverseLearning,
+      );
 
       yield AnalysisResult(
         vocabs: parsedPart.vocabs,
         grammar: parsedPart.grammar,
         kanji: parsedPart.kanji,
-        song: title,
-        artist: artist,
+        song: officialTitle ?? title,
+        artist: officialArtist ?? artist,
         lyrics: fetchedLyrics,
         youtubeId: refinedYoutubeId,
         enVocab: parsedPart.enVocab,
@@ -251,8 +253,9 @@ class LyricsRepository {
 
   Future<void> saveAnalysisResult(
     AnalysisResult result,
-    String language,
-  ) async {
+    String language, {
+    LearningMode learningMode = LearningMode.japanese,
+  }) async {
     final item = HistoryItem(
       songTitle: result.song,
       artist: result.artist,
@@ -263,6 +266,7 @@ class LyricsRepository {
               : 'No Data',
       analyzedAt: DateTime.now(),
       targetLanguage: language,
+      learningModeIndex: learningMode.index,
     )
       ..vocabs = result.vocabs
       ..grammar = result.grammar
@@ -276,41 +280,76 @@ class LyricsRepository {
     await saveToHistory(item);
   }
 
-  List<HistoryItem> getHistory({int limit = 50}) {
+  List<HistoryItem> getHistory({
+    int limit = 50,
+    LearningMode? mode,
+  }) {
     if (_box == null) {
       // Memory store fallback
-      final count = limit < _memoryStore.length ? limit : _memoryStore.length;
+      var source = _memoryStore;
+      if (mode != null) {
+        source = source.where((item) => _itemMatchesMode(item, mode)).toList();
+      }
+
+      final count = limit < source.length ? limit : source.length;
       if (count == 0) return [];
-      return _memoryStore
-          .sublist(_memoryStore.length - count)
-          .reversed
-          .toList();
+      return source.sublist(source.length - count).reversed.toList();
     }
 
-    // Optimization: Use getAt(i) which is O(1) for standard Boxes to avoid
-    // realizing the entire values list.
+    // Optimization: Use getAt(i) which is O(1) for standard Boxes
     final length = _box!.length;
-    final count = limit < length ? limit : length;
     final items = <HistoryItem>[];
 
-    for (var i = length - 1; i >= length - count; i--) {
+    // Iterate backwards to get most recent first
+    for (var i = length - 1; i >= 0; i--) {
+      // Break early if we have enough items
+      if (items.length >= limit) break;
+
       final item = _box!.getAt(i);
       if (item != null) {
-        items.add(item);
+        if (mode == null || _itemMatchesMode(item, mode)) {
+          items.add(item);
+        }
       }
     }
     return items;
   }
 
-  Stream<List<HistoryItem>> watchHistory() async* {
-    yield getHistory();
+  bool _itemMatchesMode(HistoryItem item, LearningMode mode) {
+    // 1. If explicit mode index is saved (New Items)
+    if (item.learningModeIndex != null) {
+      return item.learningModeIndex == mode.index;
+    }
+
+    // 2. Legacy Migration Logic (Old Items)
+    if (mode == LearningMode.japanese) {
+      // Assume Japanese if it has Japanese vocabs
+      return item.vocabs.isNotEmpty;
+    } else if (mode == LearningMode.english) {
+      // Assume English if it has enVocab and is NOT Japanese
+      // (or if it has enVocab and user is asking for English mode)
+      return item.enVocab != null && item.enVocab!.isNotEmpty;
+    } else if (mode == LearningMode.korean) {
+      // Legacy Korean might rely on enVocab structure but different language?
+      // For now, assume legacy items are rarely Korean unless we strictly
+      // checked targetLanguage string, but that is unreliable.
+      // Simplest: only show if explicitly tagged or match targetLanguage
+      // string.
+      return item.targetLanguage.toLowerCase() == 'korean';
+    }
+
+    return true;
+  }
+
+  Stream<List<HistoryItem>> watchHistory({LearningMode? mode}) async* {
+    yield getHistory(mode: mode);
     if (_box != null) {
       await for (final _ in _box!.watch()) {
-        yield getHistory();
+        yield getHistory(mode: mode);
       }
     } else {
       await for (final _ in _memoryStreamController.stream) {
-        yield getHistory();
+        yield getHistory(mode: mode);
       }
     }
   }
@@ -324,8 +363,10 @@ class LyricsRepository {
     }
   }
 
-  Future<AnalysisResult> parseAnalysisResult(String jsonString,
-      {bool isReverseLearning = false}) async {
+  Future<AnalysisResult> parseAnalysisResult(
+    String jsonString, {
+    bool isReverseLearning = false,
+  }) async {
     try {
       final parsed = jsonDecode(jsonString);
       if (parsed is! Map<String, dynamic>) {
@@ -337,14 +378,16 @@ class LyricsRepository {
         if (parsed.containsKey('vocab')) {
           final list = parsed['vocab'] as List<dynamic>;
           enVocab.addAll(
-              list.map((e) => EnVocab.fromJson(e as Map<String, dynamic>)));
+            list.map((e) => EnVocab.fromJson(e as Map<String, dynamic>)),
+          );
         }
 
         final enGrammar = <EnGrammar>[];
         if (parsed.containsKey('grammar')) {
           final list = parsed['grammar'] as List<dynamic>;
           enGrammar.addAll(
-              list.map((e) => EnGrammar.fromJson(e as Map<String, dynamic>)));
+            list.map((e) => EnGrammar.fromJson(e as Map<String, dynamic>)),
+          );
         }
 
         var songTitle = '';
@@ -366,7 +409,6 @@ class LyricsRepository {
           kanji: [],
           song: songTitle,
           artist: artistName,
-          youtubeId: null,
           lyrics: parsed['lyrics']?.toString() ?? '',
           enVocab: enVocab,
           enGrammar: enGrammar,
@@ -409,7 +451,6 @@ class LyricsRepository {
         kanji: kanji,
         song: songTitle,
         artist: artistName,
-        youtubeId: null,
         lyrics: parsed['lyrics']?.toString() ?? '',
       );
     } catch (e) {
@@ -489,7 +530,7 @@ class LyricsRepository {
   }
 
   String _extractJson(String text) {
-    var source = text.trim();
+    final source = text.trim();
     final startIndex = source.indexOf('{');
     if (startIndex == -1) return source;
 
@@ -498,7 +539,7 @@ class LyricsRepository {
     var inString = false;
     var escaped = false;
 
-    for (int i = startIndex; i < source.length; i++) {
+    for (var i = startIndex; i < source.length; i++) {
       final char = source[i];
 
       if (escaped) {
@@ -506,7 +547,7 @@ class LyricsRepository {
         continue;
       }
 
-      if (char == '\\') {
+      if (char == r'\') {
         escaped = true;
         continue;
       }

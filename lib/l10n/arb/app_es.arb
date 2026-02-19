@@ -132,5 +132,23 @@
     "noLyricsAvailable": "No lyrics available.",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "Vocabulary",
+    "grammarType": "Grammar",
+    "kanjiType": "Kanji",
+    "closeButton": "Close",
+    "allFilter": "All",
+    "otherFilter": "Other",
+    "learningModeLabel": "Learning Mode",
+    "modeJapanese": "Learn Japanese",
+    "modeEnglish": "Learn English",
+    "modeKorean": "Learn Korean",
+    "ipaType": "IPA",
+    "structureType": "Structure",
+    "songTitleHintEn": "e.g. Shape of You",
+    "artistNameHintEn": "e.g. Ed Sheeran",
+    "songTitleHintKo": "e.g. Gangnam Style",
+    "artistNameHintKo": "e.g. PSY",
+    "romanizationType": "Romanization",
+    "reverseLearningDescription": "Reverse Learning Mode: For Japanese speakers learning English/Korean."
 }
