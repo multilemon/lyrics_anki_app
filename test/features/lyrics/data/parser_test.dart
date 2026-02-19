@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
-import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/song_metadata_service.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockBox extends Mock implements Box<HistoryItem> {}

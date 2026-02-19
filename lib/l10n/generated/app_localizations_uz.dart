@@ -108,4 +108,59 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get noLyricsAvailable => 'No lyrics available.';
+
+  @override
+  String get vocabType => 'Vocabulary';
+
+  @override
+  String get grammarType => 'Grammar';
+
+  @override
+  String get kanjiType => 'Kanji';
+
+  @override
+  String get closeButton => 'Close';
+
+  @override
+  String get allFilter => 'All';
+
+  @override
+  String get otherFilter => 'Other';
+
+  @override
+  String get learningModeLabel => 'Learning Mode';
+
+  @override
+  String get modeJapanese => 'Learn Japanese';
+
+  @override
+  String get modeEnglish => 'Learn English';
+
+  @override
+  String get modeKorean => 'Learn Korean';
+
+  @override
+  String get ipaType => 'IPA';
+
+  @override
+  String get structureType => 'Structure';
+
+  @override
+  String get songTitleHintEn => 'e.g. Shape of You';
+
+  @override
+  String get artistNameHintEn => 'e.g. Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => 'e.g. Gangnam Style';
+
+  @override
+  String get artistNameHintKo => 'e.g. PSY';
+
+  @override
+  String get romanizationType => 'Romanization';
+
+  @override
+  String get reverseLearningDescription =>
+      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
 }

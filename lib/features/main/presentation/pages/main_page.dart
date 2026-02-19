@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/pages/lyrics_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/pages/settings_page.dart';
@@ -22,7 +23,12 @@ class MainPage extends ConsumerWidget {
     // List of pages
     final pages = [
       HomePage(
-        onNavigateToAnalyze: (title, artist, language) async {
+        onNavigateToAnalyze: (
+          title,
+          artist,
+          language, {
+          learningMode = LearningMode.japanese,
+        }) async {
           // Switch to Lyrics Tab IMMEDIATELY
           ref.read(navIndexProvider.notifier).state = 1;
           // Clear any previous selection state
@@ -35,6 +41,7 @@ class MainPage extends ConsumerWidget {
                   title,
                   artist,
                   language,
+                  learningMode: learningMode,
                 ),
           );
         },

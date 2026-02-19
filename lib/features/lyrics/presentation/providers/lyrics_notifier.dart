@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -13,31 +14,50 @@ class LyricsNotifier extends _$LyricsNotifier {
     return null;
   }
 
+  // Expose the current learning mode for UI to use even during loading
+  LearningMode get currentMode => _lastMode ?? LearningMode.japanese;
+
   String? _lastTitle;
   String? _lastArtist;
   String? _lastLanguage;
+  LearningMode? _lastMode;
 
   Future<void> retry() async {
-    if (_lastTitle != null && _lastArtist != null && _lastLanguage != null) {
-      await analyzeSong(_lastTitle!, _lastArtist!, _lastLanguage!);
+    if (_lastTitle != null &&
+        _lastArtist != null &&
+        _lastLanguage != null &&
+        _lastMode != null) {
+      await analyzeSong(
+        _lastTitle!,
+        _lastArtist!,
+        _lastLanguage!,
+        learningMode: _lastMode!,
+      );
     }
   }
 
   Future<AnalysisResult?> analyzeSong(
     String title,
     String artist,
-    String language,
-  ) async {
+    String language, {
+    LearningMode learningMode = LearningMode.japanese,
+  }) async {
     _lastTitle = title;
     _lastArtist = artist;
     _lastLanguage = language;
+    _lastMode = learningMode;
     state = const AsyncValue.loading();
 
     final repository = ref.read(lyricsRepositoryProvider);
     AnalysisResult? lastResult;
 
     try {
-      final stream = repository.analyzeSong(title, artist, language);
+      final stream = repository.analyzeSong(
+        title,
+        artist,
+        language,
+        learningMode: learningMode,
+      );
 
       await for (final result in stream) {
         state = AsyncValue.data(result);
@@ -63,6 +83,24 @@ class LyricsNotifier extends _$LyricsNotifier {
   }
 
   void loadFromHistory(HistoryItem item) {
+    // Best effort to restore mode from history item content
+    // If enVocab is present (future), it's reverse mode.
+    // For now, if we don't have enVocab in history, we assume Japanese.
+    // However, if we added a mode field to history, we should use it.
+    // Since we don't have it yet, we default to Japanese or existing logic.
+
+    // We can infer from targetLanguage maybe?
+    // If target is "Japanese" -> Reverse Mode?
+    // No, existing logic: target Language is what user WANTS to learn?
+    // In original app: Target Language was output language.
+    // In Reverse Mode: Target is English/Korean.
+
+    // Actually, let's just leave _lastMode as is or default to Japanese if unsure.
+    // But to be safe for "Retry", we should probably update it if we can.
+    // If we can't be sure, maybe don't touch it, or set to Japanese?
+    // Let's set it to Japanese as default for now since history items are mostly Japanese.
+    _lastMode = LearningMode.japanese;
+
     state = AsyncValue.data(
       AnalysisResult(
         vocabs: item.vocabs,

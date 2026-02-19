@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/song_metadata_service.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -34,8 +35,10 @@ class LyricsRepository {
   Stream<AnalysisResult> analyzeSong(
     String title,
     String artist,
-    String language,
-  ) async* {
+    String language, {
+    LearningMode learningMode = LearningMode.japanese,
+  }) async* {
+    final isReverseLearning = learningMode.isReverse;
     // 1. Check Local Cache First
     final normalizedTitle = title.trim().toLowerCase();
     final normalizedArtist = artist.trim().toLowerCase();
@@ -49,12 +52,18 @@ class LyricsRepository {
           final a = item.artist.trim().toLowerCase();
           final l = item.targetLanguage;
           // Soft match: title + artist must match, language preferred
-          return t == normalizedTitle && a == normalizedArtist && l == language;
+          if (t != normalizedTitle || a != normalizedArtist) return false;
+
+          if (isReverseLearning) {
+            return item.enVocab != null && item.enVocab!.isNotEmpty;
+          }
+
+          return l == language && item.vocabs.isNotEmpty;
         },
         orElse: () => null,
       );
 
-      if (cachedItem != null && cachedItem.vocabs.isNotEmpty) {
+      if (cachedItem != null) {
         yield AnalysisResult(
           vocabs: cachedItem.vocabs,
           grammar: cachedItem.grammar,
@@ -63,6 +72,9 @@ class LyricsRepository {
           artist: cachedItem.artist,
           lyrics: cachedItem.lyrics ?? '',
           youtubeId: cachedItem.youtubeId,
+          enVocab: cachedItem.enVocab,
+          enGrammar: cachedItem.enGrammar,
+          overallCefr: cachedItem.overallCefr,
         );
         return;
       }
@@ -70,8 +82,18 @@ class LyricsRepository {
       // Ignore cache check error
     }
 
+    String systemInstruction;
+    switch (learningMode) {
+      case LearningMode.english:
+        systemInstruction = _systemInstructionReverse;
+      case LearningMode.korean:
+        systemInstruction = _systemInstructionKorean;
+      case LearningMode.japanese:
+        systemInstruction = _systemInstruction;
+    }
+
     final model = FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-2.5-pro',
+      model: 'gemini-2.0-flash', // Use faster model for English/Japanese
       generationConfig: GenerationConfig(
         candidateCount: 1,
         temperature: 0,
@@ -79,10 +101,9 @@ class LyricsRepository {
         topK: 1,
         responseMimeType: 'application/json',
       ),
-      systemInstruction: Content.system(_systemInstruction),
+      systemInstruction: Content.system(systemInstruction),
     );
 
-    // Priority: Fetch Official Metadata & Video ID from iTunes/YouTube
     // Priority: Fetch Official Metadata & Video ID from iTunes/YouTube
     String? refinedYoutubeId;
     String? officialTitle;
@@ -168,7 +189,8 @@ class LyricsRepository {
         throw SongNotFoundException(title, artist);
       }
 
-      final parsedPart = await parseAnalysisResult(cleanText);
+      final parsedPart = await parseAnalysisResult(cleanText,
+          isReverseLearning: isReverseLearning);
 
       yield AnalysisResult(
         vocabs: parsedPart.vocabs,
@@ -178,14 +200,21 @@ class LyricsRepository {
         artist: artist,
         lyrics: fetchedLyrics,
         youtubeId: refinedYoutubeId,
+        enVocab: parsedPart.enVocab,
+        enGrammar: parsedPart.enGrammar,
+        overallCefr: parsedPart.overallCefr,
       );
 
       unawaited(
         analyticsService.logAnalysisComplete(
           songTitle: title,
           artist: artist,
-          vocabCount: parsedPart.vocabs.length,
-          grammarCount: parsedPart.grammar.length,
+          vocabCount: isReverseLearning
+              ? (parsedPart.enVocab?.length ?? 0)
+              : parsedPart.vocabs.length,
+          grammarCount: isReverseLearning
+              ? (parsedPart.enGrammar?.length ?? 0)
+              : parsedPart.grammar.length,
           kanjiCount: parsedPart.kanji.length,
           durationMs: stopwatch.elapsedMilliseconds,
         ),
@@ -229,7 +258,9 @@ class LyricsRepository {
       artist: result.artist,
       lyricsSnippet: result.vocabs.isNotEmpty
           ? 'Analysis Complete (${result.vocabs.length} words)'
-          : 'No Data',
+          : result.enVocab != null && result.enVocab!.isNotEmpty
+              ? 'Analysis Complete (${result.enVocab!.length} words)'
+              : 'No Data',
       analyzedAt: DateTime.now(),
       targetLanguage: language,
     )
@@ -237,7 +268,10 @@ class LyricsRepository {
       ..grammar = result.grammar
       ..kanji = result.kanji
       ..youtubeId = result.youtubeId
-      ..lyrics = result.lyrics;
+      ..lyrics = result.lyrics
+      ..enVocab = result.enVocab
+      ..enGrammar = result.enGrammar
+      ..overallCefr = result.overallCefr;
 
     await saveToHistory(item);
   }
@@ -290,11 +324,54 @@ class LyricsRepository {
     }
   }
 
-  Future<AnalysisResult> parseAnalysisResult(String jsonString) async {
+  Future<AnalysisResult> parseAnalysisResult(String jsonString,
+      {bool isReverseLearning = false}) async {
     try {
       final parsed = jsonDecode(jsonString);
       if (parsed is! Map<String, dynamic>) {
         return AnalysisResult(vocabs: [], grammar: [], kanji: []);
+      }
+
+      if (isReverseLearning) {
+        final enVocab = <EnVocab>[];
+        if (parsed.containsKey('vocab')) {
+          final list = parsed['vocab'] as List<dynamic>;
+          enVocab.addAll(
+              list.map((e) => EnVocab.fromJson(e as Map<String, dynamic>)));
+        }
+
+        final enGrammar = <EnGrammar>[];
+        if (parsed.containsKey('grammar')) {
+          final list = parsed['grammar'] as List<dynamic>;
+          enGrammar.addAll(
+              list.map((e) => EnGrammar.fromJson(e as Map<String, dynamic>)));
+        }
+
+        var songTitle = '';
+        var artistName = '';
+        String? overallCefr;
+
+        if (parsed.containsKey('meta')) {
+          final meta = parsed['meta'];
+          if (meta is Map<String, dynamic>) {
+            songTitle = meta['title']?.toString() ?? '';
+            artistName = meta['artist']?.toString() ?? '';
+            overallCefr = meta['overall_cefr']?.toString();
+          }
+        }
+
+        return AnalysisResult(
+          vocabs: [],
+          grammar: [],
+          kanji: [],
+          song: songTitle,
+          artist: artistName,
+          youtubeId: null,
+          lyrics: parsed['lyrics']?.toString() ?? '',
+          enVocab: enVocab,
+          enGrammar: enGrammar,
+          overallCefr: overallCefr,
+        );
       }
 
       final vocabs = <Vocab>[];
@@ -532,6 +609,112 @@ class LyricsRepository {
 "vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],
 "grammar":[["point","level","explanation","usage"]],
 "kanji":[["char","level","meanings","readings"]]
+}
+''';
+
+  static const _systemInstructionReverse = '''
+You are a Senior English Linguistic Data Engineer acting as the backend processor for a Japanese ESL application. Your role is to analyze English song lyrics and output strictly formatted linguistic data.
+
+### 1. CORE DIRECTIVES
+* **Ground Truth:** Use the provided `lyrics_text` strictly. Do not search the web or alter the lyrics.
+* **Target Audience:** Japanese native speakers learning English.
+* **Scope (CRITICAL):** Extract **ALL** unique content words (nouns, verbs, adjectives, adverbs) and distinct phrases. Do not filter out simple words unless they are purely functional (like "the", "a").
+* **Output Format:** Return ONLY a single, valid, minified RFC 8259 JSON object. Do not include Markdown code blocks (```json), whitespace, or conversational text.
+
+### 2. LINGUISTIC PROCESSING RULES
+**A. Vocabulary Extraction**
+* **Atomicity:** Tokenize words based on meaning. Treat Phrasal Verbs (e.g., "give up", "look forward to") and Idioms as single atomic units, not separate words.
+* **IPA:** Provide the International Phonetic Alphabet transcription (e.g., /həˈləʊ/).
+* **POS:** Use standard tags: n., v., adj., adv., prep., conj., phrasal verb, idiom.
+* **Meaning:** Provide the contextual definition in natural Japanese (日本語).
+* **Nuance & Silence Rule:**
+    * Detect slang, poetic license, register (formal/casual), or specific dialect usage (US/UK). Translate this nuance into Japanese.
+    * **CRITICAL:** If the word is a standard CEFR A1/A2 term with no special nuance or deviation from standard usage, return an empty string `""`.
+
+**B. Grammar Analysis**
+* Identify specific grammatical structures used in the lyrics (e.g., Present Perfect, Third Conditional, Gerunds).
+* **CEFR:** Map the structure to levels A1-C2.
+* **Explanation:** Explain the grammar point's function in Japanese.
+
+### 3. JSON SCHEMA ENFORCEMENT
+You must adhere to this structure exactly:
+
+{
+  "meta": {
+    "title": "String",
+    "artist": "String",
+    "overall_cefr": "String"
+  },
+  "vocab": [
+    {
+      "term": "String",
+      "ipa": "String",
+      "pos": "String",
+      "meaning_jp": "String",
+      "nuance_jp": "String"
+    }
+  ],
+  "grammar": [
+    {
+      "structure": "String",
+      "cefr_level": "String",
+      "explanation_jp": "String",
+      "excerpt": "String"
+    }
+  ]
+}
+''';
+
+  static const _systemInstructionKorean = '''
+You are a Senior Korean Linguistic Data Engineer acting as the backend processor for a Japanese ESL application. Your role is to analyze Korean song lyrics and output strictly formatted linguistic data for Japanese speakers.
+
+### 1. CORE DIRECTIVES
+* **Ground Truth:** Use the provided `lyrics_text` strictly. Do not search the web or alter the lyrics.
+* **Target Audience:** Japanese native speakers learning Korean.
+* **Scope (CRITICAL):** Extract **ALL** unique content words (nouns, verbs, adjectives, adverbs) and distinct phrases. Do not filter out simple words.
+* **Output Format:** Return ONLY a single, valid, minified RFC 8259 JSON object. Do not include Markdown code blocks (```json), whitespace, or conversational text.
+
+### 2. LINGUISTIC PROCESSING RULES
+**A. Vocabulary Extraction**
+* **Atomicity:** Tokenize words based on meaning. Treat idioms and common phrases as single units.
+* **IPA (Romanization):** Provide the Revised Romanization (RR) for the word (e.g., "sarang").
+* **POS:** Use standard tags: n., v., adj., adv., prep., conj., idiom.
+* **Meaning:** Provide the contextual definition in natural Japanese (日本語).
+* **Nuance:**
+    * Detect honorifics (polite/casual), slang, or dialect. Translate this nuance into Japanese.
+    * If standard usage, return empty string `""`.
+
+**B. Grammar Analysis**
+* Identify specific grammatical structures (e.g., particles, verb endings like -mnida, -yo).
+* **CEFR:** Estimate difficult level (A1-C2).
+* **Explanation:** Explain the grammar point's function in Japanese.
+
+### 3. JSON SCHEMA ENFORCEMENT
+You must adhere to this structure exactly (using same keys as English mode for compatibility):
+
+{
+  "meta": {
+    "title": "String",
+    "artist": "String",
+    "overall_cefr": "String"
+  },
+  "vocab": [
+    {
+      "term": "String (Hangul)",
+      "ipa": "String (Romanization)",
+      "pos": "String",
+      "meaning_jp": "String",
+      "nuance_jp": "String"
+    }
+  ],
+  "grammar": [
+    {
+      "structure": "String (Hangul/Rule)",
+      "cefr_level": "String",
+      "explanation_jp": "String",
+      "excerpt": "String"
+    }
+  ]
 }
 ''';
 }

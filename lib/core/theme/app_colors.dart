@@ -28,4 +28,6 @@ class AppColors {
   static const Color error = Color(0xFFE57373);
   static const Color success = Color(0xFF81C784);
   static const Color overlay = Color(0x1A000000); // 10% Black
+  static const Color greyLight =
+      Color(0xFFEEEEEE); // Light grey for borders/dividers
 }

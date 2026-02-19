@@ -86,6 +86,59 @@ class Kanji {
   Map<String, dynamic> toJson() => _$KanjiToJson(this);
 }
 
+@HiveType(typeId: 4)
+@JsonSerializable()
+class EnVocab {
+  EnVocab({
+    required this.term,
+    required this.ipa,
+    required this.pos,
+    required this.meaningJp,
+    required this.nuanceJp,
+  });
+
+  factory EnVocab.fromJson(Map<String, dynamic> json) =>
+      _$EnVocabFromJson(json);
+  @HiveField(0)
+  final String term;
+  @HiveField(1)
+  final String ipa;
+  @HiveField(2)
+  final String pos;
+  @HiveField(3)
+  @JsonKey(name: 'meaning_jp')
+  final String meaningJp;
+  @HiveField(4)
+  @JsonKey(name: 'nuance_jp')
+  final String nuanceJp;
+  Map<String, dynamic> toJson() => _$EnVocabToJson(this);
+}
+
+@HiveType(typeId: 5)
+@JsonSerializable()
+class EnGrammar {
+  EnGrammar({
+    required this.structure,
+    required this.cefrLevel,
+    required this.explanationJp,
+    required this.excerpt,
+  });
+
+  factory EnGrammar.fromJson(Map<String, dynamic> json) =>
+      _$EnGrammarFromJson(json);
+  @HiveField(0)
+  final String structure;
+  @HiveField(1)
+  @JsonKey(name: 'cefr_level')
+  final String cefrLevel;
+  @HiveField(2)
+  @JsonKey(name: 'explanation_jp')
+  final String explanationJp;
+  @HiveField(3)
+  final String excerpt;
+  Map<String, dynamic> toJson() => _$EnGrammarToJson(this);
+}
+
 @HiveType(typeId: 0)
 class HistoryItem extends HiveObject {
   HistoryItem({
@@ -128,6 +181,15 @@ class HistoryItem extends HiveObject {
 
   @HiveField(10)
   String? lyrics;
+
+  @HiveField(11)
+  List<EnVocab>? enVocab;
+
+  @HiveField(12)
+  List<EnGrammar>? enGrammar;
+
+  @HiveField(13)
+  String? overallCefr;
 }
 
 class SongNotFoundException implements Exception {
@@ -159,6 +221,9 @@ class AnalysisResult {
     this.youtubeId,
     this.lyrics = '',
     this.isComplete = true,
+    this.enVocab,
+    this.enGrammar,
+    this.overallCefr,
   });
 
   final List<Vocab> vocabs;
@@ -169,4 +234,7 @@ class AnalysisResult {
   final String? youtubeId;
   final String lyrics;
   final bool isComplete;
+  final List<EnVocab>? enVocab;
+  final List<EnGrammar>? enGrammar;
+  final String? overallCefr;
 }

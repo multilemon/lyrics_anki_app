@@ -7,6 +7,7 @@ import 'package:lyrics_anki_app/features/home/presentation/providers/history_not
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/home/presentation/widgets/storage_warning_banner.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:shimmer/shimmer.dart';
@@ -18,8 +19,12 @@ class HomePage extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final void Function(String title, String artist, String language)
-      onNavigateToAnalyze;
+  final void Function(
+    String title,
+    String artist,
+    String language, {
+    LearningMode learningMode,
+  }) onNavigateToAnalyze;
   final void Function(HistoryItem item)? onHistoryItemClick;
 
   @override
@@ -30,6 +35,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   final _titleController = TextEditingController();
   final _artistController = TextEditingController();
   String _selectedLanguage = 'English';
+  LearningMode _learningMode = LearningMode.japanese;
 
   @override
   void initState() {
@@ -40,6 +46,13 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (saved != null && saved is String) {
         setState(() {
           _selectedLanguage = saved;
+        });
+      }
+
+      final savedModeIndex = box?.get('learning_mode_index');
+      if (savedModeIndex != null && savedModeIndex is int) {
+        setState(() {
+          _learningMode = LearningMode.values[savedModeIndex];
         });
       }
     });
@@ -69,7 +82,28 @@ class _HomePageState extends ConsumerState<HomePage> {
       return;
     }
 
-    widget.onNavigateToAnalyze(title, artist, _selectedLanguage);
+    widget.onNavigateToAnalyze(
+      title,
+      artist,
+      _selectedLanguage,
+      learningMode: _learningMode,
+    );
+  }
+
+  void _onHistoryItemTap(HistoryItem item) {
+    if (widget.onHistoryItemClick != null) {
+      widget.onHistoryItemClick!(item);
+    } else {
+      // Default to Japanese if loading from history in this context
+      // Ideally HistoryItem should store the mode,
+      // but for now we follow the item's data
+      widget.onNavigateToAnalyze(
+        item.songTitle,
+        item.artist,
+        item.targetLanguage,
+        learningMode: LearningMode.japanese,
+      );
+    }
   }
 
   @override
@@ -143,6 +177,37 @@ class _HomePageState extends ConsumerState<HomePage> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                        const SizedBox(height: 16),
+
+                        // Learning Mode Toggle
+                        _ModeSelector(
+                          selectedMode: _learningMode,
+                          onModeChanged: (mode) {
+                            setState(() {
+                              _learningMode = mode;
+                              // Clear inputs when switching mode
+                              _titleController.clear();
+                              _artistController.clear();
+                            });
+                            ref.read(settingsBoxProvider)?.put(
+                                  'learning_mode_index',
+                                  _learningMode.index,
+                                );
+                          },
+                        ),
+
+                        if (_learningMode != LearningMode.japanese) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.reverseLearningDescription,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+
                         const SizedBox(height: 24),
 
                         // Song Title
@@ -150,7 +215,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                           controller: _titleController,
                           decoration: InputDecoration(
                             labelText: l10n.songTitleLabel,
-                            hintText: l10n.songTitleHint,
+                            hintText: _learningMode == LearningMode.english
+                                ? l10n.songTitleHintEn
+                                : _learningMode == LearningMode.korean
+                                    ? l10n.songTitleHintKo
+                                    : l10n.songTitleHint,
                             prefixIcon: const Icon(Icons.music_note),
                           ),
                         ),
@@ -161,64 +230,86 @@ class _HomePageState extends ConsumerState<HomePage> {
                           controller: _artistController,
                           decoration: InputDecoration(
                             labelText: l10n.artistNameLabel,
-                            hintText: l10n.artistNameHint,
+                            hintText: _learningMode == LearningMode.english
+                                ? l10n.artistNameHintEn
+                                : _learningMode == LearningMode.korean
+                                    ? l10n.artistNameHintKo
+                                    : l10n.artistNameHint,
                             prefixIcon: const Icon(Icons.person),
                           ),
                         ),
-                        const SizedBox(height: 16),
 
-                        // Target Language Selector
-                        InkWell(
-                          onTap: () async {
-                            final result = await showDialog<LanguageData>(
-                              context: context,
-                              builder: (context) =>
-                                  const _LanguageSearchDialog(),
-                            );
-                            if (result != null) {
-                              setState(() {
-                                _selectedLanguage = result.englishName;
-                              });
-                              await ref
-                                  .read(settingsBoxProvider)
-                                  ?.put('target_language', result.englishName);
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.cream,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      l10n.targetLanguageLabel,
-                                      style: theme.textTheme.labelSmall,
+                        // Target Language Selector - Hide in Reverse/Korean Learning Mode
+                        if (_learningMode == LearningMode.japanese) ...[
+                          const SizedBox(height: 16),
+                          InkWell(
+                            onTap: () async {
+                              final result = await showDialog<LanguageData>(
+                                context: context,
+                                builder: (context) =>
+                                    const _LanguageSearchDialog(),
+                              );
+                              if (result != null) {
+                                setState(() {
+                                  _selectedLanguage = result.englishName;
+                                });
+                                await ref.read(settingsBoxProvider)?.put(
+                                      'target_language',
+                                      result.englishName,
+                                    );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.cream,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.language,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.targetLanguageLabel,
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                            color: AppColors.textTertiary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _selectedLanguage,
+                                          style: theme.textTheme.bodyLarge
+                                              ?.copyWith(
+                                            color: AppColors.textPrimary,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _selectedLanguage,
-                                      style: theme.textTheme.bodyLarge,
-                                    ),
-                                  ],
-                                ),
-                                const Spacer(),
-                                const Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: AppColors.sakuraDark,
-                                ),
-                              ],
+                                  ),
+                                  const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: AppColors.textTertiary,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
+                        ],
+
                         const SizedBox(height: 32),
 
                         // Analyze Button
@@ -345,17 +436,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       size: 16,
                                       color: AppColors.sakuraDark,
                                     ),
-                                    onTap: () {
-                                      if (widget.onHistoryItemClick != null) {
-                                        widget.onHistoryItemClick!(item);
-                                      } else {
-                                        widget.onNavigateToAnalyze(
-                                          item.songTitle,
-                                          item.artist,
-                                          item.targetLanguage,
-                                        );
-                                      }
-                                    },
+                                    onTap: () => _onHistoryItemTap(item),
                                   ),
                                 ),
                               ),
@@ -514,6 +595,130 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeSelector extends StatelessWidget {
+  const _ModeSelector({
+    required this.selectedMode,
+    required this.onModeChanged,
+  });
+
+  final LearningMode selectedMode;
+  final ValueChanged<LearningMode> onModeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.greyLight.withValues(alpha: 0.5)),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Row(
+            children: [
+              Expanded(
+                child: _ModeCard(
+                  title: l10n.modeJapanese,
+                  icon: Icons.translate,
+                  isSelected: selectedMode == LearningMode.japanese,
+                  onTap: () => onModeChanged(LearningMode.japanese),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: _ModeCard(
+                  title: l10n.modeEnglish,
+                  icon: Icons.language,
+                  isSelected: selectedMode == LearningMode.english,
+                  onTap: () => onModeChanged(LearningMode.english),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: _ModeCard(
+                  title: l10n.modeKorean,
+                  icon: Icons.text_format,
+                  isSelected: selectedMode == LearningMode.korean,
+                  onTap: () => onModeChanged(LearningMode.korean),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    required this.title,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Using AnimatedContainer for smooth transition
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.sakuraLight.withValues(alpha: 0.3)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? AppColors.sakuraDark : Colors.transparent,
+          width: 1.5,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color:
+                    isSelected ? AppColors.sakuraDark : AppColors.textTertiary,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isSelected
+                      ? AppColors.sakuraDark
+                      : AppColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

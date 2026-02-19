@@ -145,7 +145,7 @@ abstract class AppLocalizations {
   /// Hint text for song title input
   ///
   /// In en, this message translates to:
-  /// **'e.g. Lemon'**
+  /// **'e.g. First Love'**
   String get songTitleHint;
 
   /// Label for artist name input
@@ -157,7 +157,7 @@ abstract class AppLocalizations {
   /// Hint text for artist name input
   ///
   /// In en, this message translates to:
-  /// **'e.g. Kenshi Yonezu'**
+  /// **'e.g. Utada Hikaru'**
   String get artistNameHint;
 
   /// Label for target language selector
@@ -309,6 +309,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No lyrics available.'**
   String get noLyricsAvailable;
+
+  /// Label for Vocabulary type in popup
+  ///
+  /// In en, this message translates to:
+  /// **'Vocabulary'**
+  String get vocabType;
+
+  /// Label for Grammar type in popup
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar'**
+  String get grammarType;
+
+  /// Label for Kanji type in popup
+  ///
+  /// In en, this message translates to:
+  /// **'Kanji'**
+  String get kanjiType;
+
+  /// Label for Close button
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeButton;
+
+  /// Label for 'All' filter chip
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get allFilter;
+
+  /// Label for 'Other' filter chip
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherFilter;
+
+  /// Label for learning mode toggle
+  ///
+  /// In en, this message translates to:
+  /// **'Learning Mode'**
+  String get learningModeLabel;
+
+  /// Option for learning Japanese
+  ///
+  /// In en, this message translates to:
+  /// **'Learn Japanese'**
+  String get modeJapanese;
+
+  /// Option for learning English (for JP speakers)
+  ///
+  /// In en, this message translates to:
+  /// **'Learn English'**
+  String get modeEnglish;
+
+  /// Option for learning Korean (for JP speakers)
+  ///
+  /// In en, this message translates to:
+  /// **'Learn Korean'**
+  String get modeKorean;
+
+  /// Label for IPA field
+  ///
+  /// In en, this message translates to:
+  /// **'IPA'**
+  String get ipaType;
+
+  /// Label for Grammar Structure field
+  ///
+  /// In en, this message translates to:
+  /// **'Structure'**
+  String get structureType;
+
+  /// Hint text for song title input (English)
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Shape of You'**
+  String get songTitleHintEn;
+
+  /// Hint text for artist name input (English)
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Ed Sheeran'**
+  String get artistNameHintEn;
+
+  /// Hint text for song title input (Korean)
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Gangnam Style'**
+  String get songTitleHintKo;
+
+  /// Hint text for artist name input (Korean)
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. PSY'**
+  String get artistNameHintKo;
+
+  /// Label for Romanization column/type
+  ///
+  /// In en, this message translates to:
+  /// **'Romanization'**
+  String get romanizationType;
+
+  /// Description text for reverse learning modes
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse Learning Mode: For Japanese speakers learning English/Korean.'**
+  String get reverseLearningDescription;
 }
 
 class _AppLocalizationsDelegate
