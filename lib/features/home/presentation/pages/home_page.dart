@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
@@ -7,6 +9,7 @@ import 'package:lyrics_anki_app/features/home/presentation/providers/history_not
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/home/presentation/widgets/storage_warning_banner.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:shimmer/shimmer.dart';
@@ -18,8 +21,12 @@ class HomePage extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final void Function(String title, String artist, String language)
-      onNavigateToAnalyze;
+  final void Function(
+    String title,
+    String artist,
+    String language, {
+    LearningMode learningMode,
+  }) onNavigateToAnalyze;
   final void Function(HistoryItem item)? onHistoryItemClick;
 
   @override
@@ -42,6 +49,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           _selectedLanguage = saved;
         });
       }
+
+      final savedModeIndex = box?.get('learning_mode_index');
+      if (savedModeIndex != null && savedModeIndex is int) {
+        ref.read(learningModeProvider.notifier).state =
+            LearningMode.values[savedModeIndex];
+      }
     });
   }
 
@@ -55,6 +68,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _handleAnalyze() {
     final title = _titleController.text.trim();
     final artist = _artistController.text.trim();
+    final learningMode = ref.read(learningModeProvider);
 
     if (title.isEmpty || artist.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,7 +83,39 @@ class _HomePageState extends ConsumerState<HomePage> {
       return;
     }
 
-    widget.onNavigateToAnalyze(title, artist, _selectedLanguage);
+    widget.onNavigateToAnalyze(
+      title,
+      artist,
+      _selectedLanguage,
+      learningMode: learningMode,
+    );
+  }
+
+  void _onHistoryItemTap(HistoryItem item) {
+    if (widget.onHistoryItemClick != null) {
+      widget.onHistoryItemClick!(item);
+    } else {
+      // Restore mode from item logic if needed, or just pass it
+      // For now, onNavigateToAnalyze usually just checks args
+      var mode = LearningMode.japanese;
+      if (item.learningModeIndex != null) {
+        mode = LearningMode.values[item.learningModeIndex!];
+      } else {
+        // Fallback
+        if (item.targetLanguage.toLowerCase() == 'korean') {
+          mode = LearningMode.korean;
+        } else if (item.enVocab != null && item.enVocab!.isNotEmpty) {
+          mode = LearningMode.english;
+        }
+      }
+
+      widget.onNavigateToAnalyze(
+        item.songTitle,
+        item.artist,
+        item.targetLanguage,
+        learningMode: mode,
+      );
+    }
   }
 
   @override
@@ -80,6 +126,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       _artistController.clear();
     });
 
+    final learningMode = ref.watch(learningModeProvider);
     final theme = Theme.of(context);
     final l10n = context.l10n;
 
@@ -93,7 +140,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               // Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
+                  padding: const EdgeInsets.fromLTRB(32, 72, 32, 36),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -120,119 +167,191 @@ class _HomePageState extends ConsumerState<HomePage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.sakuraDark.withValues(alpha: 0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          l10n.analyzeNewSong,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Song Title
-                        TextField(
-                          controller: _titleController,
-                          decoration: InputDecoration(
-                            labelText: l10n.songTitleLabel,
-                            hintText: l10n.songTitleHint,
-                            prefixIcon: const Icon(Icons.music_note),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Artist Name
-                        TextField(
-                          controller: _artistController,
-                          decoration: InputDecoration(
-                            labelText: l10n.artistNameLabel,
-                            hintText: l10n.artistNameHint,
-                            prefixIcon: const Icon(Icons.person),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Target Language Selector
-                        InkWell(
-                          onTap: () async {
-                            final result = await showDialog<LanguageData>(
-                              context: context,
-                              builder: (context) =>
-                                  const _LanguageSearchDialog(),
-                            );
-                            if (result != null) {
-                              setState(() {
-                                _selectedLanguage = result.englishName;
-                              });
-                              await ref
-                                  .read(settingsBoxProvider)
-                                  ?.put('target_language', result.englishName);
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(
+                        sigmaX: 12,
+                        sigmaY: 12,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.frost,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withValues(
+                              alpha: 0.4,
                             ),
-                            decoration: BoxDecoration(
-                              color: AppColors.cream,
-                              borderRadius: BorderRadius.circular(16),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  AppColors.sakuraDark.withValues(alpha: 0.08),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
                             ),
-                            child: Row(
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      l10n.targetLanguageLabel,
-                                      style: theme.textTheme.labelSmall,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _selectedLanguage,
-                                      style: theme.textTheme.bodyLarge,
-                                    ),
-                                  ],
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(28),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              l10n.analyzeNewSong,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Learning Mode Toggle
+                            _ModeSelector(
+                              selectedMode: learningMode,
+                              onModeChanged: (mode) {
+                                ref.read(learningModeProvider.notifier).state =
+                                    mode;
+                                // Clear inputs when switching mode
+                                _titleController.clear();
+                                _artistController.clear();
+
+                                ref.read(settingsBoxProvider)?.put(
+                                      'learning_mode_index',
+                                      mode.index,
+                                    );
+                              },
+                            ),
+
+                            if (learningMode != LearningMode.japanese) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.reverseLearningDescription,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontStyle: FontStyle.italic,
                                 ),
-                                const Spacer(),
-                                const Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: AppColors.sakuraDark,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
 
-                        // Analyze Button
-                        ElevatedButton(
-                          onPressed: _handleAnalyze,
-                          child: Text(l10n.analyzeButton),
+                            const SizedBox(height: 24),
+
+                            // Song Title
+                            TextField(
+                              controller: _titleController,
+                              decoration: InputDecoration(
+                                labelText: l10n.songTitleLabel,
+                                hintText: learningMode == LearningMode.english
+                                    ? l10n.songTitleHintEn
+                                    : learningMode == LearningMode.korean
+                                        ? l10n.songTitleHintKo
+                                        : l10n.songTitleHint,
+                                prefixIcon: const Icon(Icons.music_note),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Artist Name
+                            TextField(
+                              controller: _artistController,
+                              decoration: InputDecoration(
+                                labelText: l10n.artistNameLabel,
+                                hintText: learningMode == LearningMode.english
+                                    ? l10n.artistNameHintEn
+                                    : learningMode == LearningMode.korean
+                                        ? l10n.artistNameHintKo
+                                        : l10n.artistNameHint,
+                                prefixIcon: const Icon(Icons.person),
+                              ),
+                            ),
+
+                            // Target Language Selector
+                            if (learningMode == LearningMode.japanese) ...[
+                              const SizedBox(height: 16),
+                              InkWell(
+                                onTap: () async {
+                                  final result = await showDialog<LanguageData>(
+                                    context: context,
+                                    builder: (context) =>
+                                        const _LanguageSearchDialog(),
+                                  );
+                                  if (result != null) {
+                                    setState(() {
+                                      _selectedLanguage = result.englishName;
+                                    });
+                                    await ref.read(settingsBoxProvider)?.put(
+                                          'target_language',
+                                          result.englishName,
+                                        );
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cream,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.language,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              l10n.targetLanguageLabel,
+                                              style: theme.textTheme.labelSmall
+                                                  ?.copyWith(
+                                                color: AppColors.textTertiary,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _selectedLanguage,
+                                              style: theme.textTheme.bodyLarge
+                                                  ?.copyWith(
+                                                color: AppColors.textPrimary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_drop_down,
+                                        color: AppColors.textTertiary,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 32),
+
+                            // Analyze Button
+                            ElevatedButton(
+                              onPressed: _handleAnalyze,
+                              child: Text(l10n.analyzeButton),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 48)),
+              const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
               // History Section Title
               SliverToBoxAdapter(
@@ -334,7 +453,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       ),
                                     ),
                                     subtitle: Text(
-                                      '$artist • ${item.targetLanguage}',
+                                      (item.learningModeIndex == 1 ||
+                                              item.learningModeIndex == 2)
+                                          ? artist
+                                          : '$artist • ${item.targetLanguage}',
                                       style:
                                           theme.textTheme.bodyMedium?.copyWith(
                                         color: AppColors.sakuraDark,
@@ -345,17 +467,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       size: 16,
                                       color: AppColors.sakuraDark,
                                     ),
-                                    onTap: () {
-                                      if (widget.onHistoryItemClick != null) {
-                                        widget.onHistoryItemClick!(item);
-                                      } else {
-                                        widget.onNavigateToAnalyze(
-                                          item.songTitle,
-                                          item.artist,
-                                          item.targetLanguage,
-                                        );
-                                      }
-                                    },
+                                    onTap: () => _onHistoryItemTap(item),
                                   ),
                                 ),
                               ),
@@ -514,6 +626,130 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeSelector extends StatelessWidget {
+  const _ModeSelector({
+    required this.selectedMode,
+    required this.onModeChanged,
+  });
+
+  final LearningMode selectedMode;
+  final ValueChanged<LearningMode> onModeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.greyLight.withValues(alpha: 0.5)),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Row(
+            children: [
+              Expanded(
+                child: _ModeCard(
+                  title: l10n.modeJapanese,
+                  icon: Icons.translate,
+                  isSelected: selectedMode == LearningMode.japanese,
+                  onTap: () => onModeChanged(LearningMode.japanese),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: _ModeCard(
+                  title: l10n.modeEnglish,
+                  icon: Icons.language,
+                  isSelected: selectedMode == LearningMode.english,
+                  onTap: () => onModeChanged(LearningMode.english),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: _ModeCard(
+                  title: l10n.modeKorean,
+                  icon: Icons.text_format,
+                  isSelected: selectedMode == LearningMode.korean,
+                  onTap: () => onModeChanged(LearningMode.korean),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    required this.title,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Using AnimatedContainer for smooth transition
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.sakuraLight.withValues(alpha: 0.3)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? AppColors.sakuraDark : Colors.transparent,
+          width: 1.5,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color:
+                    isSelected ? AppColors.sakuraDark : AppColors.textTertiary,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isSelected
+                      ? AppColors.sakuraDark
+                      : AppColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

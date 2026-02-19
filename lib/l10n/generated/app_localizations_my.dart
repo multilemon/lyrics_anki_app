@@ -106,5 +106,60 @@ class AppLocalizationsMy extends AppLocalizations {
   String get exportButton => 'ပို့ရန်';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'သီချင်းစာသား မရှိပါ။';
+
+  @override
+  String get vocabType => 'ဝေါဟာရ';
+
+  @override
+  String get grammarType => 'သဒ္ဒါ';
+
+  @override
+  String get kanjiType => 'ခန်းဂျိ';
+
+  @override
+  String get closeButton => 'ပိတ်';
+
+  @override
+  String get allFilter => 'အားလုံး';
+
+  @override
+  String get otherFilter => 'အခြား';
+
+  @override
+  String get learningModeLabel => 'လေ့လာမှုမုဒ်';
+
+  @override
+  String get modeJapanese => 'ဂျပန်ဘာသာ လေ့လာ';
+
+  @override
+  String get modeEnglish => 'အင်္ဂလိပ်ဘာသာ လေ့လာ';
+
+  @override
+  String get modeKorean => 'ကိုရီးယားဘာသာ လေ့လာ';
+
+  @override
+  String get ipaType => 'IPA';
+
+  @override
+  String get structureType => 'ဖွဲ့စည်းပုံ';
+
+  @override
+  String get songTitleHintEn => 'ဥပမာ Shape of You';
+
+  @override
+  String get artistNameHintEn => 'ဥပမာ Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => 'ဥပမာ Gangnam Style';
+
+  @override
+  String get artistNameHintKo => 'ဥပမာ PSY';
+
+  @override
+  String get romanizationType => 'ရောမဂဏန်း';
+
+  @override
+  String get reverseLearningDescription =>
+      'ပြောင်းပြန်လေ့လာမှု: ဂျပန်စကားပြောသူများ အင်္ဂလိပ်/ကိုရီးယား လေ့လာရန်။';
 }

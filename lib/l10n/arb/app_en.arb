@@ -16,7 +16,7 @@
     "@songTitleLabel": {
         "description": "Label for song title input"
     },
-    "songTitleHint": "e.g. Lemon",
+    "songTitleHint": "e.g. First Love",
     "@songTitleHint": {
         "description": "Hint text for song title input"
     },
@@ -24,7 +24,7 @@
     "@artistNameLabel": {
         "description": "Label for artist name input"
     },
-    "artistNameHint": "e.g. Kenshi Yonezu",
+    "artistNameHint": "e.g. Utada Hikaru",
     "@artistNameHint": {
         "description": "Hint text for artist name input"
     },
@@ -132,5 +132,77 @@
     "noLyricsAvailable": "No lyrics available.",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
+    },
+    "vocabType": "Vocabulary",
+    "@vocabType": {
+        "description": "Label for Vocabulary type in popup"
+    },
+    "grammarType": "Grammar",
+    "@grammarType": {
+        "description": "Label for Grammar type in popup"
+    },
+    "kanjiType": "Kanji",
+    "@kanjiType": {
+        "description": "Label for Kanji type in popup"
+    },
+    "closeButton": "Close",
+    "@closeButton": {
+        "description": "Label for Close button"
+    },
+    "allFilter": "All",
+    "@allFilter": {
+        "description": "Label for 'All' filter chip"
+    },
+    "otherFilter": "Other",
+    "@otherFilter": {
+        "description": "Label for 'Other' filter chip"
+    },
+    "learningModeLabel": "Learning Mode",
+    "@learningModeLabel": {
+        "description": "Label for learning mode toggle"
+    },
+    "modeJapanese": "Learn Japanese",
+    "@modeJapanese": {
+        "description": "Option for learning Japanese"
+    },
+    "modeEnglish": "Learn English",
+    "@modeEnglish": {
+        "description": "Option for learning English (for JP speakers)"
+    },
+    "modeKorean": "Learn Korean",
+    "@modeKorean": {
+        "description": "Option for learning Korean (for JP speakers)"
+    },
+    "ipaType": "IPA",
+    "@ipaType": {
+        "description": "Label for IPA field"
+    },
+    "structureType": "Structure",
+    "@structureType": {
+        "description": "Label for Grammar Structure field"
+    },
+    "songTitleHintEn": "e.g. Shape of You",
+    "@songTitleHintEn": {
+        "description": "Hint text for song title input (English)"
+    },
+    "artistNameHintEn": "e.g. Ed Sheeran",
+    "@artistNameHintEn": {
+        "description": "Hint text for artist name input (English)"
+    },
+    "songTitleHintKo": "e.g. Gangnam Style",
+    "@songTitleHintKo": {
+        "description": "Hint text for song title input (Korean)"
+    },
+    "artistNameHintKo": "e.g. PSY",
+    "@artistNameHintKo": {
+        "description": "Hint text for artist name input (Korean)"
+    },
+    "romanizationType": "Romanization",
+    "@romanizationType": {
+        "description": "Label for Romanization column/type"
+    },
+    "reverseLearningDescription": "Reverse Learning Mode: For Japanese speakers learning English/Korean.",
+    "@reverseLearningDescription": {
+        "description": "Description text for reverse learning modes"
     }
 }

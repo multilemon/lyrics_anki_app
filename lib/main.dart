@@ -21,10 +21,26 @@ void main() async {
       ..registerAdapter(HistoryItemAdapter())
       ..registerAdapter(VocabAdapter())
       ..registerAdapter(GrammarAdapter())
-      ..registerAdapter(KanjiAdapter());
+      ..registerAdapter(KanjiAdapter())
+      ..registerAdapter(EnVocabAdapter())
+      ..registerAdapter(EnGrammarAdapter());
 
-    box = await Hive.openBox<HistoryItem>('history_box');
-    settingsBox = await Hive.openBox('settings');
+    try {
+      box = await Hive.openBox<HistoryItem>('history_box');
+      settingsBox = await Hive.openBox('settings');
+    } catch (e) {
+      debugPrint(
+        '⚠️ Hive openBox failed. Attempting to recover by clearing box...',
+      );
+      try {
+        await Hive.deleteBoxFromDisk('history_box');
+        await Hive.deleteBoxFromDisk('settings');
+        box = await Hive.openBox<HistoryItem>('history_box');
+        settingsBox = await Hive.openBox('settings');
+      } catch (e2) {
+        debugPrint('🔴 Critical: Failed to recover Hive box: $e2');
+      }
+    }
   } catch (e, st) {
     debugPrint('Hive initialization failed: $e\n$st');
   }

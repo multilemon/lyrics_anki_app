@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:file_saver/file_saver.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
@@ -8,9 +9,12 @@ import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_service_impl.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/musical_note_loading.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/native_video_player.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_list_item.dart';
 import 'package:lyrics_anki_app/features/main/presentation/pages/main_page.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 
@@ -21,24 +25,10 @@ class LyricsPage extends ConsumerStatefulWidget {
   ConsumerState<LyricsPage> createState() => _LyricsPageState();
 }
 
-class _LyricsPageState extends ConsumerState<LyricsPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _LyricsPageState extends ConsumerState<LyricsPage> {
   bool _showPlayer = false;
   bool _isDragging = false;
   Offset? _playerOffset;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,431 +41,869 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
       }
     });
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 800),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
+    // Watch the async state for data
+    final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
 
-                    // Song Title & Artist Header
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final analysis =
-                            ref.watch(lyricsNotifierProvider).asData?.value;
-                        if (analysis == null) return const SizedBox.shrink();
+    // Use currentMode to determine tab layout even during loading
+    final notifier = ref.read(lyricsNotifierProvider.notifier);
+    final currentMode = notifier.currentMode;
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            children: [
-                              Text(
-                                analysis.song,
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                analysis.artist,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontStyle: FontStyle.italic,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 24),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+    // Logic: Trust data if present, otherwise use intended mode
+    final bool isReverseLearning;
+    if (analysis != null) {
+      isReverseLearning = analysis.enVocab != null;
+    } else {
+      isReverseLearning = currentMode == LearningMode.english ||
+          currentMode == LearningMode.korean;
+    }
 
-                    // Filters (Quick Select) - Applies to all tabs
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final analysis =
-                            ref.watch(lyricsNotifierProvider).asData?.value;
-                        if (analysis == null) return const SizedBox.shrink();
+    final tabCount = isReverseLearning ? 3 : 4;
 
-                        final selected = ref.watch(selectionManagerProvider);
+    return DefaultTabController(
+      length: tabCount,
+      key: ValueKey(tabCount),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
 
-                        bool isLevelSelected(String level) {
-                          final vocabIndices = <int>[];
-                          for (var i = 0; i < analysis.vocabs.length; i++) {
-                            if (analysis.vocabs[i].jlptV.trim().toUpperCase() ==
-                                level.toUpperCase()) {
-                              vocabIndices.add(i);
-                            }
-                          }
+                      // Song Title & Artist Header
+                      Consumer(
+                        builder: (context, ref, _) {
+                          if (analysis == null) return const SizedBox.shrink();
 
-                          final grammarIndices = <int>[];
-                          for (var i = 0; i < analysis.grammar.length; i++) {
-                            if (analysis.grammar[i].level
-                                    .trim()
-                                    .toUpperCase() ==
-                                level.toUpperCase()) {
-                              grammarIndices.add(i);
-                            }
-                          }
-
-                          final kanjiIndices = <int>[];
-                          for (var i = 0; i < analysis.kanji.length; i++) {
-                            if (analysis.kanji[i].level.trim().toUpperCase() ==
-                                level.toUpperCase()) {
-                              kanjiIndices.add(i);
-                            }
-                          }
-
-                          if (vocabIndices.isEmpty &&
-                              grammarIndices.isEmpty &&
-                              kanjiIndices.isEmpty) {
-                            return false;
-                          }
-
-                          final vocabSelected = vocabIndices
-                              .every(selected.vocabIndices.contains);
-                          final grammarSelected = grammarIndices
-                              .every(selected.grammarIndices.contains);
-                          final kanjiSelected = kanjiIndices
-                              .every(selected.kanjiIndices.contains);
-
-                          return vocabSelected &&
-                              grammarSelected &&
-                              kanjiSelected;
-                        }
-
-                        bool isAllSelected() {
-                          if (analysis.vocabs.isEmpty &&
-                              analysis.grammar.isEmpty &&
-                              analysis.kanji.isEmpty) {
-                            return false;
-                          }
-
-                          final vocabAll = selected.vocabIndices.length ==
-                              analysis.vocabs.length;
-                          final grammarAll = selected.grammarIndices.length ==
-                              analysis.grammar.length;
-                          final kanjiAll = selected.kanjiIndices.length ==
-                              analysis.kanji.length;
-
-                          return vocabAll && grammarAll && kanjiAll;
-                        }
-
-                        final presentLevels = <String>{};
-                        var hasOther = false;
-
-                        void checkLevels(
-                          List<dynamic> items,
-                          String Function(dynamic) getLevel,
-                        ) {
-                          for (final item in items) {
-                            final lvl = getLevel(item).trim().toUpperCase();
-                            if (['N1', 'N2', 'N3', 'N4', 'N5'].contains(lvl)) {
-                              presentLevels.add(lvl);
-                            } else {
-                              hasOther = true;
-                            }
-                          }
-                        }
-
-                        checkLevels(analysis.vocabs, (d) => (d as Vocab).jlptV);
-                        checkLevels(
-                          analysis.grammar,
-                          (d) => (d as Grammar).level,
-                        );
-                        checkLevels(analysis.kanji, (d) => (d as Kanji).level);
-
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              _FilterChip(
-                                label: 'All', // TODO(user): Localize
-                                value: isAllSelected(),
-                                onChanged: (val) {
-                                  ref
-                                      .read(selectionManagerProvider.notifier)
-                                      .toggleAll(analysis, select: val);
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              for (final level in [
-                                'N1',
-                                'N2',
-                                'N3',
-                                'N4',
-                                'N5',
-                              ])
-                                if (presentLevels.contains(level)) ...[
-                                  _FilterChip(
-                                    label: level,
-                                    value: isLevelSelected(level),
-                                    onChanged: (val) {
-                                      ref
-                                          .read(
-                                            selectionManagerProvider.notifier,
-                                          )
-                                          .toggleLevel(
-                                            analysis,
-                                            level,
-                                            select: val,
-                                          );
-                                    },
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              children: [
+                                Text(
+                                  analysis.song,
+                                  style:
+                                      theme.textTheme.headlineSmall?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  const SizedBox(width: 8),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  analysis.artist,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (!analysis.isComplete) ...[
+                                  const SizedBox(height: 12),
+                                  MusicalNoteLoading(
+                                    compact: true,
+                                    message: context.l10n.analysisInProgress,
+                                  ),
                                 ],
-                              if (hasOther)
+                                const SizedBox(height: 24),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Filters (Quick Select) - Applies to all tabs
+                      Consumer(
+                        builder: (context, ref, child) {
+                          if (analysis == null || !analysis.isComplete) {
+                            return const SizedBox.shrink();
+                          }
+
+                          bool isLevelSelected(String level) {
+                            final selected =
+                                ref.watch(selectionManagerProvider);
+
+                            // JLPT Check
+                            final vocabIndices = <int>[];
+                            for (var i = 0; i < analysis.vocabs.length; i++) {
+                              if (analysis.vocabs[i].jlptV
+                                      .trim()
+                                      .toUpperCase() ==
+                                  level.toUpperCase()) {
+                                vocabIndices.add(i);
+                              }
+                            }
+
+                            final grammarIndices = <int>[];
+                            for (var i = 0; i < analysis.grammar.length; i++) {
+                              if (analysis.grammar[i].level
+                                      .trim()
+                                      .toUpperCase() ==
+                                  level.toUpperCase()) {
+                                grammarIndices.add(i);
+                              }
+                            }
+
+                            // CEFR Check (English/Korean) - Only Grammar has level
+                            final enGrammarIndices = <int>[];
+                            if (analysis.enGrammar != null) {
+                              for (var i = 0;
+                                  i < analysis.enGrammar!.length;
+                                  i++) {
+                                if (analysis.enGrammar![i].cefrLevel
+                                        .trim()
+                                        .toUpperCase() ==
+                                    level.toUpperCase()) {
+                                  enGrammarIndices.add(i);
+                                }
+                              }
+                            }
+
+                            final kanjiIndices = <int>[];
+                            for (var i = 0; i < analysis.kanji.length; i++) {
+                              if (analysis.kanji[i].level
+                                      .trim()
+                                      .toUpperCase() ==
+                                  level.toUpperCase()) {
+                                kanjiIndices.add(i);
+                              }
+                            }
+
+                            if (vocabIndices.isEmpty &&
+                                grammarIndices.isEmpty &&
+                                enGrammarIndices.isEmpty &&
+                                kanjiIndices.isEmpty) {
+                              return false;
+                            }
+
+                            final vocabSelected = vocabIndices
+                                .every(selected.vocabIndices.contains);
+                            final grammarSelected = grammarIndices
+                                    .every(selected.grammarIndices.contains) &&
+                                enGrammarIndices
+                                    .every(selected.grammarIndices.contains);
+                            final kanjiSelected = kanjiIndices
+                                .every(selected.kanjiIndices.contains);
+
+                            return vocabSelected &&
+                                grammarSelected &&
+                                kanjiSelected;
+                          }
+
+                          bool isAllSelected() {
+                            final selected =
+                                ref.watch(selectionManagerProvider);
+
+                            // Check if empty content (considering both modes)
+                            final hasVocab = analysis.vocabs.isNotEmpty ||
+                                (analysis.enVocab?.isNotEmpty ?? false);
+                            final hasGrammar = analysis.grammar.isNotEmpty ||
+                                (analysis.enGrammar?.isNotEmpty ?? false);
+                            final hasKanji = analysis.kanji.isNotEmpty;
+
+                            if (!hasVocab && !hasGrammar && !hasKanji) {
+                              return false;
+                            }
+
+                            final vocabAll = selected.vocabIndices.length ==
+                                (analysis.enVocab?.length ??
+                                    analysis.vocabs.length);
+                            final grammarAll = selected.grammarIndices.length ==
+                                (analysis.enGrammar?.length ??
+                                    analysis.grammar.length);
+                            final kanjiAll = selected.kanjiIndices.length ==
+                                analysis.kanji.length;
+
+                            return vocabAll && grammarAll && kanjiAll;
+                          }
+
+                          final presentLevels = <String>{};
+                          var hasOther = false;
+
+                          // Determine target levels based on mode
+                          final targetLevels = isReverseLearning
+                              ? ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+                              : ['N1', 'N2', 'N3', 'N4', 'N5'];
+
+                          void checkLevels(
+                            List<dynamic> items,
+                            String Function(dynamic) getLevel,
+                          ) {
+                            for (final item in items) {
+                              final lvl = getLevel(item).trim().toUpperCase();
+                              if (targetLevels.contains(lvl)) {
+                                presentLevels.add(lvl);
+                              } else {
+                                hasOther = true;
+                              }
+                            }
+                          }
+
+                          if (isReverseLearning) {
+                            if (analysis.enGrammar != null) {
+                              checkLevels(
+                                analysis.enGrammar!,
+                                (d) => (d as EnGrammar).cefrLevel,
+                              );
+                            }
+                            // Note: EnVocab has no level, so we don't check it for levels
+                            // Assuming non-level items (like vocab) just get selected/deselected by "All"
+                            // or if we decide to handle "Other" for them.
+                            // Currently EnVocab behaves as "Other" implicitly if we only filter by grammar levels?
+                            // Actually, if we filter by A1, we select A1 Grammar. Vocab is untouched?
+                            // SelectionManager toggleLevel checks EnGrammar.
+                            // So Vocab is effectively independent of level chips.
+                          } else {
+                            checkLevels(
+                              analysis.vocabs,
+                              (d) => (d as Vocab).jlptV,
+                            );
+                            checkLevels(
+                              analysis.grammar,
+                              (d) => (d as Grammar).level,
+                            );
+                            checkLevels(
+                              analysis.kanji,
+                              (d) => (d as Kanji).level,
+                            );
+                          }
+
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
                                 _FilterChip(
-                                  label: 'Other', // TODO(user): Localize
-                                  value: (() {
-                                    final nonLevelVocab = <int>[];
-                                    for (var i = 0;
-                                        i < analysis.vocabs.length;
-                                        i++) {
-                                      final lvl = analysis.vocabs[i].jlptV
-                                          .trim()
-                                          .toUpperCase();
-                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                          .contains(lvl)) {
-                                        nonLevelVocab.add(i);
-                                      }
-                                    }
-
-                                    final nonLevelGrammar = <int>[];
-                                    for (var i = 0;
-                                        i < analysis.grammar.length;
-                                        i++) {
-                                      final lvl = analysis.grammar[i].level
-                                          .trim()
-                                          .toUpperCase();
-                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                          .contains(lvl)) {
-                                        nonLevelGrammar.add(i);
-                                      }
-                                    }
-
-                                    final nonLevelKanji = <int>[];
-                                    for (var i = 0;
-                                        i < analysis.kanji.length;
-                                        i++) {
-                                      final lvl = analysis.kanji[i].level
-                                          .trim()
-                                          .toUpperCase();
-                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                          .contains(lvl)) {
-                                        nonLevelKanji.add(i);
-                                      }
-                                    }
-
-                                    if (nonLevelVocab.isEmpty &&
-                                        nonLevelGrammar.isEmpty &&
-                                        nonLevelKanji.isEmpty) {
-                                      return false;
-                                    }
-
-                                    final vocabAll = nonLevelVocab
-                                        .every(selected.vocabIndices.contains);
-                                    final grammarAll = nonLevelGrammar.every(
-                                      selected.grammarIndices.contains,
-                                    );
-                                    final kanjiAll = nonLevelKanji
-                                        .every(selected.kanjiIndices.contains);
-
-                                    return vocabAll && grammarAll && kanjiAll;
-                                  })(),
+                                  label: context.l10n.allFilter,
+                                  value: isAllSelected(),
                                   onChanged: (val) {
-                                    final targetIndices = <int>[];
-                                    for (var i = 0;
-                                        i < analysis.vocabs.length;
-                                        i++) {
-                                      final lvl = analysis.vocabs[i].jlptV
-                                          .trim()
-                                          .toUpperCase();
-                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                          .contains(lvl)) {
-                                        targetIndices.add(i);
-                                      }
-                                    }
-
-                                    for (final idx in targetIndices) {
-                                      ref
-                                          .read(
-                                            selectionManagerProvider.notifier,
-                                          )
-                                          .toggle(
-                                            SelectionType.vocab,
-                                            idx,
-                                            force: val,
-                                          );
-                                    }
-                                    for (var i = 0;
-                                        i < analysis.grammar.length;
-                                        i++) {
-                                      final lvl = analysis.grammar[i].level
-                                          .trim()
-                                          .toUpperCase();
-                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                          .contains(lvl)) {
-                                        ref
-                                            .read(
-                                              selectionManagerProvider.notifier,
-                                            )
-                                            .toggle(
-                                              SelectionType.grammar,
-                                              i,
-                                              force: val,
-                                            );
-                                      }
-                                    }
-                                    for (var i = 0;
-                                        i < analysis.kanji.length;
-                                        i++) {
-                                      final lvl = analysis.kanji[i].level
-                                          .trim()
-                                          .toUpperCase();
-                                      if (!['N1', 'N2', 'N3', 'N4', 'N5']
-                                          .contains(lvl)) {
-                                        ref
-                                            .read(
-                                              selectionManagerProvider.notifier,
-                                            )
-                                            .toggle(
-                                              SelectionType.kanji,
-                                              i,
-                                              force: val,
-                                            );
-                                      }
-                                    }
+                                    ref
+                                        .read(selectionManagerProvider.notifier)
+                                        .toggleAll(analysis, select: val);
                                   },
                                 ),
+                                const SizedBox(width: 8),
+                                for (final level in targetLevels)
+                                  if (presentLevels.contains(level)) ...[
+                                    _FilterChip(
+                                      label: level,
+                                      value: isLevelSelected(level),
+                                      onChanged: (val) {
+                                        ref
+                                            .read(
+                                              selectionManagerProvider.notifier,
+                                            )
+                                            .toggleLevel(
+                                              analysis,
+                                              level,
+                                              select: val,
+                                            );
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                if (hasOther)
+                                  _FilterChip(
+                                    label: context.l10n.otherFilter,
+                                    value: (() {
+                                      final selected =
+                                          ref.watch(selectionManagerProvider);
+
+                                      if (isReverseLearning) {
+                                        // For Reverse/Korean, "Other" might mean Grammar without level,
+                                        // OR conceptually it could include all EnVocab since they have no level??
+                                        // For now, let's treat EnGrammar without valid CEFR as "Other".
+                                        // And ignore EnVocab for "Other" logic to keep it simple, same as level chips.
+
+                                        final nonLevelGrammar = <int>[];
+                                        if (analysis.enGrammar != null) {
+                                          for (var i = 0;
+                                              i < analysis.enGrammar!.length;
+                                              i++) {
+                                            final lvl = analysis
+                                                .enGrammar![i].cefrLevel
+                                                .trim()
+                                                .toUpperCase();
+                                            if (!targetLevels.contains(lvl)) {
+                                              nonLevelGrammar.add(i);
+                                            }
+                                          }
+                                        }
+
+                                        if (nonLevelGrammar.isEmpty) {
+                                          return false;
+                                        }
+                                        return nonLevelGrammar.every(
+                                          selected.grammarIndices.contains,
+                                        );
+                                      }
+
+                                      // Japanese Logic
+                                      final nonLevelVocab = <int>[];
+                                      for (var i = 0;
+                                          i < analysis.vocabs.length;
+                                          i++) {
+                                        final lvl = analysis.vocabs[i].jlptV
+                                            .trim()
+                                            .toUpperCase();
+                                        if (!targetLevels.contains(lvl)) {
+                                          nonLevelVocab.add(i);
+                                        }
+                                      }
+
+                                      final nonLevelGrammar = <int>[];
+                                      for (var i = 0;
+                                          i < analysis.grammar.length;
+                                          i++) {
+                                        final lvl = analysis.grammar[i].level
+                                            .trim()
+                                            .toUpperCase();
+                                        if (!targetLevels.contains(lvl)) {
+                                          nonLevelGrammar.add(i);
+                                        }
+                                      }
+
+                                      final nonLevelKanji = <int>[];
+                                      for (var i = 0;
+                                          i < analysis.kanji.length;
+                                          i++) {
+                                        final lvl = analysis.kanji[i].level
+                                            .trim()
+                                            .toUpperCase();
+                                        if (!targetLevels.contains(lvl)) {
+                                          nonLevelKanji.add(i);
+                                        }
+                                      }
+
+                                      if (nonLevelVocab.isEmpty &&
+                                          nonLevelGrammar.isEmpty &&
+                                          nonLevelKanji.isEmpty) {
+                                        return false;
+                                      }
+
+                                      final vocabAll = nonLevelVocab.every(
+                                        selected.vocabIndices.contains,
+                                      );
+                                      final grammarAll = nonLevelGrammar.every(
+                                        selected.grammarIndices.contains,
+                                      );
+                                      final kanjiAll = nonLevelKanji.every(
+                                        selected.kanjiIndices.contains,
+                                      );
+
+                                      return vocabAll && grammarAll && kanjiAll;
+                                    })(),
+                                    onChanged: (val) {
+                                      if (isReverseLearning) {
+                                        if (analysis.enGrammar != null) {
+                                          for (var i = 0;
+                                              i < analysis.enGrammar!.length;
+                                              i++) {
+                                            final lvl = analysis
+                                                .enGrammar![i].cefrLevel
+                                                .trim()
+                                                .toUpperCase();
+                                            if (!targetLevels.contains(lvl)) {
+                                              ref
+                                                  .read(
+                                                    selectionManagerProvider
+                                                        .notifier,
+                                                  )
+                                                  .toggle(
+                                                    SelectionType.grammar,
+                                                    i,
+                                                    force: val,
+                                                  );
+                                            }
+                                          }
+                                        }
+                                      } else {
+                                        // Japanese logic
+                                        final targetIndices = <int>[];
+                                        for (var i = 0;
+                                            i < analysis.vocabs.length;
+                                            i++) {
+                                          final lvl = analysis.vocabs[i].jlptV
+                                              .trim()
+                                              .toUpperCase();
+                                          if (!targetLevels.contains(lvl)) {
+                                            targetIndices.add(i);
+                                          }
+                                        }
+
+                                        for (final idx in targetIndices) {
+                                          ref
+                                              .read(
+                                                selectionManagerProvider
+                                                    .notifier,
+                                              )
+                                              .toggle(
+                                                SelectionType.vocab,
+                                                idx,
+                                                force: val,
+                                              );
+                                        }
+
+                                        for (var i = 0;
+                                            i < analysis.grammar.length;
+                                            i++) {
+                                          final lvl = analysis.grammar[i].level
+                                              .trim()
+                                              .toUpperCase();
+                                          if (!targetLevels.contains(lvl)) {
+                                            ref
+                                                .read(
+                                                  selectionManagerProvider
+                                                      .notifier,
+                                                )
+                                                .toggle(
+                                                  SelectionType.grammar,
+                                                  i,
+                                                  force: val,
+                                                );
+                                          }
+                                        }
+
+                                        for (var i = 0;
+                                            i < analysis.kanji.length;
+                                            i++) {
+                                          final lvl = analysis.kanji[i].level
+                                              .trim()
+                                              .toUpperCase();
+                                          if (!targetLevels.contains(lvl)) {
+                                            ref
+                                                .read(
+                                                  selectionManagerProvider
+                                                      .notifier,
+                                                )
+                                                .toggle(
+                                                  SelectionType.kanji,
+                                                  i,
+                                                  force: val,
+                                                );
+                                          }
+                                        }
+                                      }
+                                    },
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Tabs
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final analysis =
+                              ref.watch(lyricsNotifierProvider).asData?.value;
+                          if (analysis == null || !analysis.isComplete) {
+                            return const SizedBox.shrink();
+                          }
+
+                          final isReverseLearning = analysis.enVocab != null;
+
+                          // Calculate counts based on learning mode
+                          final int vocabCount;
+                          final int grammarCount;
+                          final int kanjiCount;
+
+                          if (isReverseLearning) {
+                            vocabCount = analysis.enVocab?.length ?? 0;
+                            grammarCount = analysis.enGrammar?.length ?? 0;
+                            kanjiCount =
+                                0; // Not applicable for reverse learning
+                          } else {
+                            vocabCount = analysis.vocabs.length;
+                            grammarCount = analysis.grammar.length;
+                            kanjiCount = analysis.kanji.length;
+                          }
+
+                          // Prepare labels
+                          final vocabLabel =
+                              '${context.l10n.vocabTab} ($vocabCount)';
+                          final grammarLabel =
+                              '${context.l10n.grammarTab} ($grammarCount)';
+                          final structureLabel =
+                              '${context.l10n.structureType} ($grammarCount)';
+                          final kanjiLabel =
+                              '${context.l10n.kanjiTab} ($kanjiCount)';
+
+                          if (isReverseLearning) {
+                            return TabBar(
+                              labelColor: AppColors.sakuraDark,
+                              unselectedLabelColor: AppColors.textSecondary,
+                              indicatorColor: AppColors.sakuraDark,
+                              tabs: [
+                                Tab(text: context.l10n.lyricsTab),
+                                Tab(text: vocabLabel),
+                                Tab(text: structureLabel),
+                              ],
+                            );
+                          }
+
+                          return TabBar(
+                            labelColor: AppColors.sakuraDark,
+                            unselectedLabelColor: AppColors.textSecondary,
+                            indicatorColor: AppColors.sakuraDark,
+                            tabs: [
+                              Tab(text: context.l10n.lyricsTab),
+                              Tab(text: vocabLabel),
+                              Tab(text: grammarLabel),
+                              Tab(text: kanjiLabel),
                             ],
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
 
-                    // Tabs
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final analysis =
-                            ref.watch(lyricsNotifierProvider).asData?.value;
-                        final vocabCount = analysis?.vocabs.length ?? 0;
-                        final grammarCount = analysis?.grammar.length ?? 0;
-                        final kanjiCount = analysis?.kanji.length ?? 0;
-
-                        return TabBar(
-                          controller: _tabController,
-                          labelColor: AppColors.sakuraDark,
-                          unselectedLabelColor: AppColors.textSecondary,
-                          indicatorColor: AppColors.sakuraDark,
-                          tabs: [
-                            Tab(text: '${context.l10n.vocabTab} ($vocabCount)'),
-                            Tab(
-                              text:
-                                  '${context.l10n.grammarTab} ($grammarCount)',
-                            ),
-                            Tab(text: '${context.l10n.kanjiTab} ($kanjiCount)'),
-                            Tab(text: context.l10n.lyricsTab),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Results Area
-                    Expanded(
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          final state = ref.watch(lyricsNotifierProvider);
-                          return state.when(
-                            data: (analysis) {
-                              if (analysis == null) {
-                                return Center(
-                                  child: Text(
-                                    'No analysis data available.',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.textTertiary,
+                      // Results Area
+                      Expanded(
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final state = ref.watch(lyricsNotifierProvider);
+                            return state.when(
+                              data: (analysis) {
+                                if (analysis == null) {
+                                  return Center(
+                                    child: Text(
+                                      'No analysis data available.',
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color: AppColors.textTertiary,
+                                      ),
                                     ),
-                                  ),
+                                  );
+                                }
+
+                                final isLoading = !analysis.isComplete;
+
+                                final isReverseLearning =
+                                    analysis.enVocab != null;
+
+                                if (isReverseLearning) {
+                                  return TabBarView(
+                                    children: [
+                                      _LyricsView(analysis: analysis),
+                                      _EnVocabList(
+                                        vocabList: analysis.enVocab ?? [],
+                                        isLoading: isLoading,
+                                      ),
+                                      _EnGrammarList(
+                                        grammarList: analysis.enGrammar ?? [],
+                                        isLoading: isLoading,
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                return TabBarView(
+                                  children: [
+                                    _LyricsView(analysis: analysis),
+                                    _VocabList(
+                                      vocabList: analysis.vocabs,
+                                      isLoading: isLoading,
+                                    ),
+                                    _GrammarList(
+                                      grammarList: analysis.grammar,
+                                      isLoading: isLoading,
+                                    ),
+                                    _KanjiList(
+                                      kanjiList: analysis.kanji,
+                                      isLoading: isLoading,
+                                    ),
+                                  ],
                                 );
-                              }
-
-                              return TabBarView(
-                                controller: _tabController,
-                                children: [
-                                  _VocabList(vocabList: analysis.vocabs),
-                                  _GrammarList(grammarList: analysis.grammar),
-                                  _KanjiList(kanjiList: analysis.kanji),
-                                  _LyricsView(lyrics: analysis.lyrics),
-                                ],
-                              );
-                            },
-                            loading: () => Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const CircularProgressIndicator(
-                                    color: AppColors.sakuraDark,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    context.l10n.analysisInProgress,
-                                    textAlign: TextAlign.center,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
+                              },
+                              loading: () => Center(
+                                child: MusicalNoteLoading(
+                                  message: context.l10n.analysisInProgress,
+                                ),
                               ),
-                            ),
-                            error: (Object e, StackTrace s) {
-                              if (e is SongNotFoundException) {
-                                return Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
+                              error: (Object e, StackTrace s) {
+                                if (e is SongNotFoundException) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.search_off_rounded,
+                                            size: 48,
+                                            color: AppColors.error,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            context.l10n.songNotFound,
+                                            style: theme.textTheme.headlineSmall
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            context.l10n.songNotFoundMessage(
+                                              e.title,
+                                              e.artist,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            style: theme.textTheme.bodyMedium,
+                                          ),
+                                          const SizedBox(height: 32),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              // Clear Home fields
+                                              ref
+                                                  .read(
+                                                    clearHomeFormSignalProvider
+                                                        .notifier,
+                                                  )
+                                                  .state++;
+                                              // Navigate to Home (Index 0)
+                                              ref
+                                                  .read(
+                                                    navIndexProvider.notifier,
+                                                  )
+                                                  .state = 0;
+                                              // Also clear current lyrics state
+                                              ref.invalidate(
+                                                lyricsNotifierProvider,
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  AppColors.sakuraDark,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 24,
+                                                vertical: 12,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            icon: const Icon(
+                                              Icons.refresh_rounded,
+                                            ),
+                                            label: const Text('Try Again'),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.search_off_rounded,
-                                          size: 48,
-                                          color: AppColors.error,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          context.l10n.songNotFound,
-                                          style: theme.textTheme.headlineSmall
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.textSecondary,
+                                  );
+                                }
+
+                                if (e is ServerOverloadedException) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(32),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.cloud_off_rounded,
+                                            size: 48,
+                                            color: AppColors.sakuraDark,
                                           ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          context.l10n.songNotFoundMessage(
-                                            e.title,
-                                            e.artist,
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'AI is Busy',
+                                            style: theme.textTheme.headlineSmall
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textSecondary,
+                                            ),
                                           ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'The AI service is currently overloaded (503).\n'
+                                            'This happens with the Free Tier.\n'
+                                            'Please wait a moment and try again.',
+                                            textAlign: TextAlign.center,
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(height: 1.4),
+                                          ),
+                                          const SizedBox(height: 32),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              ref
+                                                  .read(
+                                                    lyricsNotifierProvider
+                                                        .notifier,
+                                                  )
+                                                  .retry();
+                                            },
+                                            icon: const Icon(Icons.refresh),
+                                            label: const Text('Retry Now'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  AppColors.sakuraDark,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 24,
+                                                vertical: 12,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                if (e is QuotaExceededException) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(32),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.hourglass_empty_rounded,
+                                            size: 48,
+                                            color: AppColors.sakuraDark,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'Daily Limit Reached',
+                                            style: theme.textTheme.headlineSmall
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            "You've hit the daily usage limit for the free AI tier.\n"
+                                            'Please try again tomorrow.',
+                                            textAlign: TextAlign.center,
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(height: 1.4),
+                                          ),
+                                          const SizedBox(height: 32),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              // Describe navigation purely via providers
+                                              ref
+                                                  .read(
+                                                    clearHomeFormSignalProvider
+                                                        .notifier,
+                                                  )
+                                                  .state++;
+                                              ref
+                                                  .read(
+                                                    navIndexProvider.notifier,
+                                                  )
+                                                  .state = 0;
+                                              ref.invalidate(
+                                                lyricsNotifierProvider,
+                                              );
+                                            },
+                                            icon: const Icon(Icons.arrow_back),
+                                            label: const Text('Back to Search'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  AppColors.sakuraDark,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 24,
+                                                vertical: 12,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                // General Error Handling
+                                final errorMsg = e.toString();
+                                final isNotJapanese = errorMsg.contains(
+                                  'not appear to be primarily in Japanese',
+                                );
+                                final isJsonError =
+                                    errorMsg.contains('JSON Parse Error') ||
+                                        errorMsg.contains('FormatException');
+                                final isLyricsNotFound = errorMsg.contains(
+                                  'LYRICS_NOT_FOUND',
+                                );
+
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isNotJapanese
+                                            ? Icons.translate_rounded
+                                            : isLyricsNotFound
+                                                ? Icons.library_music_rounded
+                                                : Icons.error_outline,
+                                        size: 48,
+                                        color: AppColors.error,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        isNotJapanese
+                                            ? 'Language Mismatch'
+                                            : isLyricsNotFound
+                                                ? 'Lyrics Unavailable'
+                                                : 'Analysis Failed',
+                                        style: theme.textTheme.headlineSmall
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 32,
+                                        ),
+                                        child: Text(
+                                          isJsonError
+                                              ? 'Sometimes AI makes a mistake.\n'
+                                                  'Please try again.'
+                                              : isLyricsNotFound
+                                                  ? 'The AI could not find the full official lyrics for this song.\n'
+                                                      'Please try a different song or artist variation.'
+                                                  : errorMsg.replaceAll(
+                                                      'Exception: ',
+                                                      '',
+                                                    ),
                                           textAlign: TextAlign.center,
-                                          style: theme.textTheme.bodyMedium,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(height: 1.4),
                                         ),
-                                        const SizedBox(height: 32),
+                                      ),
+                                      const SizedBox(height: 32),
+                                      if (isNotJapanese || isLyricsNotFound)
                                         ElevatedButton.icon(
                                           onPressed: () {
                                             // Clear Home fields
@@ -494,61 +922,27 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                               lyricsNotifierProvider,
                                             );
                                           },
+                                          icon: const Icon(Icons.search),
+                                          label:
+                                              const Text('Search Another Song'),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
                                                 AppColors.sakuraDark,
                                             foregroundColor: Colors.white,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 24,
-                                              vertical: 12,
+                                              vertical: 14,
+                                            ),
+                                            textStyle: const TextStyle(
+                                              fontWeight: FontWeight.bold,
                                             ),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             ),
                                           ),
-                                          icon:
-                                              const Icon(Icons.refresh_rounded),
-                                          label: const Text('Try Again'),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              if (e is ServerOverloadedException) {
-                                return Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(32),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.cloud_off_rounded,
-                                          size: 48,
-                                          color: AppColors.sakuraDark,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'AI is Busy',
-                                          style: theme.textTheme.headlineSmall
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'The AI service is currently overloaded (503).\n'
-                                          'This happens with the Free Tier.\n'
-                                          'Please wait a moment and try again.',
-                                          textAlign: TextAlign.center,
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(height: 1.4),
-                                        ),
-                                        const SizedBox(height: 32),
+                                        )
+                                      else
                                         ElevatedButton.icon(
                                           onPressed: () {
                                             ref
@@ -559,7 +953,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                                 .retry();
                                           },
                                           icon: const Icon(Icons.refresh),
-                                          label: const Text('Retry Now'),
+                                          label: const Text('Retry Analysis'),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
                                                 AppColors.sakuraDark,
@@ -574,521 +968,332 @@ class _LyricsPageState extends ConsumerState<LyricsPage>
                                             ),
                                           ),
                                         ),
-                                      ],
-                                    ),
+                                    ],
                                   ),
                                 );
-                              }
-
-                              if (e is QuotaExceededException) {
-                                return Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(32),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.hourglass_empty_rounded,
-                                          size: 48,
-                                          color: AppColors.sakuraDark,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'Daily Limit Reached',
-                                          style: theme.textTheme.headlineSmall
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          "You've hit the daily usage limit for the free AI tier.\n"
-                                          'Please try again tomorrow.',
-                                          textAlign: TextAlign.center,
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(height: 1.4),
-                                        ),
-                                        const SizedBox(height: 32),
-                                        ElevatedButton.icon(
-                                          onPressed: () {
-                                            // Describe navigation purely via providers
-                                            ref
-                                                .read(
-                                                  clearHomeFormSignalProvider
-                                                      .notifier,
-                                                )
-                                                .state++;
-                                            ref
-                                                .read(navIndexProvider.notifier)
-                                                .state = 0;
-                                            ref.invalidate(
-                                              lyricsNotifierProvider,
-                                            );
-                                          },
-                                          icon: const Icon(Icons.arrow_back),
-                                          label: const Text('Back to Search'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                AppColors.sakuraDark,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 24,
-                                              vertical: 12,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              // General Error Handling
-                              final errorMsg = e.toString();
-                              final isNotJapanese = errorMsg.contains(
-                                'not appear to be primarily in Japanese',
-                              );
-                              final isJsonError =
-                                  errorMsg.contains('JSON Parse Error') ||
-                                      errorMsg.contains('FormatException');
-                              final isLyricsNotFound = errorMsg.contains(
-                                'LYRICS_NOT_FOUND',
-                              );
-
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      isNotJapanese
-                                          ? Icons.translate_rounded
-                                          : isLyricsNotFound
-                                              ? Icons.library_music_rounded
-                                              : Icons.error_outline,
-                                      size: 48,
-                                      color: AppColors.error,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      isNotJapanese
-                                          ? 'Language Mismatch'
-                                          : isLyricsNotFound
-                                              ? 'Lyrics Unavailable'
-                                              : 'Analysis Failed',
-                                      style: theme.textTheme.headlineSmall
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 32,
-                                      ),
-                                      child: Text(
-                                        isJsonError
-                                            ? 'Sometimes AI makes a mistake.\n'
-                                                'Please try again.'
-                                            : isLyricsNotFound
-                                                ? 'The AI could not find the full official lyrics for this song.\n'
-                                                    'Please try a different song or artist variation.'
-                                                : errorMsg.replaceAll(
-                                                    'Exception: ',
-                                                    '',
-                                                  ),
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(height: 1.4),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 32),
-                                    if (isNotJapanese || isLyricsNotFound)
-                                      ElevatedButton.icon(
-                                        onPressed: () {
-                                          // Clear Home fields
-                                          ref
-                                              .read(
-                                                clearHomeFormSignalProvider
-                                                    .notifier,
-                                              )
-                                              .state++;
-                                          // Navigate to Home (Index 0)
-                                          ref
-                                              .read(navIndexProvider.notifier)
-                                              .state = 0;
-                                          // Also clear current lyrics state
-                                          ref.invalidate(
-                                            lyricsNotifierProvider,
-                                          );
-                                        },
-                                        icon: const Icon(Icons.search),
-                                        label:
-                                            const Text('Search Another Song'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.sakuraDark,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 14,
-                                          ),
-                                          textStyle: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      ElevatedButton.icon(
-                                        onPressed: () {
-                                          ref
-                                              .read(
-                                                lyricsNotifierProvider.notifier,
-                                              )
-                                              .retry();
-                                        },
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text('Retry Analysis'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.sakuraDark,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        },
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          // Floating Video Player
-          if (_showPlayer)
-            Consumer(
-              builder: (context, ref, child) {
-                final analysis =
-                    ref.watch(lyricsNotifierProvider).asData?.value;
-                if (analysis?.youtubeId == null) return const SizedBox.shrink();
+            // Floating Video Player
+            if (_showPlayer)
+              Consumer(
+                builder: (context, ref, child) {
+                  final analysis =
+                      ref.watch(lyricsNotifierProvider).asData?.value;
+                  if (analysis?.youtubeId == null) {
+                    return const SizedBox.shrink();
+                  }
 
-                final size = MediaQuery.of(context).size;
-                const videoWidth = 300.0;
-                const headerHeight = 48.0;
-                const videoHeight = 169.0;
-                const totalHeight = headerHeight + videoHeight;
+                  final size = MediaQuery.of(context).size;
+                  const videoWidth = 300.0;
+                  const headerHeight = 48.0;
+                  const videoHeight = 169.0;
+                  const totalHeight = headerHeight + videoHeight;
 
-                // Default position: Centered
-                final defaultLeft = (size.width - videoWidth) / 2;
-                final defaultTop = (size.height - totalHeight) / 2;
+                  // Default position: Centered
+                  final defaultLeft = (size.width - videoWidth) / 2;
+                  final defaultTop = (size.height - totalHeight) / 2;
 
-                return Positioned(
-                  left: _playerOffset?.dx ?? defaultLeft,
-                  top: _playerOffset?.dy ?? defaultTop,
-                  child: Material(
-                    elevation: 12,
-                    borderRadius: BorderRadius.circular(12),
-                    clipBehavior: Clip.antiAlias,
-                    color: AppColors.sakuraDark,
-                    child: SizedBox(
-                      width: videoWidth,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Drag Handle Header
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onPanStart: (_) =>
-                                setState(() => _isDragging = true),
-                            onPanEnd: (_) =>
-                                setState(() => _isDragging = false),
-                            onPanCancel: () =>
-                                setState(() => _isDragging = false),
-                            onPanUpdate: (details) {
-                              setState(() {
-                                final currentLeft =
-                                    _playerOffset?.dx ?? defaultLeft;
-                                final currentTop =
-                                    _playerOffset?.dy ?? defaultTop;
-                                _playerOffset = Offset(
-                                  currentLeft + details.delta.dx,
-                                  currentTop + details.delta.dy,
-                                );
-                              });
-                            },
-                            child: Container(
-                              height: headerHeight,
-                              color: AppColors.sakuraDark,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.drag_indicator,
-                                    color: Colors.white70,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Video',
-                                      style:
-                                          theme.textTheme.labelMedium?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.close,
-                                      color: Colors.white,
+                  return Positioned(
+                    left: _playerOffset?.dx ?? defaultLeft,
+                    top: _playerOffset?.dy ?? defaultTop,
+                    child: Material(
+                      elevation: 12,
+                      borderRadius: BorderRadius.circular(12),
+                      clipBehavior: Clip.antiAlias,
+                      color: AppColors.sakuraDark,
+                      child: SizedBox(
+                        width: videoWidth,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Drag Handle Header
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onPanStart: (_) =>
+                                  setState(() => _isDragging = true),
+                              onPanEnd: (_) =>
+                                  setState(() => _isDragging = false),
+                              onPanCancel: () =>
+                                  setState(() => _isDragging = false),
+                              onPanUpdate: (details) {
+                                setState(() {
+                                  final currentLeft =
+                                      _playerOffset?.dx ?? defaultLeft;
+                                  final currentTop =
+                                      _playerOffset?.dy ?? defaultTop;
+                                  _playerOffset = Offset(
+                                    currentLeft + details.delta.dx,
+                                    currentTop + details.delta.dy,
+                                  );
+                                });
+                              },
+                              child: Container(
+                                height: headerHeight,
+                                color: AppColors.sakuraDark,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.drag_indicator,
+                                      color: Colors.white70,
                                       size: 20,
                                     ),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () => setState(() {
-                                      _showPlayer = false;
-                                      // Keep _playerOffset to remember position
-                                    }),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Video',
+                                        style: theme.textTheme.labelMedium
+                                            ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () => setState(() {
+                                        _showPlayer = false;
+                                        // Keep _playerOffset to remember position
+                                      }),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Video Player
+                            SizedBox(
+                              height: videoHeight,
+                              child: Stack(
+                                children: [
+                                  const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
                                   ),
+                                  NativeVideoPlayer(
+                                    videoId: analysis!.youtubeId!,
+                                    key: ValueKey(analysis.youtubeId),
+                                  ),
+                                  if (_isDragging)
+                                    Positioned.fill(
+                                      child:
+                                          Container(color: Colors.transparent),
+                                    ),
                                 ],
                               ),
                             ),
-                          ),
-                          // Video Player
-                          SizedBox(
-                            height: videoHeight,
-                            child: Stack(
-                              children: [
-                                const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                NativeVideoPlayer(
-                                  videoId: analysis!.youtubeId!,
-                                  key: ValueKey(analysis.youtubeId),
-                                ),
-                                if (_isDragging)
-                                  Positioned.fill(
-                                    child: Container(color: Colors.transparent),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
+                  );
+                },
+              ),
+          ],
+        ),
+        floatingActionButton: Consumer(
+          builder: (context, ref, child) {
+            final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
+            final selectedState = ref.watch(selectionManagerProvider);
+            final hasSelection = selectedState.vocabIndices.isNotEmpty ||
+                selectedState.grammarIndices.isNotEmpty ||
+                selectedState.kanjiIndices.isNotEmpty;
+
+            if (analysis == null) {
+              return const SizedBox.shrink();
+            }
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (analysis.youtubeId != null) ...[
+                  FloatingActionButton(
+                    heroTag: 'video_fab',
+                    backgroundColor: AppColors.sakuraDark,
+                    onPressed: () => setState(() => _showPlayer = !_showPlayer),
+                    child: _showPlayer
+                        ? Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Icon(
+                                Icons.smart_display_rounded,
+                                color: Colors.white,
+                              ),
+                              // Masking "Eraser" to separate slash from icon
+                              Transform.rotate(
+                                angle: -0.785, // -45 degrees
+                                child: Container(
+                                  width: 4.5,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.sakuraDark,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              ),
+                              // The actual Slash
+                              Transform.rotate(
+                                angle: -0.785,
+                                child: Container(
+                                  width: 2,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(1),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : const Icon(
+                            Icons.smart_display_rounded,
+                            color: Colors.white,
+                          ),
                   ),
-                );
-              },
-            ),
-        ],
-      ),
-      floatingActionButton: Consumer(
-        builder: (context, ref, child) {
-          final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
-          final selectedState = ref.watch(selectionManagerProvider);
-          final hasSelection = selectedState.vocabIndices.isNotEmpty ||
-              selectedState.grammarIndices.isNotEmpty ||
-              selectedState.kanjiIndices.isNotEmpty;
+                  const SizedBox(height: 16),
+                ],
+                if (hasSelection)
+                  FloatingActionButton(
+                    heroTag: 'export_fab',
+                    backgroundColor: AppColors.sakuraDark,
+                    onPressed: () {
+                      // Re-read to get latest state in callback
+                      final analysis =
+                          ref.read(lyricsNotifierProvider).asData?.value;
+                      if (analysis == null) return;
 
-          if (analysis == null) {
-            return const SizedBox.shrink();
-          }
+                      final selectedState = ref.read(selectionManagerProvider);
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (analysis.youtubeId != null) ...[
-                FloatingActionButton(
-                  heroTag: 'video_fab',
-                  backgroundColor: AppColors.sakuraDark,
-                  onPressed: () => setState(() => _showPlayer = !_showPlayer),
-                  child: _showPlayer
-                      ? Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            const Icon(
-                              Icons.smart_display_rounded,
-                              color: Colors.white,
-                            ),
-                            // Masking "Eraser" to separate slash from icon
-                            Transform.rotate(
-                              angle: -0.785, // -45 degrees
-                              child: Container(
-                                width: 4.5,
-                                height: 26,
-                                decoration: BoxDecoration(
-                                  color: AppColors.sakuraDark,
-                                  borderRadius: BorderRadius.circular(2),
+                      final selectedVocabs = <Vocab>[];
+                      for (final i in selectedState.vocabIndices) {
+                        if (i < analysis.vocabs.length) {
+                          selectedVocabs.add(analysis.vocabs[i]);
+                        }
+                      }
+
+                      final selectedGrammar = <Grammar>[];
+                      for (final i in selectedState.grammarIndices) {
+                        if (i < analysis.grammar.length) {
+                          selectedGrammar.add(analysis.grammar[i]);
+                        }
+                      }
+
+                      final selectedKanji = <Kanji>[];
+                      for (final i in selectedState.kanjiIndices) {
+                        if (i < analysis.kanji.length) {
+                          selectedKanji.add(analysis.kanji[i]);
+                        }
+                      }
+
+                      if (selectedVocabs.isEmpty &&
+                          selectedGrammar.isEmpty &&
+                          selectedKanji.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Select items to export'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      showDialog<void>(
+                        context: context,
+                        builder: (context) => _ExportDialog(
+                          onExport: (userLevel) async {
+                            try {
+                              final exportService =
+                                  ref.read(ankiExportServiceProvider);
+
+                              // Log export initiation
+                              unawaited(
+                                analyticsService.logExport(
+                                  songTitle: analysis.song,
+                                  artist: analysis.artist,
+                                  level: userLevel,
+                                  vocabCount: selectedVocabs.length,
+                                  grammarCount: selectedGrammar.length,
+                                  kanjiCount: selectedKanji.length,
                                 ),
-                              ),
-                            ),
-                            // The actual Slash
-                            Transform.rotate(
-                              angle: -0.785,
-                              child: Container(
-                                width: 2,
-                                height: 26,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(1),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : const Icon(
-                          Icons.smart_display_rounded,
-                          color: Colors.white,
-                        ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (hasSelection)
-                FloatingActionButton(
-                  heroTag: 'export_fab',
-                  backgroundColor: AppColors.sakuraDark,
-                  onPressed: () {
-                    // Re-read to get latest state in callback
-                    final analysis =
-                        ref.read(lyricsNotifierProvider).asData?.value;
-                    if (analysis == null) return;
+                              );
 
-                    final selectedState = ref.read(selectionManagerProvider);
-
-                    final selectedVocabs = <Vocab>[];
-                    for (final i in selectedState.vocabIndices) {
-                      if (i < analysis.vocabs.length) {
-                        selectedVocabs.add(analysis.vocabs[i]);
-                      }
-                    }
-
-                    final selectedGrammar = <Grammar>[];
-                    for (final i in selectedState.grammarIndices) {
-                      if (i < analysis.grammar.length) {
-                        selectedGrammar.add(analysis.grammar[i]);
-                      }
-                    }
-
-                    final selectedKanji = <Kanji>[];
-                    for (final i in selectedState.kanjiIndices) {
-                      if (i < analysis.kanji.length) {
-                        selectedKanji.add(analysis.kanji[i]);
-                      }
-                    }
-
-                    if (selectedVocabs.isEmpty &&
-                        selectedGrammar.isEmpty &&
-                        selectedKanji.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Select items to export')),
-                      );
-                      return;
-                    }
-
-                    showDialog<void>(
-                      context: context,
-                      builder: (context) => _ExportDialog(
-                        onExport: (userLevel) async {
-                          try {
-                            final exportService =
-                                ref.read(ankiExportServiceProvider);
-
-                            // Log export initiation
-                            unawaited(
-                              analyticsService.logExport(
+                              // Generate .apkg
+                              final bytes = await exportService.generateApkg(
+                                vocabs: selectedVocabs,
+                                grammar: selectedGrammar,
+                                kanji: selectedKanji,
                                 songTitle: analysis.song,
                                 artist: analysis.artist,
-                                level: userLevel,
-                                vocabCount: selectedVocabs.length,
-                                grammarCount: selectedGrammar.length,
-                                kanjiCount: selectedKanji.length,
-                              ),
-                            );
+                                userLevel: userLevel,
+                              );
 
-                            // Generate .apkg
-                            final bytes = await exportService.generateApkg(
-                              vocabs: selectedVocabs,
-                              grammar: selectedGrammar,
-                              kanji: selectedKanji,
-                              songTitle: analysis.song,
-                              artist: analysis.artist,
-                              userLevel: userLevel,
-                            );
+                              if (!context.mounted) return;
 
-                            if (!context.mounted) return;
+                              final filename =
+                                  '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
 
-                            final filename =
-                                '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
+                              // Save file (trigger download)
+                              await FileSaver.instance.saveFile(
+                                name: filename,
+                                bytes: bytes,
+                              );
 
-                            // Save file (trigger download)
-                            await FileSaver.instance.saveFile(
-                              name: filename,
-                              bytes: bytes,
-                            );
-
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Export downloaded successfully'),
-                              ),
-                            );
-                          } catch (e) {
-                            unawaited(
-                              analyticsService.logError(
-                                'Export failed: $e',
-                                'export_dialog',
-                              ),
-                            );
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Export failed: $e')),
-                            );
-                          }
-                        },
-                      ),
-                    );
-                  },
-                  child: const Icon(
-                    Icons.file_upload_outlined,
-                    color: Colors.white,
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('Export downloaded successfully'),
+                                ),
+                              );
+                            } catch (e) {
+                              unawaited(
+                                analyticsService.logError(
+                                  'Export failed: $e',
+                                  'export_dialog',
+                                ),
+                              );
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Export failed: $e')),
+                              );
+                            }
+                          },
+                        ),
+                      );
+                    },
+                    child: const Icon(
+                      Icons.file_upload_outlined,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
 class _VocabList extends StatefulWidget {
-  const _VocabList({required this.vocabList});
+  const _VocabList({required this.vocabList, required this.isLoading});
   final List<Vocab> vocabList;
+  final bool isLoading;
 
   @override
   State<_VocabList> createState() => _VocabListState();
@@ -1104,6 +1309,11 @@ class _VocabListState extends State<_VocabList>
     super.build(context);
     final theme = Theme.of(context);
     if (widget.vocabList.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.sakura),
+        );
+      }
       return Center(
         child: Text(
           'No vocabulary found.',
@@ -1118,9 +1328,12 @@ class _VocabListState extends State<_VocabList>
       cacheExtent: 100,
       itemCount: widget.vocabList.length,
       itemBuilder: (context, index) {
-        return _VocabItem(
+        return StaggeredListItem(
           index: index,
-          vocab: widget.vocabList[index],
+          child: _VocabItem(
+            index: index,
+            vocab: widget.vocabList[index],
+          ),
         );
       },
     );
@@ -1223,8 +1436,9 @@ class _VocabItem extends ConsumerWidget {
 }
 
 class _GrammarList extends StatefulWidget {
-  const _GrammarList({required this.grammarList});
+  const _GrammarList({required this.grammarList, required this.isLoading});
   final List<Grammar> grammarList;
+  final bool isLoading;
 
   @override
   State<_GrammarList> createState() => _GrammarListState();
@@ -1241,6 +1455,11 @@ class _GrammarListState extends State<_GrammarList>
     final theme = Theme.of(context);
 
     if (widget.grammarList.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.matcha),
+        );
+      }
       return Center(
         child: Text(
           'No grammar points found.',
@@ -1255,9 +1474,12 @@ class _GrammarListState extends State<_GrammarList>
       cacheExtent: 100,
       itemCount: widget.grammarList.length,
       itemBuilder: (context, index) {
-        return _GrammarItem(
+        return StaggeredListItem(
           index: index,
-          grammar: widget.grammarList[index],
+          child: _GrammarItem(
+            index: index,
+            grammar: widget.grammarList[index],
+          ),
         );
       },
     );
@@ -1322,8 +1544,9 @@ class _GrammarItem extends ConsumerWidget {
 }
 
 class _KanjiList extends StatefulWidget {
-  const _KanjiList({required this.kanjiList});
+  const _KanjiList({required this.kanjiList, required this.isLoading});
   final List<Kanji> kanjiList;
+  final bool isLoading;
 
   @override
   State<_KanjiList> createState() => _KanjiListState();
@@ -1340,6 +1563,11 @@ class _KanjiListState extends State<_KanjiList>
     final theme = Theme.of(context);
 
     if (widget.kanjiList.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.textPrimary),
+        );
+      }
       return Center(
         child: Text(
           'No kanji found.',
@@ -1354,9 +1582,12 @@ class _KanjiListState extends State<_KanjiList>
       cacheExtent: 100,
       itemCount: widget.kanjiList.length,
       itemBuilder: (context, index) {
-        return _KanjiItem(
+        return StaggeredListItem(
           index: index,
-          kanji: widget.kanjiList[index],
+          child: _KanjiItem(
+            index: index,
+            kanji: widget.kanjiList[index],
+          ),
         );
       },
     );
@@ -1498,7 +1729,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _ResultCard extends StatelessWidget {
+class _ResultCard extends StatefulWidget {
   const _ResultCard({
     required this.title,
     required this.isSelected,
@@ -1520,78 +1751,159 @@ class _ResultCard extends StatelessWidget {
   final Widget? leadingContent;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: isSelected ? themeColor.withValues(alpha: 0.1) : AppColors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isSelected ? themeColor : Colors.transparent,
-        ),
+  State<_ResultCard> createState() => _ResultCardState();
+}
+
+class _ResultCardState extends State<_ResultCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _scaleAnimation;
+  bool _previousSelected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousSelected = widget.isSelected;
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1, end: 1.025)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 40,
       ),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: onToggle,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    value: isSelected,
-                    activeColor: themeColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    onChanged: (_) => onToggle(),
-                  ),
-                  if (leadingContent != null) ...[
-                    leadingContent!,
-                    const SizedBox(width: 8),
-                  ],
-                ],
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.025, end: 1)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 60,
+      ),
+    ]).animate(_pulseController);
+  }
+
+  @override
+  void didUpdateWidget(_ResultCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Trigger pulse only when selection changes to true
+    if (widget.isSelected && !_previousSelected) {
+      _pulseController
+        ..reset()
+        ..forward();
+    }
+    _previousSelected = widget.isSelected;
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = widget.isSelected;
+    final themeColor = widget.themeColor;
+
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color:
+              isSelected ? themeColor.withValues(alpha: 0.08) : AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? themeColor.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.6),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? themeColor.withValues(alpha: 0.12)
+                  : AppColors.sakuraDark.withValues(alpha: 0.04),
+              blurRadius: isSelected ? 12 : 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onToggle,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 8,
               ),
-              // Content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    top: 4,
-                    right: 8,
-                    bottom: 8,
-                    left: 4,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(child: title),
-                          if (trailingTag != null) ...[
-                            const SizedBox(width: 8),
-                            trailingTag!,
-                          ],
-                        ],
+                      Checkbox(
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        value: isSelected,
+                        activeColor: themeColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        onChanged: (_) => widget.onToggle(),
                       ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        subtitle!,
-                      ],
-                      if (details != null) ...[
-                        const SizedBox(height: 8),
-                        details!,
+                      if (widget.leadingContent != null) ...[
+                        widget.leadingContent!,
+                        const SizedBox(width: 8),
                       ],
                     ],
                   ),
-                ),
+                  // Content
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: 4,
+                        right: 8,
+                        bottom: 8,
+                        left: 4,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: widget.title),
+                              if (widget.trailingTag != null) ...[
+                                const SizedBox(width: 8),
+                                widget.trailingTag!,
+                              ],
+                            ],
+                          ),
+                          if (widget.subtitle != null) ...[
+                            const SizedBox(height: 4),
+                            widget.subtitle!,
+                          ],
+                          if (widget.details != null) ...[
+                            const SizedBox(height: 8),
+                            widget.details!,
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -1717,14 +2029,237 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
   }
 }
 
-class _LyricsView extends StatelessWidget {
-  const _LyricsView({required this.lyrics});
+class _Match {
+  _Match(this.start, this.end, this.data, this.index, this.type);
+  final int start;
+  final int end;
+  final dynamic data;
+  final int index;
+  final String type;
+}
 
-  final String lyrics;
+class _LyricsView extends StatelessWidget {
+  const _LyricsView({required this.analysis});
+
+  final AnalysisResult analysis;
+
+  Color _getColor(String type) {
+    switch (type) {
+      case 'vocab':
+        return AppColors.sakuraDark;
+      case 'grammar':
+        return AppColors.matchaDark; // Darker green for text readability
+      case 'kanji':
+        return const Color(0xFF8D6E63);
+      default:
+        return AppColors.textPrimary;
+    }
+  }
+
+  void _showPopup(BuildContext context, _Match match) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        Widget content;
+        String title;
+        if (match.type == 'vocab') {
+          title = context.l10n.vocabType;
+          if (match.data is EnVocab) {
+            final v = match.data as EnVocab;
+            content = _EnVocabItem(index: match.index, vocab: v);
+            analyticsService.logItemView(
+              type: 'vocab',
+              item: v.term,
+              source: 'lyrics_highlight',
+            );
+          } else {
+            final v = match.data as Vocab;
+            content = _VocabItem(index: match.index, vocab: v);
+            analyticsService.logItemView(
+              type: 'vocab',
+              item: v.word,
+              source: 'lyrics_highlight',
+            );
+          }
+        } else if (match.type == 'grammar') {
+          title = context.l10n.grammarType;
+          if (match.data is EnGrammar) {
+            final g = match.data as EnGrammar;
+            content = _EnGrammarItem(index: match.index, grammar: g);
+            analyticsService.logItemView(
+              type: 'grammar',
+              item: g.structure,
+              source: 'lyrics_highlight',
+            );
+          } else {
+            final g = match.data as Grammar;
+            content = _GrammarItem(index: match.index, grammar: g);
+            analyticsService.logItemView(
+              type: 'grammar',
+              item: g.point,
+              source: 'lyrics_highlight',
+            );
+          }
+        } else {
+          title = context.l10n.kanjiType;
+          final k = match.data as Kanji;
+          content = _KanjiItem(index: match.index, kanji: k);
+          analyticsService.logItemView(
+            type: 'kanji',
+            item: k.char,
+            source: 'lyrics_highlight',
+          );
+        }
+
+        return AlertDialog(
+          title: Text(title, style: Theme.of(context).textTheme.titleLarge),
+          content: SingleChildScrollView(child: content),
+          backgroundColor: AppColors.white,
+          surfaceTintColor: Colors.transparent,
+          scrollable: true,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                context.l10n.closeButton,
+                style: const TextStyle(color: AppColors.sakuraDark),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<TextSpan> _buildSpans(BuildContext context) {
+    final lyrics = analysis.lyrics;
+    final spans = <TextSpan>[];
+    if (lyrics.isEmpty) return spans;
+
+    final matches = <_Match>[];
+
+    String cleanText(String input, String type) {
+      if (type != 'grammar') return input.trim();
+      // Remove structural markers like "V.", "Adj.", "~", etc.
+      return input
+          .replaceAll(RegExp(r'^[A-Za-z]+\.'), '') // Remove "V.", "N." prefix
+          .replaceAll('~', '') // Remove tilde
+          .replaceAll('～', '') // Remove full-width tilde
+          .trim();
+    }
+
+    void addMatches(
+      List<dynamic> items,
+      String type,
+      String Function(dynamic) getText,
+    ) {
+      for (var i = 0; i < items.length; i++) {
+        final rawText = getText(items[i]);
+        // Try exact match first
+        var text = rawText.trim();
+
+        // If it's grammar, try the cleaner version if exact match fails
+        if (type == 'grammar' && !lyrics.contains(text)) {
+          text = cleanText(rawText, type);
+        }
+
+        if (text.isEmpty) continue;
+
+        var start = 0;
+        while (true) {
+          final idx = lyrics.indexOf(text, start);
+          if (idx == -1) break;
+          matches.add(_Match(idx, idx + text.length, items[i], i, type));
+          start = idx + 1;
+        }
+      }
+    }
+
+    addMatches(analysis.vocabs, 'vocab', (d) => (d as Vocab).word);
+    addMatches(analysis.grammar, 'grammar', (d) => (d as Grammar).point);
+    addMatches(analysis.kanji, 'kanji', (d) => (d as Kanji).char);
+
+    if (analysis.enVocab != null) {
+      addMatches(analysis.enVocab!, 'vocab', (d) => (d as EnVocab).term);
+    }
+    if (analysis.enGrammar != null) {
+      addMatches(
+        analysis.enGrammar!,
+        'grammar',
+        (d) => (d as EnGrammar).structure,
+      );
+    }
+
+    // Sort: Start Time asc, Length desc (Longest match wins)
+    matches.sort((a, b) {
+      if (a.start != b.start) return a.start.compareTo(b.start);
+      return b.end.compareTo(a.end);
+    });
+
+    final validMatches = <_Match>[];
+    var lastEnd = 0;
+    for (final m in matches) {
+      if (m.start >= lastEnd) {
+        validMatches.add(m);
+        lastEnd = m.end;
+      }
+    }
+
+    var currentIndex = 0;
+    final theme = Theme.of(context);
+    final baseStyle = theme.textTheme.bodyLarge?.copyWith(
+      height: 1.8,
+      fontSize: 16,
+    );
+
+    for (final m in validMatches) {
+      if (m.start > currentIndex) {
+        spans.add(
+          TextSpan(
+            text: lyrics.substring(currentIndex, m.start),
+            style: baseStyle,
+          ),
+        );
+      }
+
+      final color = _getColor(m.type);
+      spans.add(
+        TextSpan(
+          text: lyrics.substring(m.start, m.end),
+          style: baseStyle?.copyWith(
+            color: color,
+            backgroundColor: color.withValues(alpha: 0.15),
+            fontWeight: FontWeight.bold,
+            decoration: TextDecoration.underline,
+            decorationColor: color,
+            decorationStyle: TextDecorationStyle.solid,
+            decorationThickness: 2,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () => _showPopup(context, m),
+        ),
+      );
+
+      currentIndex = m.end;
+    }
+
+    if (currentIndex < lyrics.length) {
+      spans.add(
+        TextSpan(
+          text: lyrics.substring(currentIndex),
+          style: baseStyle,
+        ),
+      );
+    }
+
+    return spans;
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (lyrics.isEmpty) {
+    if (analysis.lyrics.isEmpty) {
       return Center(
         child: Text(
           context.l10n.noLyricsAvailable,
@@ -1737,14 +2272,271 @@ class _LyricsView extends StatelessWidget {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: SelectableText(
-        lyrics,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              height: 1.8,
-              fontSize: 16,
-            ),
+      child: SelectableText.rich(
+        TextSpan(children: _buildSpans(context)),
         textAlign: TextAlign.center,
       ),
+    );
+  }
+}
+
+class _EnVocabList extends StatefulWidget {
+  const _EnVocabList({required this.vocabList, required this.isLoading});
+  final List<EnVocab> vocabList;
+  final bool isLoading;
+
+  @override
+  State<_EnVocabList> createState() => _EnVocabListState();
+}
+
+class _EnVocabListState extends State<_EnVocabList>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final theme = Theme.of(context);
+    if (widget.vocabList.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.sakura),
+        );
+      }
+      return Center(
+        child: Text(
+          'No vocabulary found.',
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: AppColors.textTertiary),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      cacheExtent: 100,
+      itemCount: widget.vocabList.length,
+      itemBuilder: (context, index) {
+        return StaggeredListItem(
+          index: index,
+          child: _EnVocabItem(
+            index: index,
+            vocab: widget.vocabList[index],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EnVocabItem extends ConsumerWidget {
+  const _EnVocabItem({required this.index, required this.vocab});
+
+  final int index;
+  final EnVocab vocab;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isSelected = ref.watch(
+      selectionManagerProvider.select((s) => s.vocabIndices.contains(index)),
+    );
+
+    // Get the current learning mode to decide label (IPA vs Romanization)
+    final box = ref.read(settingsBoxProvider);
+    final savedModeIndex = box?.get('learning_mode_index');
+    final isKorean = savedModeIndex == LearningMode.korean.index;
+
+    return _ResultCard(
+      title: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: vocab.term,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (vocab.pos.isNotEmpty) ...[
+              const WidgetSpan(child: SizedBox(width: 8)),
+              TextSpan(
+                text: '[${vocab.pos}]',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.sakuraDark,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      details: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // IPA / Romanization Line
+          if (vocab.ipa.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: isKorean
+                          ? '${context.l10n.romanizationType}: '
+                          : '${context.l10n.ipaType}: ',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textTertiary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: vocab.ipa,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontFamily: isKorean ? null : 'IpaFont',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          Text(
+            vocab.meaningJp,
+            style: theme.textTheme.bodyMedium,
+          ),
+          if (vocab.nuanceJp.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Note: ${vocab.nuanceJp}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+        ],
+      ),
+      trailingTag:
+          const SizedBox.shrink(), // No JLPT tag for English/Korean yet
+      isSelected: isSelected,
+      onToggle: () {
+        ref
+            .read(selectionManagerProvider.notifier)
+            .toggle(SelectionType.vocab, index);
+      },
+      themeColor: AppColors.sakuraDark,
+    );
+  }
+}
+
+class _EnGrammarList extends StatefulWidget {
+  const _EnGrammarList({required this.grammarList, required this.isLoading});
+  final List<EnGrammar> grammarList;
+  final bool isLoading;
+
+  @override
+  State<_EnGrammarList> createState() => _EnGrammarListState();
+}
+
+class _EnGrammarListState extends State<_EnGrammarList>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final theme = Theme.of(context);
+
+    if (widget.grammarList.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.matcha),
+        );
+      }
+      return Center(
+        child: Text(
+          'No grammar points found.',
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: AppColors.textTertiary),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      cacheExtent: 100,
+      itemCount: widget.grammarList.length,
+      itemBuilder: (context, index) {
+        return StaggeredListItem(
+          index: index,
+          child: _EnGrammarItem(
+            index: index,
+            grammar: widget.grammarList[index],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EnGrammarItem extends ConsumerWidget {
+  const _EnGrammarItem({required this.index, required this.grammar});
+
+  final int index;
+  final EnGrammar grammar;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isSelected = ref.watch(
+      selectionManagerProvider.select((s) => s.grammarIndices.contains(index)),
+    );
+
+    return _ResultCard(
+      title: Text(
+        grammar.structure,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      details: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            grammar.explanationJp,
+            style: theme.textTheme.bodyMedium,
+          ),
+          if (grammar.excerpt.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Excerpt: "${grammar.excerpt}"',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+        ],
+      ),
+      trailingTag: grammar.cefrLevel.trim().isNotEmpty
+          ? _Tag(
+              label: grammar.cefrLevel,
+              color: AppColors.sakuraDark,
+            )
+          : const _Tag(label: 'Other', color: AppColors.textTertiary),
+      isSelected: isSelected,
+      onToggle: () {
+        ref
+            .read(selectionManagerProvider.notifier)
+            .toggle(SelectionType.grammar, index);
+      },
+      themeColor: AppColors.matcha,
     );
   }
 }

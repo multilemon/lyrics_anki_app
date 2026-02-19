@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
+import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,57 +14,97 @@ class LyricsNotifier extends _$LyricsNotifier {
     return null;
   }
 
+  // Expose the current learning mode for UI to use even during loading
+  LearningMode get currentMode => _lastMode ?? LearningMode.japanese;
+
   String? _lastTitle;
   String? _lastArtist;
   String? _lastLanguage;
+  LearningMode? _lastMode;
 
   Future<void> retry() async {
-    if (_lastTitle != null && _lastArtist != null && _lastLanguage != null) {
-      await analyzeSong(_lastTitle!, _lastArtist!, _lastLanguage!);
+    if (_lastTitle != null &&
+        _lastArtist != null &&
+        _lastLanguage != null &&
+        _lastMode != null) {
+      await analyzeSong(
+        _lastTitle!,
+        _lastArtist!,
+        _lastLanguage!,
+        learningMode: _lastMode!,
+      );
     }
   }
 
   Future<AnalysisResult?> analyzeSong(
     String title,
     String artist,
-    String language,
-  ) async {
+    String language, {
+    LearningMode learningMode = LearningMode.japanese,
+  }) async {
     _lastTitle = title;
     _lastArtist = artist;
     _lastLanguage = language;
+    _lastMode = learningMode;
     state = const AsyncValue.loading();
-    final result = await AsyncValue.guard(() async {
-      final repository = ref.read(lyricsRepositoryProvider);
 
-      // Update repository to handle structured input
-      final result = await repository.analyzeSong(title, artist, language);
+    final repository = ref.read(lyricsRepositoryProvider);
+    AnalysisResult? lastResult;
 
-      // Debug print
-      // print('Analysis Result: ${result.map((e) => e.toJson()).toList()}');
+    try {
+      final stream = repository.analyzeSong(
+        title,
+        artist,
+        language,
+        learningMode: learningMode,
+      );
 
-      // Validate result before saving
-      if (result.vocabs.isEmpty &&
-          result.grammar.isEmpty &&
-          result.kanji.isEmpty) {
-        // Don't save empty results (likely errors)
-        return result;
+      await for (final result in stream) {
+        state = AsyncValue.data(result);
+        lastResult = result;
       }
 
-      // Save to History
-      await repository.saveAnalysisResult(result, language);
+      // Check final result logic
+      // Check final result logic
+      if (lastResult != null) {
+        final hasJapaneseData = lastResult.vocabs.isNotEmpty ||
+            lastResult.grammar.isNotEmpty ||
+            lastResult.kanji.isNotEmpty;
+        final hasEnglishData = (lastResult.enVocab?.isNotEmpty ?? false) ||
+            (lastResult.enGrammar?.isNotEmpty ?? false);
 
-      return result;
-    });
-
-    // Directly assign the AsyncValue result to state.
-    // If it's an error, this propagates the error state correctly without throwing.
-    state = result;
-
-    // Return the value if it exists, or null. This avoids throwing if error.
-    return result.valueOrNull;
+        if (hasJapaneseData || hasEnglishData) {
+          await repository.saveAnalysisResult(
+            lastResult,
+            language,
+            learningMode: learningMode,
+          );
+        }
+      }
+      return lastResult;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      // Return null or rethrow? Future expects nullable result.
+      // Usually we don't rethrow if we set state to error in Riverpod,
+      // but the caller might await it.
+      return null;
+    }
   }
 
   void loadFromHistory(HistoryItem item) {
+    if (item.learningModeIndex != null) {
+      _lastMode = LearningMode.values[item.learningModeIndex!];
+    } else {
+      // Legacy Fallback
+      if (item.targetLanguage.toLowerCase() == 'korean') {
+        _lastMode = LearningMode.korean;
+      } else if (item.enVocab != null && item.enVocab!.isNotEmpty) {
+        _lastMode = LearningMode.english;
+      } else {
+        _lastMode = LearningMode.japanese;
+      }
+    }
+
     state = AsyncValue.data(
       AnalysisResult(
         vocabs: item.vocabs,
@@ -148,6 +191,7 @@ class SelectionManager extends _$SelectionManager {
     String level, {
     required bool select,
   }) {
+    // Japanese Levels (JLPT)
     final vocabIndices = <int>{};
     for (var i = 0; i < analysis.vocabs.length; i++) {
       if (analysis.vocabs[i].jlptV.toUpperCase() == level.toUpperCase()) {
@@ -159,6 +203,16 @@ class SelectionManager extends _$SelectionManager {
     for (var i = 0; i < analysis.grammar.length; i++) {
       if (analysis.grammar[i].level.toUpperCase() == level.toUpperCase()) {
         grammarIndices.add(i);
+      }
+    }
+
+    // English/Korean Levels (CEFR) - Only Grammar has level currently
+    if (analysis.enGrammar != null) {
+      for (var i = 0; i < analysis.enGrammar!.length; i++) {
+        if (analysis.enGrammar![i].cefrLevel.toUpperCase() ==
+            level.toUpperCase()) {
+          grammarIndices.add(i);
+        }
       }
     }
 
@@ -186,10 +240,13 @@ class SelectionManager extends _$SelectionManager {
 
   void toggleAll(AnalysisResult analysis, {required bool select}) {
     if (select) {
+      final vocabCount = analysis.enVocab?.length ?? analysis.vocabs.length;
+      final grammarCount =
+          analysis.enGrammar?.length ?? analysis.grammar.length;
+
       state = SelectionState(
-        vocabIndices: List.generate(analysis.vocabs.length, (i) => i).toSet(),
-        grammarIndices:
-            List.generate(analysis.grammar.length, (i) => i).toSet(),
+        vocabIndices: List.generate(vocabCount, (i) => i).toSet(),
+        grammarIndices: List.generate(grammarCount, (i) => i).toSet(),
         kanjiIndices: List.generate(analysis.kanji.length, (i) => i).toSet(),
       );
     } else {

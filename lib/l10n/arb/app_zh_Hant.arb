@@ -31,8 +31,26 @@
     "furiganaExplanation": "高於此等級的單字將在卡片正面顯示振假名。",
     "cancelButton": "取消",
     "exportButton": "匯出",
-    "noLyricsAvailable": "No lyrics available.",
+    "noLyricsAvailable": "找不到歌詞。",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "詞彙",
+    "grammarType": "語法",
+    "kanjiType": "漢字",
+    "closeButton": "關閉",
+    "allFilter": "全部",
+    "otherFilter": "其他",
+    "learningModeLabel": "學習模式",
+    "modeJapanese": "學日語",
+    "modeEnglish": "學英語",
+    "modeKorean": "學韓語",
+    "ipaType": "國際音標",
+    "structureType": "句型",
+    "songTitleHintEn": "例如 Shape of You",
+    "artistNameHintEn": "例如 Ed Sheeran",
+    "songTitleHintKo": "例如 Gangnam Style",
+    "artistNameHintKo": "例如 PSY",
+    "romanizationType": "羅馬字",
+    "reverseLearningDescription": "反向學習模式：面向日語母語者學習英語/韓語。"
 }

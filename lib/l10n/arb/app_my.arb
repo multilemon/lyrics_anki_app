@@ -31,8 +31,26 @@
     "furiganaExplanation": "ဒီအဆင့်အထက်ရှိ စကားလုံးများတွင် ကတ်၏ ရှေ့မျက်နှာပြင်၌ furigana ပါဝင်ပါမည်။",
     "cancelButton": "မလုပ်တော့ပါ",
     "exportButton": "ပို့ရန်",
-    "noLyricsAvailable": "No lyrics available.",
+    "noLyricsAvailable": "သီချင်းစာသား မရှိပါ။",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "ဝေါဟာရ",
+    "grammarType": "သဒ္ဒါ",
+    "kanjiType": "ခန်းဂျိ",
+    "closeButton": "ပိတ်",
+    "allFilter": "အားလုံး",
+    "otherFilter": "အခြား",
+    "learningModeLabel": "လေ့လာမှုမုဒ်",
+    "modeJapanese": "ဂျပန်ဘာသာ လေ့လာ",
+    "modeEnglish": "အင်္ဂလိပ်ဘာသာ လေ့လာ",
+    "modeKorean": "ကိုရီးယားဘာသာ လေ့လာ",
+    "ipaType": "IPA",
+    "structureType": "ဖွဲ့စည်းပုံ",
+    "songTitleHintEn": "ဥပမာ Shape of You",
+    "artistNameHintEn": "ဥပမာ Ed Sheeran",
+    "songTitleHintKo": "ဥပမာ Gangnam Style",
+    "artistNameHintKo": "ဥပမာ PSY",
+    "romanizationType": "ရောမဂဏန်း",
+    "reverseLearningDescription": "ပြောင်းပြန်လေ့လာမှု: ဂျပန်စကားပြောသူများ အင်္ဂလိပ်/ကိုရီးယား လေ့လာရန်။"
 }

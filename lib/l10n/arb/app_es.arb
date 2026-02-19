@@ -129,8 +129,26 @@
     "@exportButton": {
         "description": "Export button text"
     },
-    "noLyricsAvailable": "No lyrics available.",
+    "noLyricsAvailable": "No hay letra disponible.",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "Vocabulario",
+    "grammarType": "Gramática",
+    "kanjiType": "Kanji",
+    "closeButton": "Cerrar",
+    "allFilter": "Todo",
+    "otherFilter": "Otro",
+    "learningModeLabel": "Modo de aprendizaje",
+    "modeJapanese": "Aprender japonés",
+    "modeEnglish": "Aprender inglés",
+    "modeKorean": "Aprender coreano",
+    "ipaType": "AFI",
+    "structureType": "Estructura",
+    "songTitleHintEn": "ej. Shape of You",
+    "artistNameHintEn": "ej. Ed Sheeran",
+    "songTitleHintKo": "ej. Gangnam Style",
+    "artistNameHintKo": "ej. PSY",
+    "romanizationType": "Romanización",
+    "reverseLearningDescription": "Modo inverso: para japoneses que aprenden inglés/coreano."
 }

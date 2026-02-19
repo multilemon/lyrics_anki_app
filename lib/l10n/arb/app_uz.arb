@@ -31,8 +31,26 @@
     "furiganaExplanation": "Ushbu darajadan yuqori soʻzlar kartaning old tomonida furiganani oʻz ichiga oladi.",
     "cancelButton": "Bekor qilish",
     "exportButton": "Eksport",
-    "noLyricsAvailable": "No lyrics available.",
+    "noLyricsAvailable": "Qo'shiq matni topilmadi.",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "Lug'at",
+    "grammarType": "Grammatika",
+    "kanjiType": "Kanji",
+    "closeButton": "Yopish",
+    "allFilter": "Barchasi",
+    "otherFilter": "Boshqa",
+    "learningModeLabel": "O'rganish rejimi",
+    "modeJapanese": "Yapon tilini o'rganish",
+    "modeEnglish": "Ingliz tilini o'rganish",
+    "modeKorean": "Koreys tilini o'rganish",
+    "ipaType": "XFA",
+    "structureType": "Tuzilma",
+    "songTitleHintEn": "mas. Shape of You",
+    "artistNameHintEn": "mas. Ed Sheeran",
+    "songTitleHintKo": "mas. Gangnam Style",
+    "artistNameHintKo": "mas. PSY",
+    "romanizationType": "Romanizatsiya",
+    "reverseLearningDescription": "Teskari rejim: yapon tilida so'zlashuvchilar uchun ingliz/koreys tilini o'rganish."
 }

@@ -12,7 +12,7 @@ class AppTextStyles {
     'Noto Sans TC',
   ];
 
-  static TextStyle get display => TextStyle(
+  static TextStyle get display => const TextStyle(
         fontFamily: 'Outfit',
         fontFamilyFallback: _fontFallbacks,
         fontSize: 32,
@@ -20,7 +20,7 @@ class AppTextStyles {
         color: AppColors.sakuraDark,
       );
 
-  static TextStyle get heading1 => TextStyle(
+  static TextStyle get heading1 => const TextStyle(
         fontFamily: 'Outfit',
         fontFamilyFallback: _fontFallbacks,
         fontSize: 24,
@@ -28,7 +28,7 @@ class AppTextStyles {
         color: AppColors.textPrimary,
       );
 
-  static TextStyle get heading2 => TextStyle(
+  static TextStyle get heading2 => const TextStyle(
         fontFamily: 'Outfit',
         fontFamilyFallback: _fontFallbacks,
         fontSize: 20,
@@ -36,7 +36,7 @@ class AppTextStyles {
         color: AppColors.textPrimary,
       );
 
-  static TextStyle get bodyLarge => TextStyle(
+  static TextStyle get bodyLarge => const TextStyle(
         fontFamily: 'Noto Sans',
         fontFamilyFallback: _fontFallbacks,
         fontSize: 16,
@@ -44,7 +44,7 @@ class AppTextStyles {
         color: AppColors.textPrimary,
       );
 
-  static TextStyle get bodyMedium => TextStyle(
+  static TextStyle get bodyMedium => const TextStyle(
         fontFamily: 'Noto Sans',
         fontFamilyFallback: _fontFallbacks,
         fontSize: 14,
@@ -52,7 +52,7 @@ class AppTextStyles {
         color: AppColors.textSecondary,
       );
 
-  static TextStyle get label => TextStyle(
+  static TextStyle get label => const TextStyle(
         fontFamily: 'Noto Sans',
         fontFamilyFallback: _fontFallbacks,
         fontSize: 12,

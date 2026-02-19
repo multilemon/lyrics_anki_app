@@ -106,5 +106,60 @@ class AppLocalizationsRu extends AppLocalizations {
   String get exportButton => 'Экспорт';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'Текст песни не найден.';
+
+  @override
+  String get vocabType => 'Словарь';
+
+  @override
+  String get grammarType => 'Грамматика';
+
+  @override
+  String get kanjiType => 'Кандзи';
+
+  @override
+  String get closeButton => 'Закрыть';
+
+  @override
+  String get allFilter => 'Все';
+
+  @override
+  String get otherFilter => 'Другое';
+
+  @override
+  String get learningModeLabel => 'Режим обучения';
+
+  @override
+  String get modeJapanese => 'Учить японский';
+
+  @override
+  String get modeEnglish => 'Учить английский';
+
+  @override
+  String get modeKorean => 'Учить корейский';
+
+  @override
+  String get ipaType => 'МФА';
+
+  @override
+  String get structureType => 'Структура';
+
+  @override
+  String get songTitleHintEn => 'напр. Shape of You';
+
+  @override
+  String get artistNameHintEn => 'напр. Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => 'напр. Gangnam Style';
+
+  @override
+  String get artistNameHintKo => 'напр. PSY';
+
+  @override
+  String get romanizationType => 'Романизация';
+
+  @override
+  String get reverseLearningDescription =>
+      'Обратный режим: для японцев, изучающих английский/корейский.';
 }

@@ -31,8 +31,26 @@
     "furiganaExplanation": "Kata-kata di atas level ini akan menyertakan furigana di bagian depan kartu.",
     "cancelButton": "Batal",
     "exportButton": "Ekspor",
-    "noLyricsAvailable": "No lyrics available.",
+    "noLyricsAvailable": "Lirik tidak tersedia.",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "Kosakata",
+    "grammarType": "Tata Bahasa",
+    "kanjiType": "Kanji",
+    "closeButton": "Tutup",
+    "allFilter": "Semua",
+    "otherFilter": "Lainnya",
+    "learningModeLabel": "Mode Belajar",
+    "modeJapanese": "Belajar Bahasa Jepang",
+    "modeEnglish": "Belajar Bahasa Inggris",
+    "modeKorean": "Belajar Bahasa Korea",
+    "ipaType": "IPA",
+    "structureType": "Struktur",
+    "songTitleHintEn": "cth. Shape of You",
+    "artistNameHintEn": "cth. Ed Sheeran",
+    "songTitleHintKo": "cth. Gangnam Style",
+    "artistNameHintKo": "cth. PSY",
+    "romanizationType": "Romanisasi",
+    "reverseLearningDescription": "Mode Terbalik: untuk penutur Jepang belajar bahasa Inggris/Korea."
 }

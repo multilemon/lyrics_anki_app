@@ -106,5 +106,60 @@ class AppLocalizationsEs extends AppLocalizations {
   String get exportButton => 'Export';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'No hay letra disponible.';
+
+  @override
+  String get vocabType => 'Vocabulario';
+
+  @override
+  String get grammarType => 'Gramática';
+
+  @override
+  String get kanjiType => 'Kanji';
+
+  @override
+  String get closeButton => 'Cerrar';
+
+  @override
+  String get allFilter => 'Todo';
+
+  @override
+  String get otherFilter => 'Otro';
+
+  @override
+  String get learningModeLabel => 'Modo de aprendizaje';
+
+  @override
+  String get modeJapanese => 'Aprender japonés';
+
+  @override
+  String get modeEnglish => 'Aprender inglés';
+
+  @override
+  String get modeKorean => 'Aprender coreano';
+
+  @override
+  String get ipaType => 'AFI';
+
+  @override
+  String get structureType => 'Estructura';
+
+  @override
+  String get songTitleHintEn => 'ej. Shape of You';
+
+  @override
+  String get artistNameHintEn => 'ej. Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => 'ej. Gangnam Style';
+
+  @override
+  String get artistNameHintKo => 'ej. PSY';
+
+  @override
+  String get romanizationType => 'Romanización';
+
+  @override
+  String get reverseLearningDescription =>
+      'Modo inverso: para japoneses que aprenden inglés/coreano.';
 }
