@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/pages/language_selection_page.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
-import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
+import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class SettingsPage extends ConsumerWidget {

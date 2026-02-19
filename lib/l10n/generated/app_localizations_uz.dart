@@ -107,5 +107,60 @@ class AppLocalizationsUz extends AppLocalizations {
   String get exportButton => 'Eksport';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'Qo\'shiq matni topilmadi.';
+
+  @override
+  String get vocabType => 'Lug\'at';
+
+  @override
+  String get grammarType => 'Grammatika';
+
+  @override
+  String get kanjiType => 'Kanji';
+
+  @override
+  String get closeButton => 'Yopish';
+
+  @override
+  String get allFilter => 'Barchasi';
+
+  @override
+  String get otherFilter => 'Boshqa';
+
+  @override
+  String get learningModeLabel => 'O\'rganish rejimi';
+
+  @override
+  String get modeJapanese => 'Yapon tilini o\'rganish';
+
+  @override
+  String get modeEnglish => 'Ingliz tilini o\'rganish';
+
+  @override
+  String get modeKorean => 'Koreys tilini o\'rganish';
+
+  @override
+  String get ipaType => 'XFA';
+
+  @override
+  String get structureType => 'Tuzilma';
+
+  @override
+  String get songTitleHintEn => 'mas. Shape of You';
+
+  @override
+  String get artistNameHintEn => 'mas. Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => 'mas. Gangnam Style';
+
+  @override
+  String get artistNameHintKo => 'mas. PSY';
+
+  @override
+  String get romanizationType => 'Romanizatsiya';
+
+  @override
+  String get reverseLearningDescription =>
+      'Teskari rejim: yapon tilida so\'zlashuvchilar uchun ingliz/koreys tilini o\'rganish.';
 }

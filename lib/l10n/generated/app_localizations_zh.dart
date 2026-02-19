@@ -104,7 +104,61 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exportButton => '导出';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => '未找到歌词。';
+
+  @override
+  String get vocabType => '词汇';
+
+  @override
+  String get grammarType => '语法';
+
+  @override
+  String get kanjiType => '汉字';
+
+  @override
+  String get closeButton => '关闭';
+
+  @override
+  String get allFilter => '全部';
+
+  @override
+  String get otherFilter => '其他';
+
+  @override
+  String get learningModeLabel => '学习模式';
+
+  @override
+  String get modeJapanese => '学日语';
+
+  @override
+  String get modeEnglish => '学英语';
+
+  @override
+  String get modeKorean => '学韩语';
+
+  @override
+  String get ipaType => '国际音标';
+
+  @override
+  String get structureType => '句型';
+
+  @override
+  String get songTitleHintEn => '例如 Shape of You';
+
+  @override
+  String get artistNameHintEn => '例如 Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => '例如 Gangnam Style';
+
+  @override
+  String get artistNameHintKo => '例如 PSY';
+
+  @override
+  String get romanizationType => '罗马字';
+
+  @override
+  String get reverseLearningDescription => '反向学习模式：面向日语母语者学习英语/韩语。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -207,7 +261,61 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get exportButton => '导出';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => '未找到歌词。';
+
+  @override
+  String get vocabType => '词汇';
+
+  @override
+  String get grammarType => '语法';
+
+  @override
+  String get kanjiType => '汉字';
+
+  @override
+  String get closeButton => '关闭';
+
+  @override
+  String get allFilter => '全部';
+
+  @override
+  String get otherFilter => '其他';
+
+  @override
+  String get learningModeLabel => '学习模式';
+
+  @override
+  String get modeJapanese => '学日语';
+
+  @override
+  String get modeEnglish => '学英语';
+
+  @override
+  String get modeKorean => '学韩语';
+
+  @override
+  String get ipaType => '国际音标';
+
+  @override
+  String get structureType => '句型';
+
+  @override
+  String get songTitleHintEn => '例如 Shape of You';
+
+  @override
+  String get artistNameHintEn => '例如 Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => '例如 Gangnam Style';
+
+  @override
+  String get artistNameHintKo => '例如 PSY';
+
+  @override
+  String get romanizationType => '罗马字';
+
+  @override
+  String get reverseLearningDescription => '反向学习模式：面向日语母语者学习英语/韩语。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -310,5 +418,59 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get exportButton => '匯出';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => '找不到歌詞。';
+
+  @override
+  String get vocabType => '詞彙';
+
+  @override
+  String get grammarType => '語法';
+
+  @override
+  String get kanjiType => '漢字';
+
+  @override
+  String get closeButton => '關閉';
+
+  @override
+  String get allFilter => '全部';
+
+  @override
+  String get otherFilter => '其他';
+
+  @override
+  String get learningModeLabel => '學習模式';
+
+  @override
+  String get modeJapanese => '學日語';
+
+  @override
+  String get modeEnglish => '學英語';
+
+  @override
+  String get modeKorean => '學韓語';
+
+  @override
+  String get ipaType => '國際音標';
+
+  @override
+  String get structureType => '句型';
+
+  @override
+  String get songTitleHintEn => '例如 Shape of You';
+
+  @override
+  String get artistNameHintEn => '例如 Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => '例如 Gangnam Style';
+
+  @override
+  String get artistNameHintKo => '例如 PSY';
+
+  @override
+  String get romanizationType => '羅馬字';
+
+  @override
+  String get reverseLearningDescription => '反向學習模式：面向日語母語者學習英語/韓語。';
 }

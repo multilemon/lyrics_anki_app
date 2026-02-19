@@ -107,5 +107,60 @@ class AppLocalizationsVi extends AppLocalizations {
   String get exportButton => 'Xuất';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'Không tìm thấy lời bài hát.';
+
+  @override
+  String get vocabType => 'Từ vựng';
+
+  @override
+  String get grammarType => 'Ngữ pháp';
+
+  @override
+  String get kanjiType => 'Kanji';
+
+  @override
+  String get closeButton => 'Đóng';
+
+  @override
+  String get allFilter => 'Tất cả';
+
+  @override
+  String get otherFilter => 'Khác';
+
+  @override
+  String get learningModeLabel => 'Chế độ học';
+
+  @override
+  String get modeJapanese => 'Học tiếng Nhật';
+
+  @override
+  String get modeEnglish => 'Học tiếng Anh';
+
+  @override
+  String get modeKorean => 'Học tiếng Hàn';
+
+  @override
+  String get ipaType => 'Phiên âm';
+
+  @override
+  String get structureType => 'Cấu trúc';
+
+  @override
+  String get songTitleHintEn => 'VD: Shape of You';
+
+  @override
+  String get artistNameHintEn => 'VD: Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => 'VD: Gangnam Style';
+
+  @override
+  String get artistNameHintKo => 'VD: PSY';
+
+  @override
+  String get romanizationType => 'Phiên âm La-tinh';
+
+  @override
+  String get reverseLearningDescription =>
+      'Chế độ học ngược: Dành cho người Nhật học tiếng Anh/Hàn.';
 }

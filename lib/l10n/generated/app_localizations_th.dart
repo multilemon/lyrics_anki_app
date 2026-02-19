@@ -105,5 +105,60 @@ class AppLocalizationsTh extends AppLocalizations {
   String get exportButton => 'ส่งออก';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'ไม่มีเนื้อเพลง';
+
+  @override
+  String get vocabType => 'คำศัพท์';
+
+  @override
+  String get grammarType => 'ไวยากรณ์';
+
+  @override
+  String get kanjiType => 'คันจิ';
+
+  @override
+  String get closeButton => 'ปิด';
+
+  @override
+  String get allFilter => 'ทั้งหมด';
+
+  @override
+  String get otherFilter => 'อื่นๆ';
+
+  @override
+  String get learningModeLabel => 'โหมดการเรียน';
+
+  @override
+  String get modeJapanese => 'เรียนภาษาญี่ปุ่น';
+
+  @override
+  String get modeEnglish => 'เรียนภาษาอังกฤษ';
+
+  @override
+  String get modeKorean => 'เรียนภาษาเกาหลี';
+
+  @override
+  String get ipaType => 'สัทอักษร';
+
+  @override
+  String get structureType => 'โครงสร้าง';
+
+  @override
+  String get songTitleHintEn => 'เช่น Shape of You';
+
+  @override
+  String get artistNameHintEn => 'เช่น Ed Sheeran';
+
+  @override
+  String get songTitleHintKo => 'เช่น Gangnam Style';
+
+  @override
+  String get artistNameHintKo => 'เช่น PSY';
+
+  @override
+  String get romanizationType => 'อักษรโรมัน';
+
+  @override
+  String get reverseLearningDescription =>
+      'โหมดเรียนย้อนกลับ: สำหรับคนญี่ปุ่นที่เรียนภาษาอังกฤษ/เกาหลี';
 }

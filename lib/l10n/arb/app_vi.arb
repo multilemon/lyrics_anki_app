@@ -31,8 +31,26 @@
     "furiganaExplanation": "Các từ trên cấp độ này sẽ bao gồm furigana ở mặt trước thẻ.",
     "cancelButton": "Hủy",
     "exportButton": "Xuất",
-    "noLyricsAvailable": "No lyrics available.",
+    "noLyricsAvailable": "Không tìm thấy lời bài hát.",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "Từ vựng",
+    "grammarType": "Ngữ pháp",
+    "kanjiType": "Kanji",
+    "closeButton": "Đóng",
+    "allFilter": "Tất cả",
+    "otherFilter": "Khác",
+    "learningModeLabel": "Chế độ học",
+    "modeJapanese": "Học tiếng Nhật",
+    "modeEnglish": "Học tiếng Anh",
+    "modeKorean": "Học tiếng Hàn",
+    "ipaType": "Phiên âm",
+    "structureType": "Cấu trúc",
+    "songTitleHintEn": "VD: Shape of You",
+    "artistNameHintEn": "VD: Ed Sheeran",
+    "songTitleHintKo": "VD: Gangnam Style",
+    "artistNameHintKo": "VD: PSY",
+    "romanizationType": "Phiên âm La-tinh",
+    "reverseLearningDescription": "Chế độ học ngược: Dành cho người Nhật học tiếng Anh/Hàn."
 }

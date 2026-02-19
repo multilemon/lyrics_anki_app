@@ -31,8 +31,26 @@
     "furiganaExplanation": "คำศัพท์ที่สูงกว่าระดับนี้จะมีฟุริงานะที่ด้านหน้าของการ์ด",
     "cancelButton": "ยกเลิก",
     "exportButton": "ส่งออก",
-    "noLyricsAvailable": "No lyrics available.",
+    "noLyricsAvailable": "ไม่มีเนื้อเพลง",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "คำศัพท์",
+    "grammarType": "ไวยากรณ์",
+    "kanjiType": "คันจิ",
+    "closeButton": "ปิด",
+    "allFilter": "ทั้งหมด",
+    "otherFilter": "อื่นๆ",
+    "learningModeLabel": "โหมดการเรียน",
+    "modeJapanese": "เรียนภาษาญี่ปุ่น",
+    "modeEnglish": "เรียนภาษาอังกฤษ",
+    "modeKorean": "เรียนภาษาเกาหลี",
+    "ipaType": "สัทอักษร",
+    "structureType": "โครงสร้าง",
+    "songTitleHintEn": "เช่น Shape of You",
+    "artistNameHintEn": "เช่น Ed Sheeran",
+    "songTitleHintKo": "เช่น Gangnam Style",
+    "artistNameHintKo": "เช่น PSY",
+    "romanizationType": "อักษรโรมัน",
+    "reverseLearningDescription": "โหมดเรียนย้อนกลับ: สำหรับคนญี่ปุ่นที่เรียนภาษาอังกฤษ/เกาหลี"
 }

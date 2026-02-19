@@ -31,8 +31,26 @@
     "furiganaExplanation": "Слова выше этого уровня будут содержать фуригану на лицевой стороне карточки.",
     "cancelButton": "Отмена",
     "exportButton": "Экспорт",
-    "noLyricsAvailable": "No lyrics available.",
+    "noLyricsAvailable": "Текст песни не найден.",
     "@noLyricsAvailable": {
         "description": "Message shown when no lyrics are found"
-    }
+    },
+    "vocabType": "Словарь",
+    "grammarType": "Грамматика",
+    "kanjiType": "Кандзи",
+    "closeButton": "Закрыть",
+    "allFilter": "Все",
+    "otherFilter": "Другое",
+    "learningModeLabel": "Режим обучения",
+    "modeJapanese": "Учить японский",
+    "modeEnglish": "Учить английский",
+    "modeKorean": "Учить корейский",
+    "ipaType": "МФА",
+    "structureType": "Структура",
+    "songTitleHintEn": "напр. Shape of You",
+    "artistNameHintEn": "напр. Ed Sheeran",
+    "songTitleHintKo": "напр. Gangnam Style",
+    "artistNameHintKo": "напр. PSY",
+    "romanizationType": "Романизация",
+    "reverseLearningDescription": "Обратный режим: для японцев, изучающих английский/корейский."
 }

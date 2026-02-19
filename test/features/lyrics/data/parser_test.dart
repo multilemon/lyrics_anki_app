@@ -1,19 +1,24 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
+import 'package:lyrics_anki_app/features/lyrics/data/services/song_metadata_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockBox extends Mock implements Box<HistoryItem> {}
 
+class MockSongMetadataService extends Mock implements SongMetadataService {}
+
 void main() {
   group('LyricsRepository Parser', () {
     late LyricsRepository repository;
     late MockBox mockBox;
+    late MockSongMetadataService mockMetadataService;
 
     setUp(() {
       mockBox = MockBox();
-      repository = LyricsRepository(mockBox);
+      mockMetadataService = MockSongMetadataService();
+      repository = LyricsRepository(mockBox, mockMetadataService);
     });
 
     test('parseAnalysisResult handles valid minified JSON correctly', () async {
@@ -47,9 +52,10 @@ void main() {
     test('parseAnalysisResult handles invalid JSON gracefully', () async {
       const jsonString = 'INVALID_JSON';
 
-      final result = await repository.parseAnalysisResult(jsonString);
-
-      expect(result.vocabs, isEmpty);
+      expect(
+        () => repository.parseAnalysisResult(jsonString),
+        throwsA(isA<FormatException>()),
+      );
     });
 
     test('parseAnalysisResult handles missing vocab key', () async {
