@@ -40,7 +40,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   freezed: ^3.2.3
-  hive_ce_generator: ^1.10.0
+  hive_ce_generator: ^1.11.0
   json_serializable: ^6.11.2
   mocktail: ^1.0.3
   riverpod_generator: ^4.0.0+1
