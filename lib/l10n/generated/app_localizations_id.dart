@@ -106,60 +106,60 @@ class AppLocalizationsId extends AppLocalizations {
   String get exportButton => 'Ekspor';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'Lirik tidak tersedia.';
 
   @override
-  String get vocabType => 'Vocabulary';
+  String get vocabType => 'Kosakata';
 
   @override
-  String get grammarType => 'Grammar';
+  String get grammarType => 'Tata Bahasa';
 
   @override
   String get kanjiType => 'Kanji';
 
   @override
-  String get closeButton => 'Close';
+  String get closeButton => 'Tutup';
 
   @override
-  String get allFilter => 'All';
+  String get allFilter => 'Semua';
 
   @override
-  String get otherFilter => 'Other';
+  String get otherFilter => 'Lainnya';
 
   @override
-  String get learningModeLabel => 'Learning Mode';
+  String get learningModeLabel => 'Mode Belajar';
 
   @override
-  String get modeJapanese => 'Learn Japanese';
+  String get modeJapanese => 'Belajar Bahasa Jepang';
 
   @override
-  String get modeEnglish => 'Learn English';
+  String get modeEnglish => 'Belajar Bahasa Inggris';
 
   @override
-  String get modeKorean => 'Learn Korean';
+  String get modeKorean => 'Belajar Bahasa Korea';
 
   @override
   String get ipaType => 'IPA';
 
   @override
-  String get structureType => 'Structure';
+  String get structureType => 'Struktur';
 
   @override
-  String get songTitleHintEn => 'e.g. Shape of You';
+  String get songTitleHintEn => 'cth. Shape of You';
 
   @override
-  String get artistNameHintEn => 'e.g. Ed Sheeran';
+  String get artistNameHintEn => 'cth. Ed Sheeran';
 
   @override
-  String get songTitleHintKo => 'e.g. Gangnam Style';
+  String get songTitleHintKo => 'cth. Gangnam Style';
 
   @override
-  String get artistNameHintKo => 'e.g. PSY';
+  String get artistNameHintKo => 'cth. PSY';
 
   @override
-  String get romanizationType => 'Romanization';
+  String get romanizationType => 'Romanisasi';
 
   @override
   String get reverseLearningDescription =>
-      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
+      'Mode Terbalik: untuk penutur Jepang belajar bahasa Inggris/Korea.';
 }

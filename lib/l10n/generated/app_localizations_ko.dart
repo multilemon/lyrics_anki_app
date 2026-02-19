@@ -104,60 +104,60 @@ class AppLocalizationsKo extends AppLocalizations {
   String get exportButton => '내보내기';
 
   @override
-  String get noLyricsAvailable => '가사가 없습니다.';
+  String get noLyricsAvailable => '가사를 찾을 수 없습니다.';
 
   @override
-  String get vocabType => 'Vocabulary';
+  String get vocabType => '어휘';
 
   @override
-  String get grammarType => 'Grammar';
+  String get grammarType => '문법';
 
   @override
-  String get kanjiType => 'Kanji';
+  String get kanjiType => '한자';
 
   @override
-  String get closeButton => 'Close';
+  String get closeButton => '닫기';
 
   @override
-  String get allFilter => 'All';
+  String get allFilter => '전체';
 
   @override
-  String get otherFilter => 'Other';
+  String get otherFilter => '기타';
 
   @override
-  String get learningModeLabel => 'Learning Mode';
+  String get learningModeLabel => '학습 모드';
 
   @override
-  String get modeJapanese => 'Learn Japanese';
+  String get modeJapanese => '일본어 학습';
 
   @override
-  String get modeEnglish => 'Learn English';
+  String get modeEnglish => '영어 학습';
 
   @override
-  String get modeKorean => 'Learn Korean';
+  String get modeKorean => '한국어 학습';
 
   @override
-  String get ipaType => 'IPA';
+  String get ipaType => '발음 기호';
 
   @override
   String get structureType => '구조';
 
   @override
-  String get songTitleHintEn => 'e.g. Shape of You';
+  String get songTitleHintEn => '예: Shape of You';
 
   @override
-  String get artistNameHintEn => 'e.g. Ed Sheeran';
+  String get artistNameHintEn => '예: Ed Sheeran';
 
   @override
-  String get songTitleHintKo => 'e.g. Gangnam Style';
+  String get songTitleHintKo => '예: Gangnam Style';
 
   @override
-  String get artistNameHintKo => 'e.g. PSY';
+  String get artistNameHintKo => '예: PSY';
 
   @override
-  String get romanizationType => 'Romanization';
+  String get romanizationType => '로마자 표기';
 
   @override
   String get reverseLearningDescription =>
-      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
+      '역학습 모드: 일본어 화자가 영어/한국어를 배우기 위한 모드입니다.';
 }

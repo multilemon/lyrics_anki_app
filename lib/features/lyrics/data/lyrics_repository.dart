@@ -89,7 +89,7 @@ class LyricsRepository {
       case LearningMode.korean:
         systemInstruction = _systemInstructionKorean;
       case LearningMode.japanese:
-        systemInstruction = _systemInstruction;
+        systemInstruction = _buildSystemInstruction(language);
     }
 
     final model = FirebaseAI.googleAI().generativeModel(
@@ -614,7 +614,7 @@ class LyricsRepository {
     }
   }
 
-  static const _systemInstruction = '''
+  static String _buildSystemInstruction(String targetLanguage) => '''
 **ROLE**: Japanese Linguistic Data Engineer.
 **GOAL**: Analyze lyrics -> Structured JSON.
 
@@ -629,12 +629,12 @@ class LyricsRepository {
 
 **CONSTRAINTS**:
 
-- **Translate**: Use formal linguistics (e.g., "Intransitive Verb") in TARGET_LANGUAGE.
+- **Translate**: Use formal linguistics (e.g., "Intransitive Verb") in $targetLanguage. ALL meanings, explanations, context sentences, and nuance notes MUST be written in $targetLanguage.
 - **Vocab**: Atomic N/V/Adj/Adv. Break compounds (e.g., 喉 + 奥).
 - **Grammar**: NO N5. Format: "V.て", "V.る", "V.た". No trailing slashes.
 - **Kanji (EXHAUSTIVE)**:
   - 1 Char/entry. No okurigana.
-  - Meanings: ALL standard dictionary definitions.
+  - Meanings: ALL standard dictionary definitions in $targetLanguage.
   - Readings: ALL On'yomi (Katakana) | ALL Kun'yomi (Hiragana). Format: "コウ | のど".
   - NO transliterations (e.g., No Thai/English phonetics).
 - **JLPT**: Standard calibration. Basic greetings = N5.

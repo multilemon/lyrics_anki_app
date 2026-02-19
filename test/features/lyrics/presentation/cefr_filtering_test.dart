@@ -1,7 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   group('SelectionManager CEFR Filtering', () {
@@ -50,12 +50,21 @@ void main() {
       var state = container.read(selectionManagerProvider);
 
       // Assert
-      expect(state.grammarIndices.contains(0), true,
-          reason: 'Point A (A1) should be selected');
-      expect(state.grammarIndices.contains(2), true,
-          reason: 'Point C (A1) should be selected');
-      expect(state.grammarIndices.contains(1), false,
-          reason: 'Point B (B2) should NOT be selected');
+      expect(
+        state.grammarIndices.contains(0),
+        true,
+        reason: 'Point A (A1) should be selected',
+      );
+      expect(
+        state.grammarIndices.contains(2),
+        true,
+        reason: 'Point C (A1) should be selected',
+      );
+      expect(
+        state.grammarIndices.contains(1),
+        false,
+        reason: 'Point B (B2) should NOT be selected',
+      );
 
       // Act - Deselect A1
       notifier.toggleLevel(analysis, 'A1', select: false);
@@ -73,16 +82,27 @@ void main() {
         kanji: [],
         enVocab: [
           EnVocab(
-              term: 'Apple', ipa: '', pos: 'n', meaningJp: '', nuanceJp: ''),
+            term: 'Apple',
+            ipa: '',
+            pos: 'n',
+            meaningJp: '',
+            nuanceJp: '',
+          ),
           EnVocab(
-              term: 'Banana', ipa: '', pos: 'n', meaningJp: '', nuanceJp: ''),
+            term: 'Banana',
+            ipa: '',
+            pos: 'n',
+            meaningJp: '',
+            nuanceJp: '',
+          ),
         ],
         enGrammar: [
           EnGrammar(
-              structure: 'Rule 1',
-              cefrLevel: 'A1',
-              explanationJp: '',
-              excerpt: ''),
+            structure: 'Rule 1',
+            cefrLevel: 'A1',
+            explanationJp: '',
+            excerpt: '',
+          ),
         ],
       );
 

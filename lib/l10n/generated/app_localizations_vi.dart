@@ -107,60 +107,60 @@ class AppLocalizationsVi extends AppLocalizations {
   String get exportButton => 'Xuất';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'Không tìm thấy lời bài hát.';
 
   @override
-  String get vocabType => 'Vocabulary';
+  String get vocabType => 'Từ vựng';
 
   @override
-  String get grammarType => 'Grammar';
+  String get grammarType => 'Ngữ pháp';
 
   @override
   String get kanjiType => 'Kanji';
 
   @override
-  String get closeButton => 'Close';
+  String get closeButton => 'Đóng';
 
   @override
-  String get allFilter => 'All';
+  String get allFilter => 'Tất cả';
 
   @override
-  String get otherFilter => 'Other';
+  String get otherFilter => 'Khác';
 
   @override
-  String get learningModeLabel => 'Learning Mode';
+  String get learningModeLabel => 'Chế độ học';
 
   @override
-  String get modeJapanese => 'Learn Japanese';
+  String get modeJapanese => 'Học tiếng Nhật';
 
   @override
-  String get modeEnglish => 'Learn English';
+  String get modeEnglish => 'Học tiếng Anh';
 
   @override
-  String get modeKorean => 'Learn Korean';
+  String get modeKorean => 'Học tiếng Hàn';
 
   @override
-  String get ipaType => 'IPA';
+  String get ipaType => 'Phiên âm';
 
   @override
-  String get structureType => 'Structure';
+  String get structureType => 'Cấu trúc';
 
   @override
-  String get songTitleHintEn => 'e.g. Shape of You';
+  String get songTitleHintEn => 'VD: Shape of You';
 
   @override
-  String get artistNameHintEn => 'e.g. Ed Sheeran';
+  String get artistNameHintEn => 'VD: Ed Sheeran';
 
   @override
-  String get songTitleHintKo => 'e.g. Gangnam Style';
+  String get songTitleHintKo => 'VD: Gangnam Style';
 
   @override
-  String get artistNameHintKo => 'e.g. PSY';
+  String get artistNameHintKo => 'VD: PSY';
 
   @override
-  String get romanizationType => 'Romanization';
+  String get romanizationType => 'Phiên âm La-tinh';
 
   @override
   String get reverseLearningDescription =>
-      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
+      'Chế độ học ngược: Dành cho người Nhật học tiếng Anh/Hàn.';
 }

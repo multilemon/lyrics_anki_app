@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
@@ -95,7 +97,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     } else {
       // Restore mode from item logic if needed, or just pass it
       // For now, onNavigateToAnalyze usually just checks args
-      LearningMode mode = LearningMode.japanese;
+      var mode = LearningMode.japanese;
       if (item.learningModeIndex != null) {
         mode = LearningMode.values[item.learningModeIndex!];
       } else {
@@ -138,7 +140,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               // Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
+                  padding: const EdgeInsets.fromLTRB(32, 72, 32, 36),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -165,176 +167,191 @@ class _HomePageState extends ConsumerState<HomePage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.sakuraDark.withValues(alpha: 0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          l10n.analyzeNewSong,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Learning Mode Toggle
-                        _ModeSelector(
-                          selectedMode: learningMode,
-                          onModeChanged: (mode) {
-                            ref.read(learningModeProvider.notifier).state =
-                                mode;
-                            // Clear inputs when switching mode
-                            _titleController.clear();
-                            _artistController.clear();
-
-                            ref.read(settingsBoxProvider)?.put(
-                                  'learning_mode_index',
-                                  mode.index,
-                                );
-                          },
-                        ),
-
-                        if (learningMode != LearningMode.japanese) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.reverseLearningDescription,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontStyle: FontStyle.italic,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(
+                        sigmaX: 12,
+                        sigmaY: 12,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.frost,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withValues(
+                              alpha: 0.4,
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                        ],
-
-                        const SizedBox(height: 24),
-
-                        // Song Title
-                        TextField(
-                          controller: _titleController,
-                          decoration: InputDecoration(
-                            labelText: l10n.songTitleLabel,
-                            hintText: learningMode == LearningMode.english
-                                ? l10n.songTitleHintEn
-                                : learningMode == LearningMode.korean
-                                    ? l10n.songTitleHintKo
-                                    : l10n.songTitleHint,
-                            prefixIcon: const Icon(Icons.music_note),
-                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  AppColors.sakuraDark.withValues(alpha: 0.08),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
+                        padding: const EdgeInsets.all(28),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              l10n.analyzeNewSong,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
 
-                        // Artist Name
-                        TextField(
-                          controller: _artistController,
-                          decoration: InputDecoration(
-                            labelText: l10n.artistNameLabel,
-                            hintText: learningMode == LearningMode.english
-                                ? l10n.artistNameHintEn
-                                : learningMode == LearningMode.korean
-                                    ? l10n.artistNameHintKo
-                                    : l10n.artistNameHint,
-                            prefixIcon: const Icon(Icons.person),
-                          ),
-                        ),
+                            // Learning Mode Toggle
+                            _ModeSelector(
+                              selectedMode: learningMode,
+                              onModeChanged: (mode) {
+                                ref.read(learningModeProvider.notifier).state =
+                                    mode;
+                                // Clear inputs when switching mode
+                                _titleController.clear();
+                                _artistController.clear();
 
-                        // Target Language Selector - Hide in Reverse/Korean Learning Mode
-                        if (learningMode == LearningMode.japanese) ...[
-                          const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () async {
-                              final result = await showDialog<LanguageData>(
-                                context: context,
-                                builder: (context) =>
-                                    const _LanguageSearchDialog(),
-                              );
-                              if (result != null) {
-                                setState(() {
-                                  _selectedLanguage = result.englishName;
-                                });
-                                await ref.read(settingsBoxProvider)?.put(
-                                      'target_language',
-                                      result.englishName,
+                                ref.read(settingsBoxProvider)?.put(
+                                      'learning_mode_index',
+                                      mode.index,
                                     );
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
+                              },
+                            ),
+
+                            if (learningMode != LearningMode.japanese) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.reverseLearningDescription,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              decoration: BoxDecoration(
-                                color: AppColors.cream,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.language,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          l10n.targetLanguageLabel,
-                                          style: theme.textTheme.labelSmall
-                                              ?.copyWith(
-                                            color: AppColors.textTertiary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _selectedLanguage,
-                                          style: theme.textTheme.bodyLarge
-                                              ?.copyWith(
-                                            color: AppColors.textPrimary,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.arrow_drop_down,
-                                    color: AppColors.textTertiary,
-                                  ),
-                                ],
+                            ],
+
+                            const SizedBox(height: 24),
+
+                            // Song Title
+                            TextField(
+                              controller: _titleController,
+                              decoration: InputDecoration(
+                                labelText: l10n.songTitleLabel,
+                                hintText: learningMode == LearningMode.english
+                                    ? l10n.songTitleHintEn
+                                    : learningMode == LearningMode.korean
+                                        ? l10n.songTitleHintKo
+                                        : l10n.songTitleHint,
+                                prefixIcon: const Icon(Icons.music_note),
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
 
-                        const SizedBox(height: 32),
+                            // Artist Name
+                            TextField(
+                              controller: _artistController,
+                              decoration: InputDecoration(
+                                labelText: l10n.artistNameLabel,
+                                hintText: learningMode == LearningMode.english
+                                    ? l10n.artistNameHintEn
+                                    : learningMode == LearningMode.korean
+                                        ? l10n.artistNameHintKo
+                                        : l10n.artistNameHint,
+                                prefixIcon: const Icon(Icons.person),
+                              ),
+                            ),
 
-                        // Analyze Button
-                        ElevatedButton(
-                          onPressed: _handleAnalyze,
-                          child: Text(l10n.analyzeButton),
+                            // Target Language Selector
+                            if (learningMode == LearningMode.japanese) ...[
+                              const SizedBox(height: 16),
+                              InkWell(
+                                onTap: () async {
+                                  final result = await showDialog<LanguageData>(
+                                    context: context,
+                                    builder: (context) =>
+                                        const _LanguageSearchDialog(),
+                                  );
+                                  if (result != null) {
+                                    setState(() {
+                                      _selectedLanguage = result.englishName;
+                                    });
+                                    await ref.read(settingsBoxProvider)?.put(
+                                          'target_language',
+                                          result.englishName,
+                                        );
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cream,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.language,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              l10n.targetLanguageLabel,
+                                              style: theme.textTheme.labelSmall
+                                                  ?.copyWith(
+                                                color: AppColors.textTertiary,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _selectedLanguage,
+                                              style: theme.textTheme.bodyLarge
+                                                  ?.copyWith(
+                                                color: AppColors.textPrimary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_drop_down,
+                                        color: AppColors.textTertiary,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 32),
+
+                            // Analyze Button
+                            ElevatedButton(
+                              onPressed: _handleAnalyze,
+                              child: Text(l10n.analyzeButton),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 48)),
+              const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
               // History Section Title
               SliverToBoxAdapter(

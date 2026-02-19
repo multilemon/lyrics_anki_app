@@ -106,60 +106,60 @@ class AppLocalizationsEs extends AppLocalizations {
   String get exportButton => 'Export';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'No hay letra disponible.';
 
   @override
-  String get vocabType => 'Vocabulary';
+  String get vocabType => 'Vocabulario';
 
   @override
-  String get grammarType => 'Grammar';
+  String get grammarType => 'Gramática';
 
   @override
   String get kanjiType => 'Kanji';
 
   @override
-  String get closeButton => 'Close';
+  String get closeButton => 'Cerrar';
 
   @override
-  String get allFilter => 'All';
+  String get allFilter => 'Todo';
 
   @override
-  String get otherFilter => 'Other';
+  String get otherFilter => 'Otro';
 
   @override
-  String get learningModeLabel => 'Learning Mode';
+  String get learningModeLabel => 'Modo de aprendizaje';
 
   @override
-  String get modeJapanese => 'Learn Japanese';
+  String get modeJapanese => 'Aprender japonés';
 
   @override
-  String get modeEnglish => 'Learn English';
+  String get modeEnglish => 'Aprender inglés';
 
   @override
-  String get modeKorean => 'Learn Korean';
+  String get modeKorean => 'Aprender coreano';
 
   @override
-  String get ipaType => 'IPA';
+  String get ipaType => 'AFI';
 
   @override
-  String get structureType => 'Structure';
+  String get structureType => 'Estructura';
 
   @override
-  String get songTitleHintEn => 'e.g. Shape of You';
+  String get songTitleHintEn => 'ej. Shape of You';
 
   @override
-  String get artistNameHintEn => 'e.g. Ed Sheeran';
+  String get artistNameHintEn => 'ej. Ed Sheeran';
 
   @override
-  String get songTitleHintKo => 'e.g. Gangnam Style';
+  String get songTitleHintKo => 'ej. Gangnam Style';
 
   @override
-  String get artistNameHintKo => 'e.g. PSY';
+  String get artistNameHintKo => 'ej. PSY';
 
   @override
-  String get romanizationType => 'Romanization';
+  String get romanizationType => 'Romanización';
 
   @override
   String get reverseLearningDescription =>
-      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
+      'Modo inverso: para japoneses que aprenden inglés/coreano.';
 }

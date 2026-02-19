@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
+import 'package:lyrics_anki_app/features/lyrics/data/services/song_metadata_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:mockito/mockito.dart';
-import 'package:lyrics_anki_app/features/lyrics/data/services/song_metadata_service.dart';
 
 // Mock dependencies
 class MockSongMetadataService extends Mock implements SongMetadataService {}
@@ -58,17 +58,17 @@ void main() {
         artist: 'Kenshi',
         lyricsSnippet: 'Info',
         analyzedAt: DateTime.now(),
-        learningModeIndex: null, // Legacy
       )..vocabs = [
           Vocab(
-              word: '夢',
-              reading: 'yume',
-              meaning: 'dream',
-              partOfSpeech: 'n',
-              jlptV: 'N4',
-              jlptK: 'N4',
-              context: '',
-              nuanceNote: '')
+            word: '夢',
+            reading: 'yume',
+            meaning: 'dream',
+            partOfSpeech: 'n',
+            jlptV: 'N4',
+            jlptK: 'N4',
+            context: '',
+            nuanceNote: '',
+          ),
         ];
 
       final itemLegacyReverse = HistoryItem(
@@ -76,10 +76,14 @@ void main() {
         artist: 'Ed',
         lyricsSnippet: 'Info',
         analyzedAt: DateTime.now(),
-        learningModeIndex: null, // Legacy
       )..enVocab = [
           EnVocab(
-              term: 'love', ipa: 'lʌv', pos: 'v', meaningJp: '愛', nuanceJp: '')
+            term: 'love',
+            ipa: 'lʌv',
+            pos: 'v',
+            meaningJp: '愛',
+            nuanceJp: '',
+          ),
         ];
 
       await repository.saveToHistory(itemLegacyJP);

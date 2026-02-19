@@ -106,60 +106,60 @@ class AppLocalizationsRu extends AppLocalizations {
   String get exportButton => 'Экспорт';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'Текст песни не найден.';
 
   @override
-  String get vocabType => 'Vocabulary';
+  String get vocabType => 'Словарь';
 
   @override
-  String get grammarType => 'Grammar';
+  String get grammarType => 'Грамматика';
 
   @override
-  String get kanjiType => 'Kanji';
+  String get kanjiType => 'Кандзи';
 
   @override
-  String get closeButton => 'Close';
+  String get closeButton => 'Закрыть';
 
   @override
-  String get allFilter => 'All';
+  String get allFilter => 'Все';
 
   @override
-  String get otherFilter => 'Other';
+  String get otherFilter => 'Другое';
 
   @override
-  String get learningModeLabel => 'Learning Mode';
+  String get learningModeLabel => 'Режим обучения';
 
   @override
-  String get modeJapanese => 'Learn Japanese';
+  String get modeJapanese => 'Учить японский';
 
   @override
-  String get modeEnglish => 'Learn English';
+  String get modeEnglish => 'Учить английский';
 
   @override
-  String get modeKorean => 'Learn Korean';
+  String get modeKorean => 'Учить корейский';
 
   @override
-  String get ipaType => 'IPA';
+  String get ipaType => 'МФА';
 
   @override
-  String get structureType => 'Structure';
+  String get structureType => 'Структура';
 
   @override
-  String get songTitleHintEn => 'e.g. Shape of You';
+  String get songTitleHintEn => 'напр. Shape of You';
 
   @override
-  String get artistNameHintEn => 'e.g. Ed Sheeran';
+  String get artistNameHintEn => 'напр. Ed Sheeran';
 
   @override
-  String get songTitleHintKo => 'e.g. Gangnam Style';
+  String get songTitleHintKo => 'напр. Gangnam Style';
 
   @override
-  String get artistNameHintKo => 'e.g. PSY';
+  String get artistNameHintKo => 'напр. PSY';
 
   @override
-  String get romanizationType => 'Romanization';
+  String get romanizationType => 'Романизация';
 
   @override
   String get reverseLearningDescription =>
-      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
+      'Обратный режим: для японцев, изучающих английский/корейский.';
 }

@@ -12,7 +12,9 @@ import 'package:lyrics_anki_app/features/lyrics/data/services/anki_export_servic
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/musical_note_loading.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/native_video_player.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_list_item.dart';
 import 'package:lyrics_anki_app/features/main/presentation/pages/main_page.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 
@@ -102,22 +104,10 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 if (!analysis.isComplete) ...[
-                                  const SizedBox(height: 16),
-                                  SizedBox(
-                                    width: 120,
-                                    child: LinearProgressIndicator(
-                                      minHeight: 2,
-                                      color: AppColors.sakuraDark,
-                                      backgroundColor:
-                                          AppColors.sakuraDark.withOpacity(0.3),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    context.l10n.analysisInProgress,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: AppColors.textTertiary,
-                                    ),
+                                  const SizedBox(height: 12),
+                                  MusicalNoteLoading(
+                                    compact: true,
+                                    message: context.l10n.analysisInProgress,
                                   ),
                                 ],
                                 const SizedBox(height: 24),
@@ -131,11 +121,6 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                       Consumer(
                         builder: (context, ref, child) {
                           if (analysis == null || !analysis.isComplete) {
-                            return const SizedBox.shrink();
-                          }
-
-                          // TODO: Adapt filters for Reverse Mode or hide them for now
-                          if (isReverseLearning) {
                             return const SizedBox.shrink();
                           }
 
@@ -350,10 +335,12 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                           }
                                         }
 
-                                        if (nonLevelGrammar.isEmpty)
+                                        if (nonLevelGrammar.isEmpty) {
                                           return false;
+                                        }
                                         return nonLevelGrammar.every(
-                                            selected.grammarIndices.contains);
+                                          selected.grammarIndices.contains,
+                                        );
                                       }
 
                                       // Japanese Logic
@@ -423,8 +410,10 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                                 .toUpperCase();
                                             if (!targetLevels.contains(lvl)) {
                                               ref
-                                                  .read(selectionManagerProvider
-                                                      .notifier)
+                                                  .read(
+                                                    selectionManagerProvider
+                                                        .notifier,
+                                                  )
                                                   .toggle(
                                                     SelectionType.grammar,
                                                     i,
@@ -449,8 +438,10 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
 
                                         for (final idx in targetIndices) {
                                           ref
-                                              .read(selectionManagerProvider
-                                                  .notifier)
+                                              .read(
+                                                selectionManagerProvider
+                                                    .notifier,
+                                              )
                                               .toggle(
                                                 SelectionType.vocab,
                                                 idx,
@@ -466,8 +457,10 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                               .toUpperCase();
                                           if (!targetLevels.contains(lvl)) {
                                             ref
-                                                .read(selectionManagerProvider
-                                                    .notifier)
+                                                .read(
+                                                  selectionManagerProvider
+                                                      .notifier,
+                                                )
                                                 .toggle(
                                                   SelectionType.grammar,
                                                   i,
@@ -484,8 +477,10 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                               .toUpperCase();
                                           if (!targetLevels.contains(lvl)) {
                                             ref
-                                                .read(selectionManagerProvider
-                                                    .notifier)
+                                                .read(
+                                                  selectionManagerProvider
+                                                      .notifier,
+                                                )
                                                 .toggle(
                                                   SelectionType.kanji,
                                                   i,
@@ -512,8 +507,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                             return const SizedBox.shrink();
                           }
 
-                          final bool isReverseLearning =
-                              analysis.enVocab != null;
+                          final isReverseLearning = analysis.enVocab != null;
 
                           // Calculate counts based on learning mode
                           final int vocabCount;
@@ -628,22 +622,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                 );
                               },
                               loading: () => Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const CircularProgressIndicator(
-                                      color: AppColors.sakuraDark,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      context.l10n.analysisInProgress,
-                                      textAlign: TextAlign.center,
-                                      style:
-                                          theme.textTheme.bodyMedium?.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
+                                child: MusicalNoteLoading(
+                                  message: context.l10n.analysisInProgress,
                                 ),
                               ),
                               error: (Object e, StackTrace s) {
@@ -1348,9 +1328,12 @@ class _VocabListState extends State<_VocabList>
       cacheExtent: 100,
       itemCount: widget.vocabList.length,
       itemBuilder: (context, index) {
-        return _VocabItem(
+        return StaggeredListItem(
           index: index,
-          vocab: widget.vocabList[index],
+          child: _VocabItem(
+            index: index,
+            vocab: widget.vocabList[index],
+          ),
         );
       },
     );
@@ -1491,9 +1474,12 @@ class _GrammarListState extends State<_GrammarList>
       cacheExtent: 100,
       itemCount: widget.grammarList.length,
       itemBuilder: (context, index) {
-        return _GrammarItem(
+        return StaggeredListItem(
           index: index,
-          grammar: widget.grammarList[index],
+          child: _GrammarItem(
+            index: index,
+            grammar: widget.grammarList[index],
+          ),
         );
       },
     );
@@ -1596,9 +1582,12 @@ class _KanjiListState extends State<_KanjiList>
       cacheExtent: 100,
       itemCount: widget.kanjiList.length,
       itemBuilder: (context, index) {
-        return _KanjiItem(
+        return StaggeredListItem(
           index: index,
-          kanji: widget.kanjiList[index],
+          child: _KanjiItem(
+            index: index,
+            kanji: widget.kanjiList[index],
+          ),
         );
       },
     );
@@ -1740,7 +1729,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _ResultCard extends StatelessWidget {
+class _ResultCard extends StatefulWidget {
   const _ResultCard({
     required this.title,
     required this.isSelected,
@@ -1762,78 +1751,159 @@ class _ResultCard extends StatelessWidget {
   final Widget? leadingContent;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: isSelected ? themeColor.withValues(alpha: 0.1) : AppColors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isSelected ? themeColor : Colors.transparent,
-        ),
+  State<_ResultCard> createState() => _ResultCardState();
+}
+
+class _ResultCardState extends State<_ResultCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _scaleAnimation;
+  bool _previousSelected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousSelected = widget.isSelected;
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1, end: 1.025)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 40,
       ),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: onToggle,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    value: isSelected,
-                    activeColor: themeColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    onChanged: (_) => onToggle(),
-                  ),
-                  if (leadingContent != null) ...[
-                    leadingContent!,
-                    const SizedBox(width: 8),
-                  ],
-                ],
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.025, end: 1)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 60,
+      ),
+    ]).animate(_pulseController);
+  }
+
+  @override
+  void didUpdateWidget(_ResultCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Trigger pulse only when selection changes to true
+    if (widget.isSelected && !_previousSelected) {
+      _pulseController
+        ..reset()
+        ..forward();
+    }
+    _previousSelected = widget.isSelected;
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = widget.isSelected;
+    final themeColor = widget.themeColor;
+
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color:
+              isSelected ? themeColor.withValues(alpha: 0.08) : AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? themeColor.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.6),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? themeColor.withValues(alpha: 0.12)
+                  : AppColors.sakuraDark.withValues(alpha: 0.04),
+              blurRadius: isSelected ? 12 : 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onToggle,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 8,
               ),
-              // Content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    top: 4,
-                    right: 8,
-                    bottom: 8,
-                    left: 4,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(child: title),
-                          if (trailingTag != null) ...[
-                            const SizedBox(width: 8),
-                            trailingTag!,
-                          ],
-                        ],
+                      Checkbox(
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        value: isSelected,
+                        activeColor: themeColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        onChanged: (_) => widget.onToggle(),
                       ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        subtitle!,
-                      ],
-                      if (details != null) ...[
-                        const SizedBox(height: 8),
-                        details!,
+                      if (widget.leadingContent != null) ...[
+                        widget.leadingContent!,
+                        const SizedBox(width: 8),
                       ],
                     ],
                   ),
-                ),
+                  // Content
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: 4,
+                        right: 8,
+                        bottom: 8,
+                        left: 4,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: widget.title),
+                              if (widget.trailingTag != null) ...[
+                                const SizedBox(width: 8),
+                                widget.trailingTag!,
+                              ],
+                            ],
+                          ),
+                          if (widget.subtitle != null) ...[
+                            const SizedBox(height: 4),
+                            widget.subtitle!,
+                          ],
+                          if (widget.details != null) ...[
+                            const SizedBox(height: 8),
+                            widget.details!,
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -2248,9 +2318,12 @@ class _EnVocabListState extends State<_EnVocabList>
       cacheExtent: 100,
       itemCount: widget.vocabList.length,
       itemBuilder: (context, index) {
-        return _EnVocabItem(
+        return StaggeredListItem(
           index: index,
-          vocab: widget.vocabList[index],
+          child: _EnVocabItem(
+            index: index,
+            vocab: widget.vocabList[index],
+          ),
         );
       },
     );
@@ -2399,9 +2472,12 @@ class _EnGrammarListState extends State<_EnGrammarList>
       cacheExtent: 100,
       itemCount: widget.grammarList.length,
       itemBuilder: (context, index) {
-        return _EnGrammarItem(
+        return StaggeredListItem(
           index: index,
-          grammar: widget.grammarList[index],
+          child: _EnGrammarItem(
+            index: index,
+            grammar: widget.grammarList[index],
+          ),
         );
       },
     );

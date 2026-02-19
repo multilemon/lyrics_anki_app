@@ -105,60 +105,60 @@ class AppLocalizationsTh extends AppLocalizations {
   String get exportButton => 'ส่งออก';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'ไม่มีเนื้อเพลง';
 
   @override
-  String get vocabType => 'Vocabulary';
+  String get vocabType => 'คำศัพท์';
 
   @override
-  String get grammarType => 'Grammar';
+  String get grammarType => 'ไวยากรณ์';
 
   @override
-  String get kanjiType => 'Kanji';
+  String get kanjiType => 'คันจิ';
 
   @override
-  String get closeButton => 'Close';
+  String get closeButton => 'ปิด';
 
   @override
-  String get allFilter => 'All';
+  String get allFilter => 'ทั้งหมด';
 
   @override
-  String get otherFilter => 'Other';
+  String get otherFilter => 'อื่นๆ';
 
   @override
-  String get learningModeLabel => 'Learning Mode';
+  String get learningModeLabel => 'โหมดการเรียน';
 
   @override
-  String get modeJapanese => 'Learn Japanese';
+  String get modeJapanese => 'เรียนภาษาญี่ปุ่น';
 
   @override
-  String get modeEnglish => 'Learn English';
+  String get modeEnglish => 'เรียนภาษาอังกฤษ';
 
   @override
-  String get modeKorean => 'Learn Korean';
+  String get modeKorean => 'เรียนภาษาเกาหลี';
 
   @override
-  String get ipaType => 'IPA';
+  String get ipaType => 'สัทอักษร';
 
   @override
-  String get structureType => 'Structure';
+  String get structureType => 'โครงสร้าง';
 
   @override
-  String get songTitleHintEn => 'e.g. Shape of You';
+  String get songTitleHintEn => 'เช่น Shape of You';
 
   @override
-  String get artistNameHintEn => 'e.g. Ed Sheeran';
+  String get artistNameHintEn => 'เช่น Ed Sheeran';
 
   @override
-  String get songTitleHintKo => 'e.g. Gangnam Style';
+  String get songTitleHintKo => 'เช่น Gangnam Style';
 
   @override
-  String get artistNameHintKo => 'e.g. PSY';
+  String get artistNameHintKo => 'เช่น PSY';
 
   @override
-  String get romanizationType => 'Romanization';
+  String get romanizationType => 'อักษรโรมัน';
 
   @override
   String get reverseLearningDescription =>
-      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
+      'โหมดเรียนย้อนกลับ: สำหรับคนญี่ปุ่นที่เรียนภาษาอังกฤษ/เกาหลี';
 }

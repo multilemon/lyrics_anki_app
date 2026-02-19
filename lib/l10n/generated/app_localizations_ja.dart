@@ -104,60 +104,59 @@ class AppLocalizationsJa extends AppLocalizations {
   String get exportButton => 'エクスポート';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => '歌詞が見つかりません。';
 
   @override
-  String get vocabType => 'Vocabulary';
+  String get vocabType => '単語';
 
   @override
-  String get grammarType => 'Grammar';
+  String get grammarType => '文法';
 
   @override
-  String get kanjiType => 'Kanji';
+  String get kanjiType => '漢字';
 
   @override
-  String get closeButton => 'Close';
+  String get closeButton => '閉じる';
 
   @override
-  String get allFilter => 'All';
+  String get allFilter => 'すべて';
 
   @override
-  String get otherFilter => 'Other';
+  String get otherFilter => 'その他';
 
   @override
-  String get learningModeLabel => 'Learning Mode';
+  String get learningModeLabel => '学習モード';
 
   @override
-  String get modeJapanese => 'Learn Japanese';
+  String get modeJapanese => '日本語を学ぶ';
 
   @override
-  String get modeEnglish => 'Learn English';
+  String get modeEnglish => '英語を学ぶ';
 
   @override
-  String get modeKorean => 'Learn Korean';
+  String get modeKorean => '韓国語を学ぶ';
 
   @override
-  String get ipaType => 'IPA';
+  String get ipaType => '発音記号';
 
   @override
-  String get structureType => 'Structure';
+  String get structureType => '構文';
 
   @override
-  String get songTitleHintEn => 'e.g. Shape of You';
+  String get songTitleHintEn => '例：Shape of You';
 
   @override
-  String get artistNameHintEn => 'e.g. Ed Sheeran';
+  String get artistNameHintEn => '例：Ed Sheeran';
 
   @override
-  String get songTitleHintKo => 'e.g. Gangnam Style';
+  String get songTitleHintKo => '例：Gangnam Style';
 
   @override
-  String get artistNameHintKo => 'e.g. PSY';
+  String get artistNameHintKo => '例：PSY';
 
   @override
-  String get romanizationType => 'Romanization';
+  String get romanizationType => 'ローマ字表記';
 
   @override
-  String get reverseLearningDescription =>
-      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
+  String get reverseLearningDescription => 'リバース学習モード：日本語話者が英語/韓国語を学ぶためのモード。';
 }

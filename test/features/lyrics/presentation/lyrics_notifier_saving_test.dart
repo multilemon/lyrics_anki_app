@@ -1,11 +1,11 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 
 // Generate MockLyricsRepository
 @GenerateNiceMocks([MockSpec<LyricsRepository>()])
@@ -37,7 +37,12 @@ void main() {
         kanji: [],
         enVocab: [
           EnVocab(
-              term: 'Apple', ipa: '', pos: 'n', meaningJp: '', nuanceJp: ''),
+            term: 'Apple',
+            ipa: '',
+            pos: 'n',
+            meaningJp: '',
+            nuanceJp: '',
+          ),
         ],
         enGrammar: [],
         song: 'Title',
@@ -45,24 +50,41 @@ void main() {
         lyrics: 'Lyrics',
       );
 
-      when(mockRepository.analyzeSong(any, any, any,
-              learningMode: anyNamed('learningMode')))
-          .thenAnswer((_) => Stream.value(result));
+      when(
+        mockRepository.analyzeSong(
+          any,
+          any,
+          any,
+          learningMode: anyNamed('learningMode'),
+        ),
+      ).thenAnswer((_) => Stream.value(result));
 
-      when(mockRepository.saveAnalysisResult(any, any,
-              learningMode: anyNamed('learningMode')))
-          .thenAnswer((_) async {});
+      when(
+        mockRepository.saveAnalysisResult(
+          any,
+          any,
+          learningMode: anyNamed('learningMode'),
+        ),
+      ).thenAnswer((_) async {});
 
       final notifier = container.read(lyricsNotifierProvider.notifier);
 
       // Act
-      await notifier.analyzeSong('Titile', 'Artist', 'English',
-          learningMode: LearningMode.english);
+      await notifier.analyzeSong(
+        'Titile',
+        'Artist',
+        'English',
+        learningMode: LearningMode.english,
+      );
 
       // Assert
-      verify(mockRepository.saveAnalysisResult(result, 'English',
-              learningMode: LearningMode.english))
-          .called(1);
+      verify(
+        mockRepository.saveAnalysisResult(
+          result,
+          'English',
+          learningMode: LearningMode.english,
+        ),
+      ).called(1);
     });
 
     test('should save analysis result for Korean song', () async {
@@ -75,7 +97,12 @@ void main() {
         kanji: [],
         enVocab: [
           EnVocab(
-              term: 'Kimchi', ipa: '', pos: 'n', meaningJp: '', nuanceJp: ''),
+            term: 'Kimchi',
+            ipa: '',
+            pos: 'n',
+            meaningJp: '',
+            nuanceJp: '',
+          ),
         ],
         enGrammar: [],
         song: 'Title',
@@ -83,24 +110,41 @@ void main() {
         lyrics: 'Lyrics',
       );
 
-      when(mockRepository.analyzeSong(any, any, any,
-              learningMode: anyNamed('learningMode')))
-          .thenAnswer((_) => Stream.value(result));
+      when(
+        mockRepository.analyzeSong(
+          any,
+          any,
+          any,
+          learningMode: anyNamed('learningMode'),
+        ),
+      ).thenAnswer((_) => Stream.value(result));
 
-      when(mockRepository.saveAnalysisResult(any, any,
-              learningMode: anyNamed('learningMode')))
-          .thenAnswer((_) async {});
+      when(
+        mockRepository.saveAnalysisResult(
+          any,
+          any,
+          learningMode: anyNamed('learningMode'),
+        ),
+      ).thenAnswer((_) async {});
 
       final notifier = container.read(lyricsNotifierProvider.notifier);
 
       // Act
-      await notifier.analyzeSong('Title', 'Artist', 'Korean',
-          learningMode: LearningMode.korean);
+      await notifier.analyzeSong(
+        'Title',
+        'Artist',
+        'Korean',
+        learningMode: LearningMode.korean,
+      );
 
       // Assert
-      verify(mockRepository.saveAnalysisResult(result, 'Korean',
-              learningMode: LearningMode.korean))
-          .called(1);
+      verify(
+        mockRepository.saveAnalysisResult(
+          result,
+          'Korean',
+          learningMode: LearningMode.korean,
+        ),
+      ).called(1);
     });
   });
 }

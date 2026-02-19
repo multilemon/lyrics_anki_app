@@ -107,60 +107,60 @@ class AppLocalizationsUz extends AppLocalizations {
   String get exportButton => 'Eksport';
 
   @override
-  String get noLyricsAvailable => 'No lyrics available.';
+  String get noLyricsAvailable => 'Qo\'shiq matni topilmadi.';
 
   @override
-  String get vocabType => 'Vocabulary';
+  String get vocabType => 'Lug\'at';
 
   @override
-  String get grammarType => 'Grammar';
+  String get grammarType => 'Grammatika';
 
   @override
   String get kanjiType => 'Kanji';
 
   @override
-  String get closeButton => 'Close';
+  String get closeButton => 'Yopish';
 
   @override
-  String get allFilter => 'All';
+  String get allFilter => 'Barchasi';
 
   @override
-  String get otherFilter => 'Other';
+  String get otherFilter => 'Boshqa';
 
   @override
-  String get learningModeLabel => 'Learning Mode';
+  String get learningModeLabel => 'O\'rganish rejimi';
 
   @override
-  String get modeJapanese => 'Learn Japanese';
+  String get modeJapanese => 'Yapon tilini o\'rganish';
 
   @override
-  String get modeEnglish => 'Learn English';
+  String get modeEnglish => 'Ingliz tilini o\'rganish';
 
   @override
-  String get modeKorean => 'Learn Korean';
+  String get modeKorean => 'Koreys tilini o\'rganish';
 
   @override
-  String get ipaType => 'IPA';
+  String get ipaType => 'XFA';
 
   @override
-  String get structureType => 'Structure';
+  String get structureType => 'Tuzilma';
 
   @override
-  String get songTitleHintEn => 'e.g. Shape of You';
+  String get songTitleHintEn => 'mas. Shape of You';
 
   @override
-  String get artistNameHintEn => 'e.g. Ed Sheeran';
+  String get artistNameHintEn => 'mas. Ed Sheeran';
 
   @override
-  String get songTitleHintKo => 'e.g. Gangnam Style';
+  String get songTitleHintKo => 'mas. Gangnam Style';
 
   @override
-  String get artistNameHintKo => 'e.g. PSY';
+  String get artistNameHintKo => 'mas. PSY';
 
   @override
-  String get romanizationType => 'Romanization';
+  String get romanizationType => 'Romanizatsiya';
 
   @override
   String get reverseLearningDescription =>
-      'Reverse Learning Mode: For Japanese speakers learning English/Korean.';
+      'Teskari rejim: yapon tilida so\'zlashuvchilar uchun ingliz/koreys tilini o\'rganish.';
 }
