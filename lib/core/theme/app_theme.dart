@@ -8,7 +8,7 @@ class AppTheme {
   static ThemeData get light {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: AppColors.cream,
+      scaffoldBackgroundColor: AppColors.background,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.sakura,
         primary: AppColors.sakuraDark,
@@ -35,7 +35,7 @@ class AppTheme {
         ],
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.cream,
+        backgroundColor: AppColors.background,
         elevation: 0,
         centerTitle: true,
         scrolledUnderElevation: 0,
@@ -61,23 +61,23 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.cream,
+        fillColor: AppColors.white,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(
-            color: AppColors.sakura,
+            color: AppColors.sakuraDark,
             width: 1.5,
           ),
         ),
@@ -86,6 +86,10 @@ class AppTheme {
         ),
         labelStyle: AppTextStyles.bodyMedium.copyWith(
           color: AppColors.textSecondary,
+        ),
+        floatingLabelStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.sakuraDark,
+          fontWeight: FontWeight.w500,
         ),
         prefixIconColor: AppColors.sakuraDark,
       ),

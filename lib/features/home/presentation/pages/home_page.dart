@@ -287,21 +287,24 @@ class _HomePageState extends ConsumerState<HomePage> {
                                         );
                                   }
                                 },
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(20),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
+                                    horizontal: 20,
+                                    vertical: 18,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.cream,
-                                    borderRadius: BorderRadius.circular(16),
+                                    color: AppColors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: AppColors.border,
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
                                       const Icon(
                                         Icons.language,
-                                        color: AppColors.textSecondary,
+                                        color: AppColors.sakuraDark,
                                       ),
                                       const SizedBox(width: 16),
                                       Expanded(
@@ -330,7 +333,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       ),
                                       const Icon(
                                         Icons.arrow_drop_down,
-                                        color: AppColors.textTertiary,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ],
                                   ),
