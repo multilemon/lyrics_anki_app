@@ -52,8 +52,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       final savedModeIndex = box?.get('learning_mode_index');
       if (savedModeIndex != null && savedModeIndex is int) {
-        ref.read(learningModeProvider.notifier).state =
-            LearningMode.values[savedModeIndex];
+        ref.read(learningModeProvider.notifier).set(
+              LearningMode.values[savedModeIndex],
+            );
       }
     });
   }
@@ -209,8 +210,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                             _ModeSelector(
                               selectedMode: learningMode,
                               onModeChanged: (mode) {
-                                ref.read(learningModeProvider.notifier).state =
-                                    mode;
+                                ref
+                                    .read(learningModeProvider.notifier)
+                                    .set(mode);
                                 // Clear inputs when switching mode
                                 _titleController.clear();
                                 _artistController.clear();
@@ -390,7 +392,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 builder: (context, ref, child) {
                   // if (!repo.isReady) { ... } // Removed blocking error
 
-                  final historyAsync = ref.watch(historyNotifierProvider);
+                  final historyAsync = ref.watch(historyProvider);
                   return historyAsync.when(
                     data: (items) {
                       if (items.isEmpty) {

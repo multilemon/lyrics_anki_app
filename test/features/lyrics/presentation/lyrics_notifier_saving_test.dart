@@ -67,7 +67,7 @@ void main() {
         ),
       ).thenAnswer((_) async {});
 
-      final notifier = container.read(lyricsNotifierProvider.notifier);
+      final notifier = container.read(lyricsProvider.notifier);
 
       // Act
       await notifier.analyzeSong(
@@ -127,7 +127,7 @@ void main() {
         ),
       ).thenAnswer((_) async {});
 
-      final notifier = container.read(lyricsNotifierProvider.notifier);
+      final notifier = container.read(lyricsProvider.notifier);
 
       // Act
       await notifier.analyzeSong(

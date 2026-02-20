@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'version_provider.g.dart';
 
 @riverpod
-Future<String> version(VersionRef ref) async {
+Future<String> version(Ref ref) async {
   final packageInfo = await PackageInfo.fromPlatform();
   return 'v${packageInfo.version} (${packageInfo.buildNumber})';
 }

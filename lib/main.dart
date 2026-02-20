@@ -2,9 +2,9 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:lyrics_anki_app/app/app.dart';
-import 'package:lyrics_anki_app/bootstrap.dart';
 
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
@@ -68,12 +68,14 @@ void main() async {
     debugPrint('Firebase initialization failed: $e\n$st');
   }
 
-  await bootstrap(
-    () => const App(),
-    overrides: [
-      if (box != null) historyBoxProvider.overrideWithValue(box),
-      if (settingsBox != null)
-        settingsBoxProvider.overrideWithValue(settingsBox),
-    ],
+  runApp(
+    ProviderScope(
+      overrides: [
+        if (box != null) historyBoxProvider.overrideWithValue(box),
+        if (settingsBox != null)
+          settingsBoxProvider.overrideWithValue(settingsBox),
+      ],
+      child: const App(),
+    ),
   );
 }

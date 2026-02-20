@@ -10,7 +10,7 @@ class LanguageSelectionPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final currentLocale = ref.watch(localeNotifierProvider);
+    final currentLocale = ref.watch(localeProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -33,14 +33,14 @@ class LanguageSelectionPage extends ConsumerWidget {
             value: const Locale('en'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'ไทย (Thai)',
             value: const Locale('th'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: '简体中文 (Chinese Simplified)',
@@ -50,7 +50,7 @@ class LanguageSelectionPage extends ConsumerWidget {
             ),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: '繁體中文 (Chinese Traditional)',
@@ -60,56 +60,56 @@ class LanguageSelectionPage extends ConsumerWidget {
             ),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Bahasa Indonesia',
             value: const Locale('id'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'ဗမာစာ (Burmese)',
             value: const Locale('my'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: '日本語 (Japanese)',
             value: const Locale('ja'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Oʻzbek (Uzbek)',
             value: const Locale('uz'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Tiếng Việt (Vietnamese)',
             value: const Locale('vi'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Русский (Russian)',
             value: const Locale('ru'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: '한국어 (Korean)',
             value: const Locale('ko'),
             groupValue: currentLocale,
             onChanged: (v) =>
-                ref.read(localeNotifierProvider.notifier).setLocale(v),
+                ref.read(localeProvider.notifier).setLocale(v),
           ),
         ],
       ),

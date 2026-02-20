@@ -35,17 +35,17 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
     final theme = Theme.of(context);
 
     // Reset video player when song changes
-    ref.listen(lyricsNotifierProvider, (_, __) {
+    ref.listen(lyricsProvider, (_, __) {
       if (_showPlayer) {
         setState(() => _showPlayer = false);
       }
     });
 
     // Watch the async state for data
-    final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
+    final analysis = ref.watch(lyricsProvider).asData?.value;
 
     // Use currentMode to determine tab layout even during loading
-    final notifier = ref.read(lyricsNotifierProvider.notifier);
+    final notifier = ref.read(lyricsProvider.notifier);
     final currentMode = notifier.currentMode;
 
     // Logic: Trust data if present, otherwise use intended mode
@@ -123,6 +123,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                           if (analysis == null || !analysis.isComplete) {
                             return const SizedBox.shrink();
                           }
+                          // Local binding for type promotion
+                          final data = analysis;
 
                           bool isLevelSelected(String level) {
                             final selected =
@@ -130,20 +132,16 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
 
                             // JLPT Check
                             final vocabIndices = <int>[];
-                            for (var i = 0; i < analysis.vocabs.length; i++) {
-                              if (analysis.vocabs[i].jlptV
-                                      .trim()
-                                      .toUpperCase() ==
+                            for (var i = 0; i < data.vocabs.length; i++) {
+                              if (data.vocabs[i].jlptV.trim().toUpperCase() ==
                                   level.toUpperCase()) {
                                 vocabIndices.add(i);
                               }
                             }
 
                             final grammarIndices = <int>[];
-                            for (var i = 0; i < analysis.grammar.length; i++) {
-                              if (analysis.grammar[i].level
-                                      .trim()
-                                      .toUpperCase() ==
+                            for (var i = 0; i < data.grammar.length; i++) {
+                              if (data.grammar[i].level.trim().toUpperCase() ==
                                   level.toUpperCase()) {
                                 grammarIndices.add(i);
                               }
@@ -151,11 +149,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
 
                             // CEFR Check (English/Korean) - Only Grammar has level
                             final enGrammarIndices = <int>[];
-                            if (analysis.enGrammar != null) {
-                              for (var i = 0;
-                                  i < analysis.enGrammar!.length;
-                                  i++) {
-                                if (analysis.enGrammar![i].cefrLevel
+                            if (data.enGrammar != null) {
+                              for (var i = 0; i < data.enGrammar!.length; i++) {
+                                if (data.enGrammar![i].cefrLevel
                                         .trim()
                                         .toUpperCase() ==
                                     level.toUpperCase()) {
@@ -165,10 +161,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                             }
 
                             final kanjiIndices = <int>[];
-                            for (var i = 0; i < analysis.kanji.length; i++) {
-                              if (analysis.kanji[i].level
-                                      .trim()
-                                      .toUpperCase() ==
+                            for (var i = 0; i < data.kanji.length; i++) {
+                              if (data.kanji[i].level.trim().toUpperCase() ==
                                   level.toUpperCase()) {
                                 kanjiIndices.add(i);
                               }
@@ -200,24 +194,22 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                 ref.watch(selectionManagerProvider);
 
                             // Check if empty content (considering both modes)
-                            final hasVocab = analysis.vocabs.isNotEmpty ||
-                                (analysis.enVocab?.isNotEmpty ?? false);
-                            final hasGrammar = analysis.grammar.isNotEmpty ||
-                                (analysis.enGrammar?.isNotEmpty ?? false);
-                            final hasKanji = analysis.kanji.isNotEmpty;
+                            final hasVocab = data.vocabs.isNotEmpty ||
+                                (data.enVocab?.isNotEmpty ?? false);
+                            final hasGrammar = data.grammar.isNotEmpty ||
+                                (data.enGrammar?.isNotEmpty ?? false);
+                            final hasKanji = data.kanji.isNotEmpty;
 
                             if (!hasVocab && !hasGrammar && !hasKanji) {
                               return false;
                             }
 
                             final vocabAll = selected.vocabIndices.length ==
-                                (analysis.enVocab?.length ??
-                                    analysis.vocabs.length);
+                                (data.enVocab?.length ?? data.vocabs.length);
                             final grammarAll = selected.grammarIndices.length ==
-                                (analysis.enGrammar?.length ??
-                                    analysis.grammar.length);
+                                (data.enGrammar?.length ?? data.grammar.length);
                             final kanjiAll = selected.kanjiIndices.length ==
-                                analysis.kanji.length;
+                                data.kanji.length;
 
                             return vocabAll && grammarAll && kanjiAll;
                           }
@@ -245,9 +237,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                           }
 
                           if (isReverseLearning) {
-                            if (analysis.enGrammar != null) {
+                            if (data.enGrammar != null) {
                               checkLevels(
-                                analysis.enGrammar!,
+                                data.enGrammar!,
                                 (d) => (d as EnGrammar).cefrLevel,
                               );
                             }
@@ -260,15 +252,15 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                             // So Vocab is effectively independent of level chips.
                           } else {
                             checkLevels(
-                              analysis.vocabs,
+                              data.vocabs,
                               (d) => (d as Vocab).jlptV,
                             );
                             checkLevels(
-                              analysis.grammar,
+                              data.grammar,
                               (d) => (d as Grammar).level,
                             );
                             checkLevels(
-                              analysis.kanji,
+                              data.kanji,
                               (d) => (d as Kanji).level,
                             );
                           }
@@ -284,7 +276,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                   onChanged: (val) {
                                     ref
                                         .read(selectionManagerProvider.notifier)
-                                        .toggleAll(analysis, select: val);
+                                        .toggleAll(data, select: val);
                                   },
                                 ),
                                 const SizedBox(width: 8),
@@ -299,7 +291,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                               selectionManagerProvider.notifier,
                                             )
                                             .toggleLevel(
-                                              analysis,
+                                              data,
                                               level,
                                               select: val,
                                             );
@@ -321,11 +313,11 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                         // And ignore EnVocab for "Other" logic to keep it simple, same as level chips.
 
                                         final nonLevelGrammar = <int>[];
-                                        if (analysis.enGrammar != null) {
+                                        if (data.enGrammar != null) {
                                           for (var i = 0;
-                                              i < analysis.enGrammar!.length;
+                                              i < data.enGrammar!.length;
                                               i++) {
-                                            final lvl = analysis
+                                            final lvl = data
                                                 .enGrammar![i].cefrLevel
                                                 .trim()
                                                 .toUpperCase();
@@ -346,9 +338,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                       // Japanese Logic
                                       final nonLevelVocab = <int>[];
                                       for (var i = 0;
-                                          i < analysis.vocabs.length;
+                                          i < data.vocabs.length;
                                           i++) {
-                                        final lvl = analysis.vocabs[i].jlptV
+                                        final lvl = data.vocabs[i].jlptV
                                             .trim()
                                             .toUpperCase();
                                         if (!targetLevels.contains(lvl)) {
@@ -358,9 +350,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
 
                                       final nonLevelGrammar = <int>[];
                                       for (var i = 0;
-                                          i < analysis.grammar.length;
+                                          i < data.grammar.length;
                                           i++) {
-                                        final lvl = analysis.grammar[i].level
+                                        final lvl = data.grammar[i].level
                                             .trim()
                                             .toUpperCase();
                                         if (!targetLevels.contains(lvl)) {
@@ -370,9 +362,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
 
                                       final nonLevelKanji = <int>[];
                                       for (var i = 0;
-                                          i < analysis.kanji.length;
+                                          i < data.kanji.length;
                                           i++) {
-                                        final lvl = analysis.kanji[i].level
+                                        final lvl = data.kanji[i].level
                                             .trim()
                                             .toUpperCase();
                                         if (!targetLevels.contains(lvl)) {
@@ -400,11 +392,11 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                     })(),
                                     onChanged: (val) {
                                       if (isReverseLearning) {
-                                        if (analysis.enGrammar != null) {
+                                        if (data.enGrammar != null) {
                                           for (var i = 0;
-                                              i < analysis.enGrammar!.length;
+                                              i < data.enGrammar!.length;
                                               i++) {
-                                            final lvl = analysis
+                                            final lvl = data
                                                 .enGrammar![i].cefrLevel
                                                 .trim()
                                                 .toUpperCase();
@@ -426,9 +418,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                         // Japanese logic
                                         final targetIndices = <int>[];
                                         for (var i = 0;
-                                            i < analysis.vocabs.length;
+                                            i < data.vocabs.length;
                                             i++) {
-                                          final lvl = analysis.vocabs[i].jlptV
+                                          final lvl = data.vocabs[i].jlptV
                                               .trim()
                                               .toUpperCase();
                                           if (!targetLevels.contains(lvl)) {
@@ -450,9 +442,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                         }
 
                                         for (var i = 0;
-                                            i < analysis.grammar.length;
+                                            i < data.grammar.length;
                                             i++) {
-                                          final lvl = analysis.grammar[i].level
+                                          final lvl = data.grammar[i].level
                                               .trim()
                                               .toUpperCase();
                                           if (!targetLevels.contains(lvl)) {
@@ -470,9 +462,9 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                         }
 
                                         for (var i = 0;
-                                            i < analysis.kanji.length;
+                                            i < data.kanji.length;
                                             i++) {
-                                          final lvl = analysis.kanji[i].level
+                                          final lvl = data.kanji[i].level
                                               .trim()
                                               .toUpperCase();
                                           if (!targetLevels.contains(lvl)) {
@@ -502,7 +494,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                       Consumer(
                         builder: (context, ref, _) {
                           final analysis =
-                              ref.watch(lyricsNotifierProvider).asData?.value;
+                              ref.watch(lyricsProvider).asData?.value;
                           if (analysis == null || !analysis.isComplete) {
                             return const SizedBox.shrink();
                           }
@@ -567,7 +559,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                       Expanded(
                         child: Consumer(
                           builder: (context, ref, child) {
-                            final state = ref.watch(lyricsNotifierProvider);
+                            final state = ref.watch(lyricsProvider);
                             return state.when(
                               data: (analysis) {
                                 if (analysis == null) {
@@ -670,16 +662,16 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                                     clearHomeFormSignalProvider
                                                         .notifier,
                                                   )
-                                                  .state++;
+                                                  .increment();
                                               // Navigate to Home (Index 0)
                                               ref
                                                   .read(
                                                     navIndexProvider.notifier,
                                                   )
-                                                  .state = 0;
+                                                  .set(0);
                                               // Also clear current lyrics state
                                               ref.invalidate(
-                                                lyricsNotifierProvider,
+                                                lyricsProvider,
                                               );
                                             },
                                             style: ElevatedButton.styleFrom(
@@ -743,7 +735,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                             onPressed: () {
                                               ref
                                                   .read(
-                                                    lyricsNotifierProvider
+                                                    lyricsProvider
                                                         .notifier,
                                                   )
                                                   .retry();
@@ -810,14 +802,14 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                                     clearHomeFormSignalProvider
                                                         .notifier,
                                                   )
-                                                  .state++;
+                                                  .increment();
                                               ref
                                                   .read(
                                                     navIndexProvider.notifier,
                                                   )
-                                                  .state = 0;
+                                                  .set(0);
                                               ref.invalidate(
-                                                lyricsNotifierProvider,
+                                                lyricsProvider,
                                               );
                                             },
                                             icon: const Icon(Icons.arrow_back),
@@ -912,14 +904,14 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                                   clearHomeFormSignalProvider
                                                       .notifier,
                                                 )
-                                                .state++;
+                                                .increment();
                                             // Navigate to Home (Index 0)
                                             ref
                                                 .read(navIndexProvider.notifier)
-                                                .state = 0;
+                                                .set(0);
                                             // Also clear current lyrics state
                                             ref.invalidate(
-                                              lyricsNotifierProvider,
+                                              lyricsProvider,
                                             );
                                           },
                                           icon: const Icon(Icons.search),
@@ -947,7 +939,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                           onPressed: () {
                                             ref
                                                 .read(
-                                                  lyricsNotifierProvider
+                                                  lyricsProvider
                                                       .notifier,
                                                 )
                                                 .retry();
@@ -986,7 +978,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
               Consumer(
                 builder: (context, ref, child) {
                   final analysis =
-                      ref.watch(lyricsNotifierProvider).asData?.value;
+                      ref.watch(lyricsProvider).asData?.value;
                   if (analysis?.youtubeId == null) {
                     return const SizedBox.shrink();
                   }
@@ -1108,7 +1100,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
         ),
         floatingActionButton: Consumer(
           builder: (context, ref, child) {
-            final analysis = ref.watch(lyricsNotifierProvider).asData?.value;
+            final analysis = ref.watch(lyricsProvider).asData?.value;
             final selectedState = ref.watch(selectionManagerProvider);
             final hasSelection = selectedState.vocabIndices.isNotEmpty ||
                 selectedState.grammarIndices.isNotEmpty ||
@@ -1175,7 +1167,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                     onPressed: () {
                       // Re-read to get latest state in callback
                       final analysis =
-                          ref.read(lyricsNotifierProvider).asData?.value;
+                          ref.read(lyricsProvider).asData?.value;
                       if (analysis == null) return;
 
                       final selectedState = ref.read(selectionManagerProvider);

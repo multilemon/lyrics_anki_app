@@ -108,8 +108,6 @@ class LyricsRepository {
     String? refinedYoutubeId;
     String? officialTitle;
     String? officialArtist;
-    var queryToUse = '$title $artist';
-
     try {
       final metadata = await _metadataService.fetchMetadata(
         title: title,
@@ -118,15 +116,15 @@ class LyricsRepository {
 
       officialTitle = metadata.title;
       officialArtist = metadata.artist;
-
-      // Use official metadata for lyrics search
-      queryToUse = '${metadata.title} ${metadata.artist}';
       refinedYoutubeId = metadata.youtubeId;
     } catch (e) {
       // Ignore metadata fetch error
     }
 
-    final fetchedLyrics = await _fetchLyricsFromLrclib(queryToUse);
+    final fetchedLyrics = await _fetchLyricsFromLrclib(
+      trackName: officialTitle ?? title,
+      artistName: officialArtist ?? artist,
+    );
 
     if (fetchedLyrics == null) {
       throw SongNotFoundException(title, artist);
@@ -583,11 +581,30 @@ class LyricsRepository {
     return source;
   }
 
-  Future<String?> _fetchLyricsFromLrclib(String query) async {
+  Future<String?> _fetchLyricsFromLrclib({
+    required String trackName,
+    required String artistName,
+  }) async {
+    // 1. Try precise search with track_name + artist_name
+    final precise = await _searchLrclib({
+      'track_name': trackName,
+      'artist_name': artistName,
+    });
+    if (precise != null) return precise;
+
+    // 2. Fallback: generic q search
+    return _searchLrclib({'q': '$trackName $artistName'});
+  }
+
+  Future<String?> _searchLrclib(
+    Map<String, String> queryParams,
+  ) async {
     try {
-      final uri = Uri.https('lrclib.net', '/api/search', {
-        'q': query,
-      });
+      final uri = Uri.https(
+        'lrclib.net',
+        '/api/search',
+        queryParams,
+      );
 
       final response = await http.get(uri);
 

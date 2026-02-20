@@ -5,14 +5,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
+import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/pages/lyrics_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/pages/settings_page.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-// Simple state provider for the current tab index
-final navIndexProvider = StateProvider<int>((ref) => 0);
+part 'main_page.g.dart';
+
+@riverpod
+class NavIndex extends _$NavIndex {
+  @override
+  int build() => 0;
+
+  void set(int index) => state = index;
+}
 
 class MainPage extends ConsumerWidget {
   const MainPage({super.key});
@@ -32,14 +41,14 @@ class MainPage extends ConsumerWidget {
           learningMode = LearningMode.japanese,
         }) async {
           // Switch to Lyrics Tab IMMEDIATELY
-          ref.read(navIndexProvider.notifier).state = 1;
+          ref.read(navIndexProvider.notifier).set(1);
           // Clear any previous selection state
           ref.read(selectionManagerProvider.notifier).clear();
 
           // Trigger analysis (fire and forget for UI,
           // but provider handles state)
           unawaited(
-            ref.read(lyricsNotifierProvider.notifier).analyzeSong(
+            ref.read(lyricsProvider.notifier).analyzeSong(
                   title,
                   artist,
                   language,
@@ -51,12 +60,12 @@ class MainPage extends ConsumerWidget {
           item,
         ) {
           // Switch to Lyrics Tab IMMEDIATELY
-          ref.read(navIndexProvider.notifier).state = 1;
+          ref.read(navIndexProvider.notifier).set(1);
           // Clear any previous selection state
           ref.read(selectionManagerProvider.notifier).clear();
 
           // Load from history
-          ref.read(lyricsNotifierProvider.notifier).loadFromHistory(item);
+          ref.read(lyricsProvider.notifier).loadFromHistory(item);
         },
       ),
       const LyricsPage(),
@@ -75,7 +84,7 @@ class MainPage extends ConsumerWidget {
           child: NavigationBar(
             selectedIndex: currentIndex,
             onDestinationSelected: (index) {
-              ref.read(navIndexProvider.notifier).state = index;
+              ref.read(navIndexProvider.notifier).set(index);
             },
             backgroundColor: AppColors.frost,
             elevation: 0,

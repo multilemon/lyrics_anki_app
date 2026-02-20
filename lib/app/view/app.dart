@@ -32,7 +32,7 @@ class _AppState extends ConsumerState<App> {
 
   @override
   Widget build(BuildContext context) {
-    final locale = ref.watch(localeNotifierProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp(
       title: 'HanaUta',

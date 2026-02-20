@@ -4,7 +4,7 @@ part 'song_metadata.freezed.dart';
 part 'song_metadata.g.dart';
 
 @freezed
-class SongMetadata with _$SongMetadata {
+abstract class SongMetadata with _$SongMetadata {
   const factory SongMetadata({
     required String title,
     required String artist,

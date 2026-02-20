@@ -14,7 +14,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final currentLocale = ref.watch(localeNotifierProvider);
+    final currentLocale = ref.watch(localeProvider);
     final localeName = _getLocaleName(currentLocale);
 
     return Scaffold(
