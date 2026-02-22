@@ -134,10 +134,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get modeJapanese => 'Học tiếng Nhật';
 
   @override
-  String get modeEnglish => 'Học tiếng Anh';
+  String get modeEnglish => 'Học tiếng Anh\n(For JP)';
 
   @override
-  String get modeKorean => 'Học tiếng Hàn';
+  String get modeKorean => 'Học tiếng Hàn\n(For JP)';
 
   @override
   String get ipaType => 'Phiên âm';

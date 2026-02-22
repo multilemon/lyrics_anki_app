@@ -361,13 +361,13 @@ abstract class AppLocalizations {
   /// Option for learning English (for JP speakers)
   ///
   /// In en, this message translates to:
-  /// **'Learn English'**
+  /// **'Learn English\n(For JP)'**
   String get modeEnglish;
 
   /// Option for learning Korean (for JP speakers)
   ///
   /// In en, this message translates to:
-  /// **'Learn Korean'**
+  /// **'Learn Korean\n(For JP)'**
   String get modeKorean;
 
   /// Label for IPA field

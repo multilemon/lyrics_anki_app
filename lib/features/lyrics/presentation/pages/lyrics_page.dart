@@ -668,7 +668,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                                   .read(
                                                     navIndexProvider.notifier,
                                                   )
-                                                  .set(0);
+                                                  .index = 0;
                                               // Also clear current lyrics state
                                               ref.invalidate(
                                                 lyricsProvider,
@@ -735,8 +735,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                             onPressed: () {
                                               ref
                                                   .read(
-                                                    lyricsProvider
-                                                        .notifier,
+                                                    lyricsProvider.notifier,
                                                   )
                                                   .retry();
                                             },
@@ -807,7 +806,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                                   .read(
                                                     navIndexProvider.notifier,
                                                   )
-                                                  .set(0);
+                                                  .index = 0;
                                               ref.invalidate(
                                                 lyricsProvider,
                                               );
@@ -908,7 +907,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                             // Navigate to Home (Index 0)
                                             ref
                                                 .read(navIndexProvider.notifier)
-                                                .set(0);
+                                                .index = 0;
                                             // Also clear current lyrics state
                                             ref.invalidate(
                                               lyricsProvider,
@@ -939,8 +938,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                           onPressed: () {
                                             ref
                                                 .read(
-                                                  lyricsProvider
-                                                      .notifier,
+                                                  lyricsProvider.notifier,
                                                 )
                                                 .retry();
                                           },
@@ -977,8 +975,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
             if (_showPlayer)
               Consumer(
                 builder: (context, ref, child) {
-                  final analysis =
-                      ref.watch(lyricsProvider).asData?.value;
+                  final analysis = ref.watch(lyricsProvider).asData?.value;
                   if (analysis?.youtubeId == null) {
                     return const SizedBox.shrink();
                   }
@@ -1166,8 +1163,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                     backgroundColor: AppColors.sakuraDark,
                     onPressed: () {
                       // Re-read to get latest state in callback
-                      final analysis =
-                          ref.read(lyricsProvider).asData?.value;
+                      final analysis = ref.read(lyricsProvider).asData?.value;
                       if (analysis == null) return;
 
                       final selectedState = ref.read(selectionManagerProvider);

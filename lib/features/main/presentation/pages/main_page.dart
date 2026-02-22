@@ -18,8 +18,8 @@ part 'main_page.g.dart';
 class NavIndex extends _$NavIndex {
   @override
   int build() => 0;
-
-  void set(int index) => state = index;
+  int get index => state;
+  set index(int value) => state = value;
 }
 
 class MainPage extends ConsumerWidget {
@@ -40,7 +40,7 @@ class MainPage extends ConsumerWidget {
           learningMode = LearningMode.japanese,
         }) async {
           // Switch to Lyrics Tab IMMEDIATELY
-          ref.read(navIndexProvider.notifier).set(1);
+          ref.read(navIndexProvider.notifier).index = 1;
           // Clear any previous selection state
           ref.read(selectionManagerProvider.notifier).clear();
 
@@ -59,7 +59,7 @@ class MainPage extends ConsumerWidget {
           item,
         ) {
           // Switch to Lyrics Tab IMMEDIATELY
-          ref.read(navIndexProvider.notifier).set(1);
+          ref.read(navIndexProvider.notifier).index = 1;
           // Clear any previous selection state
           ref.read(selectionManagerProvider.notifier).clear();
 
@@ -83,7 +83,7 @@ class MainPage extends ConsumerWidget {
           child: NavigationBar(
             selectedIndex: currentIndex,
             onDestinationSelected: (index) {
-              ref.read(navIndexProvider.notifier).set(index);
+              ref.read(navIndexProvider.notifier).index = index;
             },
             backgroundColor: AppColors.frost,
             elevation: 0,

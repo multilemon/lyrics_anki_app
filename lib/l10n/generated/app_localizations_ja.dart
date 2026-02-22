@@ -131,10 +131,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get modeJapanese => '日本語を学ぶ';
 
   @override
-  String get modeEnglish => '英語を学ぶ';
+  String get modeEnglish => '英語を学ぶ\n(日本人向け)';
 
   @override
-  String get modeKorean => '韓国語を学ぶ';
+  String get modeKorean => '韓国語を学ぶ\n(日本人向け)';
 
   @override
   String get ipaType => '発音記号';

@@ -131,10 +131,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modeJapanese => '学日语';
 
   @override
-  String get modeEnglish => '学英语';
+  String get modeEnglish => '学英语\n(For JP)';
 
   @override
-  String get modeKorean => '学韩语';
+  String get modeKorean => '学韩语\n(For JP)';
 
   @override
   String get ipaType => '国际音标';
@@ -288,10 +288,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get modeJapanese => '学日语';
 
   @override
-  String get modeEnglish => '学英语';
+  String get modeEnglish => '学英语\n(For JP)';
 
   @override
-  String get modeKorean => '学韩语';
+  String get modeKorean => '学韩语\n(For JP)';
 
   @override
   String get ipaType => '国际音标';
@@ -445,10 +445,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get modeJapanese => '學日語';
 
   @override
-  String get modeEnglish => '學英語';
+  String get modeEnglish => '學英語\n(For JP)';
 
   @override
-  String get modeKorean => '學韓語';
+  String get modeKorean => '學韓語\n(For JP)';
 
   @override
   String get ipaType => '國際音標';

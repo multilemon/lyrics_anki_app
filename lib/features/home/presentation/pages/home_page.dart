@@ -650,6 +650,17 @@ class _ModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
+    Widget buildSymbol(String symbol, bool isSelected) {
+      return Text(
+        symbol,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: isSelected ? AppColors.sakuraDark : AppColors.textTertiary,
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -659,35 +670,41 @@ class _ModeSelector extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return Row(
-            children: [
-              Expanded(
-                child: _ModeCard(
-                  title: l10n.modeJapanese,
-                  icon: Icons.translate,
-                  isSelected: selectedMode == LearningMode.japanese,
-                  onTap: () => onModeChanged(LearningMode.japanese),
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _ModeCard(
+                    title: l10n.modeJapanese,
+                    iconWidget:
+                        buildSymbol('あ', selectedMode == LearningMode.japanese),
+                    isSelected: selectedMode == LearningMode.japanese,
+                    onTap: () => onModeChanged(LearningMode.japanese),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: _ModeCard(
-                  title: l10n.modeEnglish,
-                  icon: Icons.language,
-                  isSelected: selectedMode == LearningMode.english,
-                  onTap: () => onModeChanged(LearningMode.english),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: _ModeCard(
+                    title: l10n.modeEnglish,
+                    iconWidget:
+                        buildSymbol('A', selectedMode == LearningMode.english),
+                    isSelected: selectedMode == LearningMode.english,
+                    onTap: () => onModeChanged(LearningMode.english),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: _ModeCard(
-                  title: l10n.modeKorean,
-                  icon: Icons.text_format,
-                  isSelected: selectedMode == LearningMode.korean,
-                  onTap: () => onModeChanged(LearningMode.korean),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: _ModeCard(
+                    title: l10n.modeKorean,
+                    iconWidget:
+                        buildSymbol('가', selectedMode == LearningMode.korean),
+                    isSelected: selectedMode == LearningMode.korean,
+                    onTap: () => onModeChanged(LearningMode.korean),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -698,13 +715,13 @@ class _ModeSelector extends StatelessWidget {
 class _ModeCard extends StatelessWidget {
   const _ModeCard({
     required this.title,
-    required this.icon,
+    required this.iconWidget,
     required this.isSelected,
     required this.onTap,
   });
 
   final String title;
-  final IconData icon;
+  final Widget iconWidget;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -733,13 +750,9 @@ class _ModeCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color:
-                    isSelected ? AppColors.sakuraDark : AppColors.textTertiary,
-              ),
+              iconWidget,
               const SizedBox(height: 6),
               Text(
                 title,
@@ -750,7 +763,7 @@ class _ModeCard extends StatelessWidget {
                       : AppColors.textSecondary,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
-                maxLines: 1,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
             ],

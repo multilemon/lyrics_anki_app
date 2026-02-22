@@ -133,10 +133,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get modeJapanese => 'Belajar Bahasa Jepang';
 
   @override
-  String get modeEnglish => 'Belajar Bahasa Inggris';
+  String get modeEnglish => 'Belajar Bahasa Inggris\n(For JP)';
 
   @override
-  String get modeKorean => 'Belajar Bahasa Korea';
+  String get modeKorean => 'Belajar Bahasa Korea\n(For JP)';
 
   @override
   String get ipaType => 'IPA';

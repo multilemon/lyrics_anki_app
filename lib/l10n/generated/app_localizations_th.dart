@@ -132,10 +132,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get modeJapanese => 'เรียนภาษาญี่ปุ่น';
 
   @override
-  String get modeEnglish => 'เรียนภาษาอังกฤษ';
+  String get modeEnglish => 'เรียนภาษาอังกฤษ\n(For JP)';
 
   @override
-  String get modeKorean => 'เรียนภาษาเกาหลี';
+  String get modeKorean => 'เรียนภาษาเกาหลี\n(For JP)';
 
   @override
   String get ipaType => 'สัทอักษร';

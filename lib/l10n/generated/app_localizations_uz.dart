@@ -134,10 +134,10 @@ class AppLocalizationsUz extends AppLocalizations {
   String get modeJapanese => 'Yapon tilini o\'rganish';
 
   @override
-  String get modeEnglish => 'Ingliz tilini o\'rganish';
+  String get modeEnglish => 'Ingliz tilini o\'rganish\n(For JP)';
 
   @override
-  String get modeKorean => 'Koreys tilini o\'rganish';
+  String get modeKorean => 'Koreys tilini o\'rganish\n(For JP)';
 
   @override
   String get ipaType => 'XFA';
