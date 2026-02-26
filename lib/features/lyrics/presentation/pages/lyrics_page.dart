@@ -1093,185 +1093,198 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                   );
                 },
               ),
-          ],
-        ),
-        floatingActionButton: Consumer(
-          builder: (context, ref, child) {
-            final analysis = ref.watch(lyricsProvider).asData?.value;
-            final selectedState = ref.watch(selectionManagerProvider);
-            final hasSelection = selectedState.vocabIndices.isNotEmpty ||
-                selectedState.grammarIndices.isNotEmpty ||
-                selectedState.kanjiIndices.isNotEmpty;
 
-            if (analysis == null) {
-              return const SizedBox.shrink();
-            }
+            // FABs positioned above the bottom navigation bar
+            Positioned(
+              right: 16,
+              bottom: MediaQuery.paddingOf(context).bottom + 16,
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final analysis = ref.watch(lyricsProvider).asData?.value;
+                  final selectedState = ref.watch(selectionManagerProvider);
+                  final hasSelection = selectedState.vocabIndices.isNotEmpty ||
+                      selectedState.grammarIndices.isNotEmpty ||
+                      selectedState.kanjiIndices.isNotEmpty;
 
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (analysis.youtubeId != null) ...[
-                  FloatingActionButton(
-                    heroTag: 'video_fab',
-                    backgroundColor: AppColors.sakuraDark,
-                    onPressed: () => setState(() => _showPlayer = !_showPlayer),
-                    child: _showPlayer
-                        ? Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              const Icon(
-                                Icons.smart_display_rounded,
-                                color: Colors.white,
-                              ),
-                              // Masking "Eraser" to separate slash from icon
-                              Transform.rotate(
-                                angle: -0.785, // -45 degrees
-                                child: Container(
-                                  width: 4.5,
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.sakuraDark,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
+                  if (analysis == null) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (analysis.youtubeId != null) ...[
+                        FloatingActionButton(
+                          heroTag: 'video_fab',
+                          backgroundColor: AppColors.sakuraDark,
+                          onPressed: () =>
+                              setState(() => _showPlayer = !_showPlayer),
+                          child: _showPlayer
+                              ? Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.smart_display_rounded,
+                                      color: Colors.white,
+                                    ),
+                                    // Masking "Eraser" to separate slash from icon
+                                    Transform.rotate(
+                                      angle: -0.785, // -45 degrees
+                                      child: Container(
+                                        width: 4.5,
+                                        height: 26,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.sakuraDark,
+                                          borderRadius:
+                                              BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                    ),
+                                    // The actual Slash
+                                    Transform.rotate(
+                                      angle: -0.785,
+                                      child: Container(
+                                        width: 2,
+                                        height: 26,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(1),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : const Icon(
+                                  Icons.smart_display_rounded,
+                                  color: Colors.white,
                                 ),
-                              ),
-                              // The actual Slash
-                              Transform.rotate(
-                                angle: -0.785,
-                                child: Container(
-                                  width: 2,
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(1),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : const Icon(
-                            Icons.smart_display_rounded,
-                            color: Colors.white,
-                          ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (hasSelection)
-                  FloatingActionButton(
-                    heroTag: 'export_fab',
-                    backgroundColor: AppColors.sakuraDark,
-                    onPressed: () {
-                      // Re-read to get latest state in callback
-                      final analysis = ref.read(lyricsProvider).asData?.value;
-                      if (analysis == null) return;
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (hasSelection)
+                        FloatingActionButton(
+                          heroTag: 'export_fab',
+                          backgroundColor: AppColors.sakuraDark,
+                          onPressed: () {
+                            // Re-read to get latest state in callback
+                            final analysis =
+                                ref.read(lyricsProvider).asData?.value;
+                            if (analysis == null) return;
 
-                      final selectedState = ref.read(selectionManagerProvider);
+                            final selectedState =
+                                ref.read(selectionManagerProvider);
 
-                      final selectedVocabs = <Vocab>[];
-                      for (final i in selectedState.vocabIndices) {
-                        if (i < analysis.vocabs.length) {
-                          selectedVocabs.add(analysis.vocabs[i]);
-                        }
-                      }
+                            final selectedVocabs = <Vocab>[];
+                            for (final i in selectedState.vocabIndices) {
+                              if (i < analysis.vocabs.length) {
+                                selectedVocabs.add(analysis.vocabs[i]);
+                              }
+                            }
 
-                      final selectedGrammar = <Grammar>[];
-                      for (final i in selectedState.grammarIndices) {
-                        if (i < analysis.grammar.length) {
-                          selectedGrammar.add(analysis.grammar[i]);
-                        }
-                      }
+                            final selectedGrammar = <Grammar>[];
+                            for (final i in selectedState.grammarIndices) {
+                              if (i < analysis.grammar.length) {
+                                selectedGrammar.add(analysis.grammar[i]);
+                              }
+                            }
 
-                      final selectedKanji = <Kanji>[];
-                      for (final i in selectedState.kanjiIndices) {
-                        if (i < analysis.kanji.length) {
-                          selectedKanji.add(analysis.kanji[i]);
-                        }
-                      }
+                            final selectedKanji = <Kanji>[];
+                            for (final i in selectedState.kanjiIndices) {
+                              if (i < analysis.kanji.length) {
+                                selectedKanji.add(analysis.kanji[i]);
+                              }
+                            }
 
-                      if (selectedVocabs.isEmpty &&
-                          selectedGrammar.isEmpty &&
-                          selectedKanji.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Select items to export'),
-                          ),
-                        );
-                        return;
-                      }
-
-                      showDialog<void>(
-                        context: context,
-                        builder: (context) => _ExportDialog(
-                          onExport: (userLevel) async {
-                            try {
-                              final exportService =
-                                  ref.read(ankiExportServiceProvider);
-
-                              // Log export initiation
-                              unawaited(
-                                analyticsService.logExport(
-                                  songTitle: analysis.song,
-                                  artist: analysis.artist,
-                                  level: userLevel,
-                                  vocabCount: selectedVocabs.length,
-                                  grammarCount: selectedGrammar.length,
-                                  kanjiCount: selectedKanji.length,
-                                ),
-                              );
-
-                              // Generate .apkg
-                              final bytes = await exportService.generateApkg(
-                                vocabs: selectedVocabs,
-                                grammar: selectedGrammar,
-                                kanji: selectedKanji,
-                                songTitle: analysis.song,
-                                artist: analysis.artist,
-                                userLevel: userLevel,
-                              );
-
-                              if (!context.mounted) return;
-
-                              final filename =
-                                  '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
-
-                              // Save file (trigger download)
-                              await FileSaver.instance.saveFile(
-                                name: filename,
-                                bytes: bytes,
-                              );
-
-                              if (!context.mounted) return;
+                            if (selectedVocabs.isEmpty &&
+                                selectedGrammar.isEmpty &&
+                                selectedKanji.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content:
-                                      Text('Export downloaded successfully'),
+                                  content: Text('Select items to export'),
                                 ),
                               );
-                            } catch (e) {
-                              unawaited(
-                                analyticsService.logError(
-                                  'Export failed: $e',
-                                  'export_dialog',
-                                ),
-                              );
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Export failed: $e')),
-                              );
+                              return;
                             }
+
+                            showDialog<void>(
+                              context: context,
+                              builder: (context) => _ExportDialog(
+                                onExport: (userLevel) async {
+                                  try {
+                                    final exportService =
+                                        ref.read(ankiExportServiceProvider);
+
+                                    // Log export initiation
+                                    unawaited(
+                                      analyticsService.logExport(
+                                        songTitle: analysis.song,
+                                        artist: analysis.artist,
+                                        level: userLevel,
+                                        vocabCount: selectedVocabs.length,
+                                        grammarCount: selectedGrammar.length,
+                                        kanjiCount: selectedKanji.length,
+                                      ),
+                                    );
+
+                                    // Generate .apkg
+                                    final bytes =
+                                        await exportService.generateApkg(
+                                      vocabs: selectedVocabs,
+                                      grammar: selectedGrammar,
+                                      kanji: selectedKanji,
+                                      songTitle: analysis.song,
+                                      artist: analysis.artist,
+                                      userLevel: userLevel,
+                                    );
+
+                                    if (!context.mounted) return;
+
+                                    final filename =
+                                        '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
+
+                                    // Save file (trigger download)
+                                    await FileSaver.instance.saveFile(
+                                      name: filename,
+                                      bytes: bytes,
+                                    );
+
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Export downloaded successfully'),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    unawaited(
+                                      analyticsService.logError(
+                                        'Export failed: $e',
+                                        'export_dialog',
+                                      ),
+                                    );
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text('Export failed: $e')),
+                                    );
+                                  }
+                                },
+                              ),
+                            );
                           },
+                          child: const Icon(
+                            Icons.file_upload_outlined,
+                            color: Colors.white,
+                          ),
                         ),
-                      );
-                    },
-                    child: const Icon(
-                      Icons.file_upload_outlined,
-                      color: Colors.white,
-                    ),
-                  ),
-              ],
-            );
-          },
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1312,7 +1325,7 @@ class _VocabListState extends State<_VocabList>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.vocabList.length,
       itemBuilder: (context, index) {
@@ -1458,7 +1471,7 @@ class _GrammarListState extends State<_GrammarList>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.grammarList.length,
       itemBuilder: (context, index) {
@@ -1566,7 +1579,7 @@ class _KanjiListState extends State<_KanjiList>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.kanjiList.length,
       itemBuilder: (context, index) {
@@ -2259,7 +2272,12 @@ class _LyricsView extends StatelessWidget {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: 88,
+      ),
       child: SelectableText.rich(
         TextSpan(children: _buildSpans(context)),
         textAlign: TextAlign.center,
@@ -2302,7 +2320,7 @@ class _EnVocabListState extends State<_EnVocabList>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.vocabList.length,
       itemBuilder: (context, index) {
@@ -2456,7 +2474,7 @@ class _EnGrammarListState extends State<_EnGrammarList>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.grammarList.length,
       itemBuilder: (context, index) {
