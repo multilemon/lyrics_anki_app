@@ -750,7 +750,6 @@ class _ModeCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               iconWidget,
               const SizedBox(height: 6),

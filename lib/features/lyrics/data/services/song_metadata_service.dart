@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:firebase_ai/firebase_ai.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/song_metadata.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

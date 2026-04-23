@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/features/anki/data/services/anki_database_service.dart';
 import 'package:lyrics_anki_app/features/anki/data/services/anki_package_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';

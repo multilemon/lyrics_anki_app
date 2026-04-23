@@ -1254,7 +1254,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
-                                            'Export downloaded successfully'),
+                                            'Export downloaded successfully',),
                                       ),
                                     );
                                   } catch (e) {
@@ -1267,7 +1267,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                          content: Text('Export failed: $e')),
+                                          content: Text('Export failed: $e'),),
                                     );
                                   }
                                 },
@@ -1325,7 +1325,7 @@ class _VocabListState extends State<_VocabList>
     }
 
     return ListView.builder(
-      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
+      padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.vocabList.length,
       itemBuilder: (context, index) {
@@ -1471,7 +1471,7 @@ class _GrammarListState extends State<_GrammarList>
     }
 
     return ListView.builder(
-      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
+      padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.grammarList.length,
       itemBuilder: (context, index) {
@@ -1579,7 +1579,7 @@ class _KanjiListState extends State<_KanjiList>
     }
 
     return ListView.builder(
-      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
+      padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.kanjiList.length,
       itemBuilder: (context, index) {
@@ -2272,7 +2272,7 @@ class _LyricsView extends StatelessWidget {
     }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
+      padding: const EdgeInsets.only(
         left: 24,
         right: 24,
         top: 24,
@@ -2320,7 +2320,7 @@ class _EnVocabListState extends State<_EnVocabList>
     }
 
     return ListView.builder(
-      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
+      padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.vocabList.length,
       itemBuilder: (context, index) {
@@ -2474,7 +2474,7 @@ class _EnGrammarListState extends State<_EnGrammarList>
     }
 
     return ListView.builder(
-      padding: EdgeInsets.only(bottom: 88, left: 16, right: 16),
+      padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
       itemCount: widget.grammarList.length,
       itemBuilder: (context, index) {
