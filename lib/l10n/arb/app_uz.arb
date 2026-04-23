@@ -52,5 +52,19 @@
     "songTitleHintKo": "mas. Gangnam Style",
     "artistNameHintKo": "mas. PSY",
     "romanizationType": "Romanizatsiya",
-    "reverseLearningDescription": "Teskari rejim: yapon tilida so'zlashuvchilar uchun ingliz/koreys tilini o'rganish."
+    "reverseLearningDescription": "Teskari rejim: yapon tilida so'zlashuvchilar uchun ingliz/koreys tilini o'rganish.",
+    "exportOptions": "Eksport variantlari",
+    "exportAnkiOption": "Anki-ga eksport (.apkg)",
+    "exportAnkiDescription": "Anki ilovasi uchun flesh-kartalar",
+    "exportPlainTextOption": "So'z ro'yxatini eksport (Matn)",
+    "exportPlainTextDescription": "Renshuu va b. uchun vergul bilan ajratilgan so'zlar",
+    "wordListCopied": "So'z ro'yxati nusxalandi!",
+    "wordListDownloaded": "So'z ro'yxati yuklab olindi!",
+    "exportWordsTitle": "So'z ro'yxatini eksport",
+    "includeVocab": "Lug'at",
+    "includeKanji": "Kanji",
+    "includeGrammar": "Grammatika",
+    "copyToClipboard": "Nusxalash",
+    "downloadAsFile": "Yuklab olish",
+    "noWordsToExport": "Eksport qilish uchun so'z yo'q. Kamida bitta toifani tanlang."
 }

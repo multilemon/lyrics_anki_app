@@ -150,5 +150,19 @@
     "songTitleHintKo": "ej. Gangnam Style",
     "artistNameHintKo": "ej. PSY",
     "romanizationType": "Romanización",
-    "reverseLearningDescription": "Modo inverso: para japoneses que aprenden inglés/coreano."
+    "reverseLearningDescription": "Modo inverso: para japoneses que aprenden inglés/coreano.",
+    "exportOptions": "Opciones de exportación",
+    "exportAnkiOption": "Exportar a Anki (.apkg)",
+    "exportAnkiDescription": "Mazo de tarjetas para la app Anki",
+    "exportPlainTextOption": "Exportar lista de palabras (Texto)",
+    "exportPlainTextDescription": "Palabras separadas por comas para Renshuu, etc.",
+    "wordListCopied": "¡Lista de palabras copiada!",
+    "wordListDownloaded": "¡Lista de palabras descargada!",
+    "exportWordsTitle": "Exportar lista de palabras",
+    "includeVocab": "Vocabulario",
+    "includeKanji": "Kanji",
+    "includeGrammar": "Gramática",
+    "copyToClipboard": "Copiar",
+    "downloadAsFile": "Descargar",
+    "noWordsToExport": "No hay palabras para exportar. Seleccione al menos una categoría."
 }

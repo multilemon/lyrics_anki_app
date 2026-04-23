@@ -162,4 +162,48 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get reverseLearningDescription =>
       'Modo inverso: para japoneses que aprenden inglés/coreano.';
+
+  @override
+  String get exportOptions => 'Opciones de exportación';
+
+  @override
+  String get exportAnkiOption => 'Exportar a Anki (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Mazo de tarjetas para la app Anki';
+
+  @override
+  String get exportPlainTextOption => 'Exportar lista de palabras (Texto)';
+
+  @override
+  String get exportPlainTextDescription =>
+      'Palabras separadas por comas para Renshuu, etc.';
+
+  @override
+  String get wordListCopied => '¡Lista de palabras copiada!';
+
+  @override
+  String get wordListDownloaded => '¡Lista de palabras descargada!';
+
+  @override
+  String get exportWordsTitle => 'Exportar lista de palabras';
+
+  @override
+  String get includeVocab => 'Vocabulario';
+
+  @override
+  String get includeKanji => 'Kanji';
+
+  @override
+  String get includeGrammar => 'Gramática';
+
+  @override
+  String get copyToClipboard => 'Copiar';
+
+  @override
+  String get downloadAsFile => 'Descargar';
+
+  @override
+  String get noWordsToExport =>
+      'No hay palabras para exportar. Seleccione al menos una categoría.';
 }

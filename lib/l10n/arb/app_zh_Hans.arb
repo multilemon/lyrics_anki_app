@@ -52,5 +52,19 @@
     "songTitleHintKo": "例如 Gangnam Style",
     "artistNameHintKo": "例如 PSY",
     "romanizationType": "罗马字",
-    "reverseLearningDescription": "反向学习模式：面向日语母语者学习英语/韩语。"
+    "reverseLearningDescription": "反向学习模式：面向日语母语者学习英语/韩语。",
+    "exportOptions": "导出选项",
+    "exportAnkiOption": "导出到 Anki (.apkg)",
+    "exportAnkiDescription": "Anki 应用的闪卡牌组",
+    "exportPlainTextOption": "导出单词列表 (文本)",
+    "exportPlainTextDescription": "用逗号分隔的单词，适用于 Renshuu 等",
+    "wordListCopied": "单词列表已复制到剪贴板！",
+    "wordListDownloaded": "单词列表已下载！",
+    "exportWordsTitle": "导出单词列表",
+    "includeVocab": "词汇",
+    "includeKanji": "汉字",
+    "includeGrammar": "语法",
+    "copyToClipboard": "复制",
+    "downloadAsFile": "下载",
+    "noWordsToExport": "没有可导出的单词。请至少选择一个类别。"
 }

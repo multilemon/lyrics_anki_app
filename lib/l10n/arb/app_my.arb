@@ -52,5 +52,19 @@
     "songTitleHintKo": "ဥပမာ Gangnam Style",
     "artistNameHintKo": "ဥပမာ PSY",
     "romanizationType": "ရောမဂဏန်း",
-    "reverseLearningDescription": "ပြောင်းပြန်လေ့လာမှု: ဂျပန်စကားပြောသူများ အင်္ဂလိပ်/ကိုရီးယား လေ့လာရန်။"
+    "reverseLearningDescription": "ပြောင်းပြန်လေ့လာမှု: ဂျပန်စကားပြောသူများ အင်္ဂလိပ်/ကိုရီးယား လေ့လာရန်။",
+    "exportOptions": "ပို့ရန်နည်းလမ်းများ",
+    "exportAnkiOption": "Anki သို့ ပို့ရန် (.apkg)",
+    "exportAnkiDescription": "Anki အက်ပ်အတွက် ကတ်အစု",
+    "exportPlainTextOption": "စကားလုံးစာရင်း ပို့ရန် (စာသား)",
+    "exportPlainTextDescription": "Renshuu စသည်တို့အတွက် ကော်မာခြားထားသော စကားလုံးများ",
+    "wordListCopied": "စကားလုံးစာရင်းကို ကူးယူပြီးပါပြီ!",
+    "wordListDownloaded": "စကားလုံးစာရင်းကို ဒေါင်းလုပ်ပြီးပါပြီ!",
+    "exportWordsTitle": "စကားလုံးစာရင်း ပို့ရန်",
+    "includeVocab": "ဝေါဟာရ",
+    "includeKanji": "ခန်းဂျီး",
+    "includeGrammar": "သဒ္ဒါ",
+    "copyToClipboard": "ကူးယူ",
+    "downloadAsFile": "ဒေါင်းလုပ်",
+    "noWordsToExport": "ပို့ရန် စကားလုံးမရှိပါ။ အနည်းဆုံး အမျိုးအစားတစ်ခုကို ရွေးချယ်ပါ။"
 }

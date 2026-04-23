@@ -204,5 +204,61 @@
     "reverseLearningDescription": "Reverse Learning Mode: For Japanese speakers learning English/Korean.",
     "@reverseLearningDescription": {
         "description": "Description text for reverse learning modes"
+    },
+    "exportOptions": "Export Options",
+    "@exportOptions": {
+        "description": "Title for the export options bottom sheet"
+    },
+    "exportAnkiOption": "Export to Anki (.apkg)",
+    "@exportAnkiOption": {
+        "description": "Label for the Anki export option"
+    },
+    "exportAnkiDescription": "Flashcard deck for Anki app",
+    "@exportAnkiDescription": {
+        "description": "Description for the Anki export option"
+    },
+    "exportPlainTextOption": "Export Word List (Text)",
+    "@exportPlainTextOption": {
+        "description": "Label for the plain text word list export option"
+    },
+    "exportPlainTextDescription": "Comma-separated words for Renshuu, etc.",
+    "@exportPlainTextDescription": {
+        "description": "Description for the plain text word list export option"
+    },
+    "wordListCopied": "Word list copied to clipboard!",
+    "@wordListCopied": {
+        "description": "Snackbar message when word list is copied"
+    },
+    "wordListDownloaded": "Word list downloaded!",
+    "@wordListDownloaded": {
+        "description": "Snackbar message when word list is downloaded"
+    },
+    "exportWordsTitle": "Export Word List",
+    "@exportWordsTitle": {
+        "description": "Title for the plain text export dialog"
+    },
+    "includeVocab": "Vocabulary",
+    "@includeVocab": {
+        "description": "Checkbox label for including vocab words"
+    },
+    "includeKanji": "Kanji",
+    "@includeKanji": {
+        "description": "Checkbox label for including kanji characters"
+    },
+    "includeGrammar": "Grammar",
+    "@includeGrammar": {
+        "description": "Checkbox label for including grammar points"
+    },
+    "copyToClipboard": "Copy",
+    "@copyToClipboard": {
+        "description": "Button text to copy to clipboard"
+    },
+    "downloadAsFile": "Download",
+    "@downloadAsFile": {
+        "description": "Button text to download as file"
+    },
+    "noWordsToExport": "No words to export. Please select at least one category.",
+    "@noWordsToExport": {
+        "description": "Message when no words are available for export"
     }
 }

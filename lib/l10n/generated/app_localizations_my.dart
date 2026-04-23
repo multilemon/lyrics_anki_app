@@ -162,4 +162,48 @@ class AppLocalizationsMy extends AppLocalizations {
   @override
   String get reverseLearningDescription =>
       'ပြောင်းပြန်လေ့လာမှု: ဂျပန်စကားပြောသူများ အင်္ဂလိပ်/ကိုရီးယား လေ့လာရန်။';
+
+  @override
+  String get exportOptions => 'ပို့ရန်နည်းလမ်းများ';
+
+  @override
+  String get exportAnkiOption => 'Anki သို့ ပို့ရန် (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Anki အက်ပ်အတွက် ကတ်အစု';
+
+  @override
+  String get exportPlainTextOption => 'စကားလုံးစာရင်း ပို့ရန် (စာသား)';
+
+  @override
+  String get exportPlainTextDescription =>
+      'Renshuu စသည်တို့အတွက် ကော်မာခြားထားသော စကားလုံးများ';
+
+  @override
+  String get wordListCopied => 'စကားလုံးစာရင်းကို ကူးယူပြီးပါပြီ!';
+
+  @override
+  String get wordListDownloaded => 'စကားလုံးစာရင်းကို ဒေါင်းလုပ်ပြီးပါပြီ!';
+
+  @override
+  String get exportWordsTitle => 'စကားလုံးစာရင်း ပို့ရန်';
+
+  @override
+  String get includeVocab => 'ဝေါဟာရ';
+
+  @override
+  String get includeKanji => 'ခန်းဂျီး';
+
+  @override
+  String get includeGrammar => 'သဒ္ဒါ';
+
+  @override
+  String get copyToClipboard => 'ကူးယူ';
+
+  @override
+  String get downloadAsFile => 'ဒေါင်းလုပ်';
+
+  @override
+  String get noWordsToExport =>
+      'ပို့ရန် စကားလုံးမရှိပါ။ အနည်းဆုံး အမျိုးအစားတစ်ခုကို ရွေးချယ်ပါ။';
 }

@@ -52,5 +52,19 @@
     "songTitleHintKo": "VD: Gangnam Style",
     "artistNameHintKo": "VD: PSY",
     "romanizationType": "Phiên âm La-tinh",
-    "reverseLearningDescription": "Chế độ học ngược: Dành cho người Nhật học tiếng Anh/Hàn."
+    "reverseLearningDescription": "Chế độ học ngược: Dành cho người Nhật học tiếng Anh/Hàn.",
+    "exportOptions": "Tùy chọn xuất",
+    "exportAnkiOption": "Xuất sang Anki (.apkg)",
+    "exportAnkiDescription": "Bộ thẻ flashcard cho ứng dụng Anki",
+    "exportPlainTextOption": "Xuất danh sách từ (Văn bản)",
+    "exportPlainTextDescription": "Từ ngăn cách bằng dấu phẩy cho Renshuu, v.v.",
+    "wordListCopied": "Danh sách từ đã được sao chép!",
+    "wordListDownloaded": "Danh sách từ đã được tải xuống!",
+    "exportWordsTitle": "Xuất danh sách từ",
+    "includeVocab": "Từ vựng",
+    "includeKanji": "Kanji",
+    "includeGrammar": "Ngữ pháp",
+    "copyToClipboard": "Sao chép",
+    "downloadAsFile": "Tải xuống",
+    "noWordsToExport": "Không có từ nào để xuất. Vui lòng chọn ít nhất một danh mục."
 }

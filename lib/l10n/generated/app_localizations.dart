@@ -417,6 +417,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reverse Learning Mode: For Japanese speakers learning English/Korean.'**
   String get reverseLearningDescription;
+
+  /// Title for the export options bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Export Options'**
+  String get exportOptions;
+
+  /// Label for the Anki export option
+  ///
+  /// In en, this message translates to:
+  /// **'Export to Anki (.apkg)'**
+  String get exportAnkiOption;
+
+  /// Description for the Anki export option
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcard deck for Anki app'**
+  String get exportAnkiDescription;
+
+  /// Label for the plain text word list export option
+  ///
+  /// In en, this message translates to:
+  /// **'Export Word List (Text)'**
+  String get exportPlainTextOption;
+
+  /// Description for the plain text word list export option
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated words for Renshuu, etc.'**
+  String get exportPlainTextDescription;
+
+  /// Snackbar message when word list is copied
+  ///
+  /// In en, this message translates to:
+  /// **'Word list copied to clipboard!'**
+  String get wordListCopied;
+
+  /// Snackbar message when word list is downloaded
+  ///
+  /// In en, this message translates to:
+  /// **'Word list downloaded!'**
+  String get wordListDownloaded;
+
+  /// Title for the plain text export dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Export Word List'**
+  String get exportWordsTitle;
+
+  /// Checkbox label for including vocab words
+  ///
+  /// In en, this message translates to:
+  /// **'Vocabulary'**
+  String get includeVocab;
+
+  /// Checkbox label for including kanji characters
+  ///
+  /// In en, this message translates to:
+  /// **'Kanji'**
+  String get includeKanji;
+
+  /// Checkbox label for including grammar points
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar'**
+  String get includeGrammar;
+
+  /// Button text to copy to clipboard
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copyToClipboard;
+
+  /// Button text to download as file
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get downloadAsFile;
+
+  /// Message when no words are available for export
+  ///
+  /// In en, this message translates to:
+  /// **'No words to export. Please select at least one category.'**
+  String get noWordsToExport;
 }
 
 class _AppLocalizationsDelegate

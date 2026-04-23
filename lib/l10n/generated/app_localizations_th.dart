@@ -161,4 +161,48 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get reverseLearningDescription =>
       'โหมดเรียนย้อนกลับ: สำหรับคนญี่ปุ่นที่เรียนภาษาอังกฤษ/เกาหลี';
+
+  @override
+  String get exportOptions => 'ตัวเลือกส่งออก';
+
+  @override
+  String get exportAnkiOption => 'ส่งออกไปยัง Anki (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'ชุดแฟลชการ์ดสำหรับแอป Anki';
+
+  @override
+  String get exportPlainTextOption => 'ส่งออกรายการคำศัพท์ (ข้อความ)';
+
+  @override
+  String get exportPlainTextDescription =>
+      'คำศัพท์คั่นด้วยเครื่องหมายจุลภาคสำหรับ Renshuu ฯลฯ';
+
+  @override
+  String get wordListCopied => 'คัดลอกรายการคำศัพท์แล้ว!';
+
+  @override
+  String get wordListDownloaded => 'ดาวน์โหลดรายการคำศัพท์แล้ว!';
+
+  @override
+  String get exportWordsTitle => 'ส่งออกรายการคำศัพท์';
+
+  @override
+  String get includeVocab => 'คำศัพท์';
+
+  @override
+  String get includeKanji => 'คันจิ';
+
+  @override
+  String get includeGrammar => 'ไวยากรณ์';
+
+  @override
+  String get copyToClipboard => 'คัดลอก';
+
+  @override
+  String get downloadAsFile => 'ดาวน์โหลด';
+
+  @override
+  String get noWordsToExport =>
+      'ไม่มีคำศัพท์ที่จะส่งออก กรุณาเลือกอย่างน้อยหนึ่งหมวดหมู่';
 }

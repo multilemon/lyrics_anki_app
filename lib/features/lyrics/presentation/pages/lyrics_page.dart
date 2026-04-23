@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
@@ -1197,9 +1199,30 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                               }
                             }
 
+                            // For reverse learning, also collect EnVocab
+                            final selectedEnVocabs = <EnVocab>[];
+                            if (analysis.enVocab != null) {
+                              for (final i in selectedState.vocabIndices) {
+                                if (i < analysis.enVocab!.length) {
+                                  selectedEnVocabs.add(analysis.enVocab![i]);
+                                }
+                              }
+                            }
+
+                            // For reverse learning, also collect EnGrammar
+                            final selectedEnGrammar = <EnGrammar>[];
+                            if (analysis.enGrammar != null) {
+                              for (final i in selectedState.grammarIndices) {
+                                if (i < analysis.enGrammar!.length) {
+                                  selectedEnGrammar.add(analysis.enGrammar![i]);
+                                }
+                              }
+                            }
+
                             if (selectedVocabs.isEmpty &&
                                 selectedGrammar.isEmpty &&
-                                selectedKanji.isEmpty) {
+                                selectedKanji.isEmpty &&
+                                selectedEnVocabs.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Select items to export'),
@@ -1208,69 +1231,149 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                               return;
                             }
 
-                            showDialog<void>(
+                            final isReverse = analysis.enVocab != null;
+                            final l10n = context.l10n;
+
+                            // Show export options bottom sheet
+                            showModalBottomSheet<void>(
                               context: context,
-                              builder: (context) => _ExportDialog(
-                                onExport: (userLevel) async {
-                                  try {
-                                    final exportService =
-                                        ref.read(ankiExportServiceProvider);
-
-                                    // Log export initiation
-                                    unawaited(
-                                      analyticsService.logExport(
-                                        songTitle: analysis.song,
-                                        artist: analysis.artist,
-                                        level: userLevel,
-                                        vocabCount: selectedVocabs.length,
-                                        grammarCount: selectedGrammar.length,
-                                        kanjiCount: selectedKanji.length,
-                                      ),
-                                    );
-
-                                    // Generate .apkg
-                                    final bytes =
-                                        await exportService.generateApkg(
-                                      vocabs: selectedVocabs,
-                                      grammar: selectedGrammar,
-                                      kanji: selectedKanji,
-                                      songTitle: analysis.song,
-                                      artist: analysis.artist,
-                                      userLevel: userLevel,
-                                    );
-
-                                    if (!context.mounted) return;
-
-                                    final filename =
-                                        '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
-
-                                    // Save file (trigger download)
-                                    await FileSaver.instance.saveFile(
-                                      name: filename,
-                                      bytes: bytes,
-                                    );
-
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            'Export downloaded successfully',),
-                                      ),
-                                    );
-                                  } catch (e) {
-                                    unawaited(
-                                      analyticsService.logError(
-                                        'Export failed: $e',
-                                        'export_dialog',
-                                      ),
-                                    );
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text('Export failed: $e'),),
-                                    );
-                                  }
-                                },
+                              backgroundColor: Colors.transparent,
+                              builder: (sheetContext) => Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(20),
+                                  ),
+                                ),
+                                child: SafeArea(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Handle bar
+                                        Container(
+                                          width: 40,
+                                          height: 4,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius:
+                                                BorderRadius.circular(2),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          l10n.exportOptions,
+                                          style: Theme.of(sheetContext)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.textPrimary,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        // Option 1: Export to Anki
+                                        ListTile(
+                                          leading: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.sakuraDark
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: const Icon(
+                                              Icons.style_rounded,
+                                              color: AppColors.sakuraDark,
+                                            ),
+                                          ),
+                                          title: Text(l10n.exportAnkiOption),
+                                          subtitle: Text(
+                                            l10n.exportAnkiDescription,
+                                            style: const TextStyle(
+                                              color: AppColors.textTertiary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          trailing: const Icon(
+                                            Icons.chevron_right_rounded,
+                                            color: AppColors.textTertiary,
+                                          ),
+                                          onTap: () {
+                                            Navigator.pop(sheetContext);
+                                            _showAnkiExportDialog(
+                                              context: context,
+                                              ref: ref,
+                                              analysis: analysis,
+                                              selectedVocabs: selectedVocabs,
+                                              selectedGrammar: selectedGrammar,
+                                              selectedKanji: selectedKanji,
+                                            );
+                                          },
+                                        ),
+                                        const Divider(
+                                          indent: 72,
+                                          endIndent: 16,
+                                          height: 1,
+                                        ),
+                                        // Option 2: Export Word List
+                                        ListTile(
+                                          leading: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.sakuraDark
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: const Icon(
+                                              Icons.text_snippet_rounded,
+                                              color: AppColors.sakuraDark,
+                                            ),
+                                          ),
+                                          title: Text(
+                                            l10n.exportPlainTextOption,
+                                          ),
+                                          subtitle: Text(
+                                            l10n.exportPlainTextDescription,
+                                            style: const TextStyle(
+                                              color: AppColors.textTertiary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          trailing: const Icon(
+                                            Icons.chevron_right_rounded,
+                                            color: AppColors.textTertiary,
+                                          ),
+                                          onTap: () {
+                                            Navigator.pop(sheetContext);
+                                            showDialog<void>(
+                                              context: context,
+                                              builder: (ctx) =>
+                                                  _PlainTextExportDialog(
+                                                selectedVocabs: selectedVocabs,
+                                                selectedKanji: selectedKanji,
+                                                selectedGrammar:
+                                                    selectedGrammar,
+                                                selectedEnVocabs:
+                                                    selectedEnVocabs,
+                                                selectedEnGrammar:
+                                                    selectedEnGrammar,
+                                                isReverseLearning: isReverse,
+                                                songTitle: analysis.song,
+                                                artist: analysis.artist,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(height: 8),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             );
                           },
@@ -2026,6 +2129,304 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
                 child: Text(l10n.exportButton),
               ),
             ],
+    );
+  }
+}
+
+/// Shows the Anki export dialog (extracted as a method for cleanliness)
+void _showAnkiExportDialog({
+  required BuildContext context,
+  required WidgetRef ref,
+  required AnalysisResult analysis,
+  required List<Vocab> selectedVocabs,
+  required List<Grammar> selectedGrammar,
+  required List<Kanji> selectedKanji,
+}) {
+  showDialog<void>(
+    context: context,
+    builder: (context) => _ExportDialog(
+      onExport: (userLevel) async {
+        try {
+          final exportService = ref.read(ankiExportServiceProvider);
+
+          // Log export initiation
+          unawaited(
+            analyticsService.logExport(
+              songTitle: analysis.song,
+              artist: analysis.artist,
+              level: userLevel,
+              vocabCount: selectedVocabs.length,
+              grammarCount: selectedGrammar.length,
+              kanjiCount: selectedKanji.length,
+            ),
+          );
+
+          // Generate .apkg
+          final bytes = await exportService.generateApkg(
+            vocabs: selectedVocabs,
+            grammar: selectedGrammar,
+            kanji: selectedKanji,
+            songTitle: analysis.song,
+            artist: analysis.artist,
+            userLevel: userLevel,
+          );
+
+          if (!context.mounted) return;
+
+          final filename =
+              '${analysis.song.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${analysis.artist}.apkg';
+
+          // Save file (trigger download)
+          await FileSaver.instance.saveFile(
+            name: filename,
+            bytes: bytes,
+          );
+
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export downloaded successfully'),
+            ),
+          );
+        } catch (e) {
+          unawaited(
+            analyticsService.logError(
+              'Export failed: $e',
+              'export_dialog',
+            ),
+          );
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Export failed: $e'),
+            ),
+          );
+        }
+      },
+    ),
+  );
+}
+
+/// Dialog for exporting selected words/kanji as comma-separated plain text
+class _PlainTextExportDialog extends StatefulWidget {
+  const _PlainTextExportDialog({
+    required this.selectedVocabs,
+    required this.selectedKanji,
+    required this.selectedGrammar,
+    required this.selectedEnVocabs,
+    required this.selectedEnGrammar,
+    required this.isReverseLearning,
+    required this.songTitle,
+    required this.artist,
+  });
+
+  final List<Vocab> selectedVocabs;
+  final List<Kanji> selectedKanji;
+  final List<Grammar> selectedGrammar;
+  final List<EnVocab> selectedEnVocabs;
+  final List<EnGrammar> selectedEnGrammar;
+  final bool isReverseLearning;
+  final String songTitle;
+  final String artist;
+
+  @override
+  State<_PlainTextExportDialog> createState() => _PlainTextExportDialogState();
+}
+
+class _PlainTextExportDialogState extends State<_PlainTextExportDialog> {
+  bool _includeVocab = true;
+  bool _includeKanji = true;
+  bool _includeGrammar = true;
+
+  String _buildWordList() {
+    final words = <String>[];
+
+    if (_includeVocab) {
+      if (widget.isReverseLearning) {
+        for (final v in widget.selectedEnVocabs) {
+          if (v.term.isNotEmpty) words.add(v.term);
+        }
+      } else {
+        for (final v in widget.selectedVocabs) {
+          if (v.word.isNotEmpty) words.add(v.word);
+        }
+      }
+    }
+
+    if (_includeGrammar) {
+      if (widget.isReverseLearning) {
+        for (final g in widget.selectedEnGrammar) {
+          if (g.structure.isNotEmpty && !words.contains(g.structure)) {
+            words.add(g.structure);
+          }
+        }
+      } else {
+        for (final g in widget.selectedGrammar) {
+          if (g.point.isNotEmpty && !words.contains(g.point)) {
+            words.add(g.point);
+          }
+        }
+      }
+    }
+
+    if (_includeKanji && !widget.isReverseLearning) {
+      for (final k in widget.selectedKanji) {
+        if (k.char.isNotEmpty && !words.contains(k.char)) {
+          words.add(k.char);
+        }
+      }
+    }
+
+    return words.join(', ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final wordList = _buildWordList();
+
+    // Hide kanji toggle for reverse learning
+    final showKanjiToggle =
+        !widget.isReverseLearning && widget.selectedKanji.isNotEmpty;
+
+    // Show grammar toggle if grammar is available
+    final showGrammarToggle = widget.selectedGrammar.isNotEmpty ||
+        widget.selectedEnGrammar.isNotEmpty;
+
+    return AlertDialog(
+      title: Text(
+        l10n.exportWordsTitle,
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: AppColors.textSecondary,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Category toggles
+          if (widget.selectedVocabs.isNotEmpty ||
+              widget.selectedEnVocabs.isNotEmpty)
+            CheckboxListTile(
+              value: _includeVocab,
+              onChanged: (val) => setState(() => _includeVocab = val ?? true),
+              title: Text(l10n.includeVocab),
+              activeColor: AppColors.sakuraDark,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          if (showGrammarToggle)
+            CheckboxListTile(
+              value: _includeGrammar,
+              onChanged: (val) => setState(() => _includeGrammar = val ?? true),
+              title: Text(l10n.includeGrammar),
+              activeColor: AppColors.sakuraDark,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          if (showKanjiToggle)
+            CheckboxListTile(
+              value: _includeKanji,
+              onChanged: (val) => setState(() => _includeKanji = val ?? true),
+              title: Text(l10n.includeKanji),
+              activeColor: AppColors.sakuraDark,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          const SizedBox(height: 12),
+          // Preview
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.sakuraDark.withValues(alpha: 0.2),
+              ),
+            ),
+            constraints: const BoxConstraints(maxHeight: 160),
+            child: SingleChildScrollView(
+              child: wordList.isEmpty
+                  ? Text(
+                      l10n.noWordsToExport,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textTertiary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  : SelectableText(
+                      wordList,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        height: 1.5,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            l10n.cancelButton,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textTertiary,
+            ),
+          ),
+        ),
+        // Download as file
+        OutlinedButton.icon(
+          onPressed: wordList.isEmpty
+              ? null
+              : () async {
+                  final filename =
+                      '${widget.songTitle.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_${widget.artist}_words.txt';
+                  await FileSaver.instance.saveFile(
+                    name: filename,
+                    bytes: utf8.encode(wordList),
+                  );
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.wordListDownloaded),
+                    ),
+                  );
+                },
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.sakuraDark,
+            side: const BorderSide(color: AppColors.sakuraDark),
+          ),
+          icon: const Icon(Icons.download_rounded, size: 18),
+          label: Text(l10n.downloadAsFile),
+        ),
+        // Copy to clipboard
+        ElevatedButton.icon(
+          onPressed: wordList.isEmpty
+              ? null
+              : () async {
+                  await Clipboard.setData(ClipboardData(text: wordList));
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.wordListCopied),
+                    ),
+                  );
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.sakuraDark,
+            foregroundColor: Colors.white,
+          ),
+          icon: const Icon(Icons.copy_rounded, size: 18),
+          label: Text(l10n.copyToClipboard),
+        ),
+      ],
     );
   }
 }

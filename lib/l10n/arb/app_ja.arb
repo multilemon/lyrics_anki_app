@@ -52,5 +52,19 @@
     "songTitleHintKo": "例：Gangnam Style",
     "artistNameHintKo": "例：PSY",
     "romanizationType": "ローマ字表記",
-    "reverseLearningDescription": "リバース学習モード：日本語話者が英語/韓国語を学ぶためのモード。"
+    "reverseLearningDescription": "リバース学習モード：日本語話者が英語/韓国語を学ぶためのモード。",
+    "exportOptions": "エクスポート方法",
+    "exportAnkiOption": "Ankiへエクスポート (.apkg)",
+    "exportAnkiDescription": "Ankiアプリ用フラッシュカード",
+    "exportPlainTextOption": "単語リストをエクスポート (テキスト)",
+    "exportPlainTextDescription": "Renshuu等で使えるカンマ区切りの単語一覧",
+    "wordListCopied": "単語リストをコピーしました！",
+    "wordListDownloaded": "単語リストをダウンロードしました！",
+    "exportWordsTitle": "単語リストのエクスポート",
+    "includeVocab": "単語",
+    "includeKanji": "漢字",
+    "includeGrammar": "文法",
+    "copyToClipboard": "コピー",
+    "downloadAsFile": "ダウンロード",
+    "noWordsToExport": "エクスポートする単語がありません。少なくとも1つのカテゴリを選択してください。"
 }

@@ -163,4 +163,48 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get reverseLearningDescription =>
       'Teskari rejim: yapon tilida so\'zlashuvchilar uchun ingliz/koreys tilini o\'rganish.';
+
+  @override
+  String get exportOptions => 'Eksport variantlari';
+
+  @override
+  String get exportAnkiOption => 'Anki-ga eksport (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Anki ilovasi uchun flesh-kartalar';
+
+  @override
+  String get exportPlainTextOption => 'So\'z ro\'yxatini eksport (Matn)';
+
+  @override
+  String get exportPlainTextDescription =>
+      'Renshuu va b. uchun vergul bilan ajratilgan so\'zlar';
+
+  @override
+  String get wordListCopied => 'So\'z ro\'yxati nusxalandi!';
+
+  @override
+  String get wordListDownloaded => 'So\'z ro\'yxati yuklab olindi!';
+
+  @override
+  String get exportWordsTitle => 'So\'z ro\'yxatini eksport';
+
+  @override
+  String get includeVocab => 'Lug\'at';
+
+  @override
+  String get includeKanji => 'Kanji';
+
+  @override
+  String get includeGrammar => 'Grammatika';
+
+  @override
+  String get copyToClipboard => 'Nusxalash';
+
+  @override
+  String get downloadAsFile => 'Yuklab olish';
+
+  @override
+  String get noWordsToExport =>
+      'Eksport qilish uchun so\'z yo\'q. Kamida bitta toifani tanlang.';
 }

@@ -162,4 +162,48 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get reverseLearningDescription =>
       'Mode Terbalik: untuk penutur Jepang belajar bahasa Inggris/Korea.';
+
+  @override
+  String get exportOptions => 'Opsi Ekspor';
+
+  @override
+  String get exportAnkiOption => 'Ekspor ke Anki (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Dek flashcard untuk aplikasi Anki';
+
+  @override
+  String get exportPlainTextOption => 'Ekspor Daftar Kata (Teks)';
+
+  @override
+  String get exportPlainTextDescription =>
+      'Kata dipisahkan koma untuk Renshuu, dll.';
+
+  @override
+  String get wordListCopied => 'Daftar kata disalin ke clipboard!';
+
+  @override
+  String get wordListDownloaded => 'Daftar kata berhasil diunduh!';
+
+  @override
+  String get exportWordsTitle => 'Ekspor Daftar Kata';
+
+  @override
+  String get includeVocab => 'Kosakata';
+
+  @override
+  String get includeKanji => 'Kanji';
+
+  @override
+  String get includeGrammar => 'Tata Bahasa';
+
+  @override
+  String get copyToClipboard => 'Salin';
+
+  @override
+  String get downloadAsFile => 'Unduh';
+
+  @override
+  String get noWordsToExport =>
+      'Tidak ada kata untuk diekspor. Pilih setidaknya satu kategori.';
 }

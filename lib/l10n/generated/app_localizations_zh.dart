@@ -159,6 +159,48 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reverseLearningDescription => '反向学习模式：面向日语母语者学习英语/韩语。';
+
+  @override
+  String get exportOptions => '导出选项';
+
+  @override
+  String get exportAnkiOption => '导出到 Anki (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Anki 应用的闪卡牌组';
+
+  @override
+  String get exportPlainTextOption => '导出单词列表 (文本)';
+
+  @override
+  String get exportPlainTextDescription => '用逗号分隔的单词，适用于 Renshuu 等';
+
+  @override
+  String get wordListCopied => '单词列表已复制到剪贴板！';
+
+  @override
+  String get wordListDownloaded => '单词列表已下载！';
+
+  @override
+  String get exportWordsTitle => '导出单词列表';
+
+  @override
+  String get includeVocab => '词汇';
+
+  @override
+  String get includeKanji => '汉字';
+
+  @override
+  String get includeGrammar => '语法';
+
+  @override
+  String get copyToClipboard => '复制';
+
+  @override
+  String get downloadAsFile => '下载';
+
+  @override
+  String get noWordsToExport => '没有可导出的单词。请至少选择一个类别。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -316,6 +358,48 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get reverseLearningDescription => '反向学习模式：面向日语母语者学习英语/韩语。';
+
+  @override
+  String get exportOptions => '导出选项';
+
+  @override
+  String get exportAnkiOption => '导出到 Anki (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Anki 应用的闪卡牌组';
+
+  @override
+  String get exportPlainTextOption => '导出单词列表 (文本)';
+
+  @override
+  String get exportPlainTextDescription => '用逗号分隔的单词，适用于 Renshuu 等';
+
+  @override
+  String get wordListCopied => '单词列表已复制到剪贴板！';
+
+  @override
+  String get wordListDownloaded => '单词列表已下载！';
+
+  @override
+  String get exportWordsTitle => '导出单词列表';
+
+  @override
+  String get includeVocab => '词汇';
+
+  @override
+  String get includeKanji => '汉字';
+
+  @override
+  String get includeGrammar => '语法';
+
+  @override
+  String get copyToClipboard => '复制';
+
+  @override
+  String get downloadAsFile => '下载';
+
+  @override
+  String get noWordsToExport => '没有可导出的单词。请至少选择一个类别。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -473,4 +557,46 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get reverseLearningDescription => '反向學習模式：面向日語母語者學習英語/韓語。';
+
+  @override
+  String get exportOptions => '匯出選項';
+
+  @override
+  String get exportAnkiOption => '匯出至 Anki (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Anki 應用的閃卡牌組';
+
+  @override
+  String get exportPlainTextOption => '匯出單字列表 (文字)';
+
+  @override
+  String get exportPlainTextDescription => '用逗號分隔的單字，適用於 Renshuu 等';
+
+  @override
+  String get wordListCopied => '單字列表已複製到剪貼簿！';
+
+  @override
+  String get wordListDownloaded => '單字列表已下載！';
+
+  @override
+  String get exportWordsTitle => '匯出單字列表';
+
+  @override
+  String get includeVocab => '詞彙';
+
+  @override
+  String get includeKanji => '漢字';
+
+  @override
+  String get includeGrammar => '文法';
+
+  @override
+  String get copyToClipboard => '複製';
+
+  @override
+  String get downloadAsFile => '下載';
+
+  @override
+  String get noWordsToExport => '沒有可匯出的單字。請至少選擇一個類別。';
 }

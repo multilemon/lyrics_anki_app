@@ -163,4 +163,48 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get reverseLearningDescription =>
       'Chế độ học ngược: Dành cho người Nhật học tiếng Anh/Hàn.';
+
+  @override
+  String get exportOptions => 'Tùy chọn xuất';
+
+  @override
+  String get exportAnkiOption => 'Xuất sang Anki (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Bộ thẻ flashcard cho ứng dụng Anki';
+
+  @override
+  String get exportPlainTextOption => 'Xuất danh sách từ (Văn bản)';
+
+  @override
+  String get exportPlainTextDescription =>
+      'Từ ngăn cách bằng dấu phẩy cho Renshuu, v.v.';
+
+  @override
+  String get wordListCopied => 'Danh sách từ đã được sao chép!';
+
+  @override
+  String get wordListDownloaded => 'Danh sách từ đã được tải xuống!';
+
+  @override
+  String get exportWordsTitle => 'Xuất danh sách từ';
+
+  @override
+  String get includeVocab => 'Từ vựng';
+
+  @override
+  String get includeKanji => 'Kanji';
+
+  @override
+  String get includeGrammar => 'Ngữ pháp';
+
+  @override
+  String get copyToClipboard => 'Sao chép';
+
+  @override
+  String get downloadAsFile => 'Tải xuống';
+
+  @override
+  String get noWordsToExport =>
+      'Không có từ nào để xuất. Vui lòng chọn ít nhất một danh mục.';
 }

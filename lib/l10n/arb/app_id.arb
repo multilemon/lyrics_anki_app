@@ -52,5 +52,19 @@
     "songTitleHintKo": "cth. Gangnam Style",
     "artistNameHintKo": "cth. PSY",
     "romanizationType": "Romanisasi",
-    "reverseLearningDescription": "Mode Terbalik: untuk penutur Jepang belajar bahasa Inggris/Korea."
+    "reverseLearningDescription": "Mode Terbalik: untuk penutur Jepang belajar bahasa Inggris/Korea.",
+    "exportOptions": "Opsi Ekspor",
+    "exportAnkiOption": "Ekspor ke Anki (.apkg)",
+    "exportAnkiDescription": "Dek flashcard untuk aplikasi Anki",
+    "exportPlainTextOption": "Ekspor Daftar Kata (Teks)",
+    "exportPlainTextDescription": "Kata dipisahkan koma untuk Renshuu, dll.",
+    "wordListCopied": "Daftar kata disalin ke clipboard!",
+    "wordListDownloaded": "Daftar kata berhasil diunduh!",
+    "exportWordsTitle": "Ekspor Daftar Kata",
+    "includeVocab": "Kosakata",
+    "includeKanji": "Kanji",
+    "includeGrammar": "Tata Bahasa",
+    "copyToClipboard": "Salin",
+    "downloadAsFile": "Unduh",
+    "noWordsToExport": "Tidak ada kata untuk diekspor. Pilih setidaknya satu kategori."
 }

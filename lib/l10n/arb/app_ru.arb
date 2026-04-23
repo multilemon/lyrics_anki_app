@@ -52,5 +52,19 @@
     "songTitleHintKo": "напр. Gangnam Style",
     "artistNameHintKo": "напр. PSY",
     "romanizationType": "Романизация",
-    "reverseLearningDescription": "Обратный режим: для японцев, изучающих английский/корейский."
+    "reverseLearningDescription": "Обратный режим: для японцев, изучающих английский/корейский.",
+    "exportOptions": "Варианты экспорта",
+    "exportAnkiOption": "Экспорт в Anki (.apkg)",
+    "exportAnkiDescription": "Набор карточек для Anki",
+    "exportPlainTextOption": "Экспорт списка слов (текст)",
+    "exportPlainTextDescription": "Слова через запятую для Renshuu и др.",
+    "wordListCopied": "Список слов скопирован!",
+    "wordListDownloaded": "Список слов загружен!",
+    "exportWordsTitle": "Экспорт списка слов",
+    "includeVocab": "Словарь",
+    "includeKanji": "Кандзи",
+    "includeGrammar": "Грамматика",
+    "copyToClipboard": "Копировать",
+    "downloadAsFile": "Скачать",
+    "noWordsToExport": "Нет слов для экспорта. Выберите хотя бы одну категорию."
 }

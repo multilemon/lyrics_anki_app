@@ -52,5 +52,19 @@
     "songTitleHintKo": "เช่น Gangnam Style",
     "artistNameHintKo": "เช่น PSY",
     "romanizationType": "อักษรโรมัน",
-    "reverseLearningDescription": "โหมดเรียนย้อนกลับ: สำหรับคนญี่ปุ่นที่เรียนภาษาอังกฤษ/เกาหลี"
+    "reverseLearningDescription": "โหมดเรียนย้อนกลับ: สำหรับคนญี่ปุ่นที่เรียนภาษาอังกฤษ/เกาหลี",
+    "exportOptions": "ตัวเลือกส่งออก",
+    "exportAnkiOption": "ส่งออกไปยัง Anki (.apkg)",
+    "exportAnkiDescription": "ชุดแฟลชการ์ดสำหรับแอป Anki",
+    "exportPlainTextOption": "ส่งออกรายการคำศัพท์ (ข้อความ)",
+    "exportPlainTextDescription": "คำศัพท์คั่นด้วยเครื่องหมายจุลภาคสำหรับ Renshuu ฯลฯ",
+    "wordListCopied": "คัดลอกรายการคำศัพท์แล้ว!",
+    "wordListDownloaded": "ดาวน์โหลดรายการคำศัพท์แล้ว!",
+    "exportWordsTitle": "ส่งออกรายการคำศัพท์",
+    "includeVocab": "คำศัพท์",
+    "includeKanji": "คันจิ",
+    "includeGrammar": "ไวยากรณ์",
+    "copyToClipboard": "คัดลอก",
+    "downloadAsFile": "ดาวน์โหลด",
+    "noWordsToExport": "ไม่มีคำศัพท์ที่จะส่งออก กรุณาเลือกอย่างน้อยหนึ่งหมวดหมู่"
 }

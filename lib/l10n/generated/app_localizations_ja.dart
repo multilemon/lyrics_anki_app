@@ -159,4 +159,46 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reverseLearningDescription => 'リバース学習モード：日本語話者が英語/韓国語を学ぶためのモード。';
+
+  @override
+  String get exportOptions => 'エクスポート方法';
+
+  @override
+  String get exportAnkiOption => 'Ankiへエクスポート (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Ankiアプリ用フラッシュカード';
+
+  @override
+  String get exportPlainTextOption => '単語リストをエクスポート (テキスト)';
+
+  @override
+  String get exportPlainTextDescription => 'Renshuu等で使えるカンマ区切りの単語一覧';
+
+  @override
+  String get wordListCopied => '単語リストをコピーしました！';
+
+  @override
+  String get wordListDownloaded => '単語リストをダウンロードしました！';
+
+  @override
+  String get exportWordsTitle => '単語リストのエクスポート';
+
+  @override
+  String get includeVocab => '単語';
+
+  @override
+  String get includeKanji => '漢字';
+
+  @override
+  String get includeGrammar => '文法';
+
+  @override
+  String get copyToClipboard => 'コピー';
+
+  @override
+  String get downloadAsFile => 'ダウンロード';
+
+  @override
+  String get noWordsToExport => 'エクスポートする単語がありません。少なくとも1つのカテゴリを選択してください。';
 }

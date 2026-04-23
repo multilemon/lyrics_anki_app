@@ -160,4 +160,46 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get reverseLearningDescription =>
       '역학습 모드: 일본어 화자가 영어/한국어를 배우기 위한 모드입니다.';
+
+  @override
+  String get exportOptions => '내보내기 옵션';
+
+  @override
+  String get exportAnkiOption => 'Anki로 내보내기 (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Anki 앱용 플래시카드 덱';
+
+  @override
+  String get exportPlainTextOption => '단어 목록 내보내기 (텍스트)';
+
+  @override
+  String get exportPlainTextDescription => 'Renshuu 등에 사용할 수 있는 쉼표로 구분된 단어';
+
+  @override
+  String get wordListCopied => '단어 목록이 클립보드에 복사되었습니다!';
+
+  @override
+  String get wordListDownloaded => '단어 목록이 다운로드되었습니다!';
+
+  @override
+  String get exportWordsTitle => '단어 목록 내보내기';
+
+  @override
+  String get includeVocab => '어휘';
+
+  @override
+  String get includeKanji => '한자';
+
+  @override
+  String get includeGrammar => '문법';
+
+  @override
+  String get copyToClipboard => '복사';
+
+  @override
+  String get downloadAsFile => '다운로드';
+
+  @override
+  String get noWordsToExport => '내보낼 단어가 없습니다. 최소 하나의 카테고리를 선택하세요.';
 }

@@ -162,4 +162,48 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get reverseLearningDescription =>
       'Обратный режим: для японцев, изучающих английский/корейский.';
+
+  @override
+  String get exportOptions => 'Варианты экспорта';
+
+  @override
+  String get exportAnkiOption => 'Экспорт в Anki (.apkg)';
+
+  @override
+  String get exportAnkiDescription => 'Набор карточек для Anki';
+
+  @override
+  String get exportPlainTextOption => 'Экспорт списка слов (текст)';
+
+  @override
+  String get exportPlainTextDescription =>
+      'Слова через запятую для Renshuu и др.';
+
+  @override
+  String get wordListCopied => 'Список слов скопирован!';
+
+  @override
+  String get wordListDownloaded => 'Список слов загружен!';
+
+  @override
+  String get exportWordsTitle => 'Экспорт списка слов';
+
+  @override
+  String get includeVocab => 'Словарь';
+
+  @override
+  String get includeKanji => 'Кандзи';
+
+  @override
+  String get includeGrammar => 'Грамматика';
+
+  @override
+  String get copyToClipboard => 'Копировать';
+
+  @override
+  String get downloadAsFile => 'Скачать';
+
+  @override
+  String get noWordsToExport =>
+      'Нет слов для экспорта. Выберите хотя бы одну категорию.';
 }
