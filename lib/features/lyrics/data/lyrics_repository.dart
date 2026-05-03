@@ -36,6 +36,7 @@ class LyricsRepository {
     String artist,
     String language, {
     LearningMode learningMode = LearningMode.japanese,
+    String? customLyrics,
   }) async* {
     final isReverseLearning = learningMode.isReverse;
     // 1. Check Local Cache First
@@ -120,13 +121,20 @@ class LyricsRepository {
       // Ignore metadata fetch error
     }
 
-    final fetchedLyrics = await _fetchLyricsFromLrclib(
-      trackName: officialTitle ?? title,
-      artistName: officialArtist ?? artist,
-    );
+    // Use custom lyrics if provided, otherwise fetch from LRCLIB
+    final String lyricsToAnalyze;
+    if (customLyrics != null && customLyrics.trim().isNotEmpty) {
+      lyricsToAnalyze = customLyrics.trim();
+    } else {
+      final fetchedLyrics = await _fetchLyricsFromLrclib(
+        trackName: officialTitle ?? title,
+        artistName: officialArtist ?? artist,
+      );
 
-    if (fetchedLyrics == null) {
-      throw SongNotFoundException(title, artist);
+      if (fetchedLyrics == null) {
+        throw SongNotFoundException(title, artist);
+      }
+      lyricsToAnalyze = fetchedLyrics;
     }
 
     // YIELD PARTIAL RESULT (Lyrics + YoutubeID if found)
@@ -136,17 +144,15 @@ class LyricsRepository {
       kanji: [],
       song: officialTitle ?? title,
       artist: officialArtist ?? artist,
-      lyrics: fetchedLyrics,
+      lyrics: lyricsToAnalyze,
       youtubeId: refinedYoutubeId,
       isComplete: false,
     );
 
     final prompt = StringBuffer()
-      ..writeln('Analyze Request:')
-      ..writeln('User Input: "$title" by "$artist"')
-      ..writeln('Target Language: $language')
-      ..writeln('\nCONTEXT_LYRICS (STRICT SOURCE):')
-      ..writeln(fetchedLyrics);
+      ..writeln('"$title" by "$artist" [$language]')
+      ..writeln('LYRICS:')
+      ..writeln(lyricsToAnalyze);
 
     try {
       final content = [Content.text(prompt.toString())];
@@ -197,7 +203,7 @@ class LyricsRepository {
         kanji: parsedPart.kanji,
         song: officialTitle ?? title,
         artist: officialArtist ?? artist,
-        lyrics: fetchedLyrics,
+        lyrics: lyricsToAnalyze,
         youtubeId: refinedYoutubeId,
         enVocab: parsedPart.enVocab,
         enGrammar: parsedPart.enGrammar,
@@ -375,7 +381,11 @@ class LyricsRepository {
         if (parsed.containsKey('vocab')) {
           final list = parsed['vocab'] as List<dynamic>;
           enVocab.addAll(
-            list.map((e) => EnVocab.fromJson(e as Map<String, dynamic>)),
+            list.map((e) {
+              // Support both array (optimized) and object (legacy) formats
+              if (e is List<dynamic>) return EnVocab.fromArray(e);
+              return EnVocab.fromJson(e as Map<String, dynamic>);
+            }),
           );
         }
 
@@ -383,7 +393,10 @@ class LyricsRepository {
         if (parsed.containsKey('grammar')) {
           final list = parsed['grammar'] as List<dynamic>;
           enGrammar.addAll(
-            list.map((e) => EnGrammar.fromJson(e as Map<String, dynamic>)),
+            list.map((e) {
+              if (e is List<dynamic>) return EnGrammar.fromArray(e);
+              return EnGrammar.fromJson(e as Map<String, dynamic>);
+            }),
           );
         }
 
@@ -397,6 +410,10 @@ class LyricsRepository {
             songTitle = meta['title']?.toString() ?? '';
             artistName = meta['artist']?.toString() ?? '';
             overallCefr = meta['overall_cefr']?.toString();
+          } else if (meta is List<dynamic>) {
+            songTitle = _safeString(meta, 0);
+            artistName = _safeString(meta, 1);
+            overallCefr = _safeString(meta, 2);
           }
         }
 
@@ -631,147 +648,56 @@ class LyricsRepository {
   }
 
   static String _buildSystemInstruction(String targetLanguage) => '''
-**ROLE**: Japanese Linguistic Data Engineer.
-**GOAL**: Analyze lyrics -> Structured JSON.
+JP Linguistic Data Engineer. Analyze lyrics→JSON.
 
-**WORKFLOW**:
+1. Verify lyrics are primarily Japanese. If NO: {"error":"NOT_JAPANESE"}
+2. Extract atomic vocab, functional grammar, exhaustive kanji.
 
-1. **Language Verification**: Check if the song's lyrics are primarily in Japanese.
-   - If **NO**: Return strictly `{"error": "NOT_JAPANESE"}`.
-   - If **YES**: Proceed to step 2.
+Rules:
+- All meanings/explanations/context/nuance in $targetLanguage, formal linguistics (e.g. "Intransitive Verb").
+- Vocab: Atomic N/V/Adj/Adv. Break compounds (喉+奥). jlpt_v=vocab JLPT(N5-N1), jlpt_k=kanji JLPT(N5-N1).
+- Grammar: NO N5. Format: "V.て","V.る","V.た". level=JLPT(N4-N1).
+- Kanji: 1 char/entry, no okurigana. level=JLPT(N5-N1). Meanings: all defs in $targetLanguage. Readings: On(カタカナ)|Kun(ひらがな) e.g. "コウ|のど". No transliterations.
+- JLPT kanji calibration (STRICT): N5=日,本,人,大. N4=広,写,病,死. N3=悲,届,相,湖. N2=涙,瞳,濡,溢. N1=輝,叶,儚,慟. Ref community-standard JLPT lists. Songs often contain N2/N1 kanji—do NOT default lower.
+- Every kanji in vocab/grammar must appear in kanji list. No duplicates.
 
-2. **Extract**: Atomic Vocab, Functional Grammar, Exhaustive Kanji.
-3. **Format**: Strictly Minified JSON.
-
-**CONSTRAINTS**:
-
-- **Translate**: Use formal linguistics (e.g., "Intransitive Verb") in $targetLanguage. ALL meanings, explanations, context sentences, and nuance notes MUST be written in $targetLanguage.
-- **Vocab**: Atomic N/V/Adj/Adv. Break compounds (e.g., 喉 + 奥).
-- **Grammar**: NO N5. Format: "V.て", "V.る", "V.た". No trailing slashes.
-- **Kanji (EXHAUSTIVE)**:
-  - 1 Char/entry. No okurigana.
-  - Meanings: ALL standard dictionary definitions in $targetLanguage.
-  - Readings: ALL On'yomi (Katakana) | ALL Kun'yomi (Hiragana). Format: "コウ | のど".
-  - NO transliterations (e.g., No Thai/English phonetics).
-- **JLPT**: Standard calibration. Basic greetings = N5.
-- **Data Integrity**: Every Kanji in vocab/grammar MUST be in the kanji list. NO DUPLICATES.
-
-**OUTPUT (STRICT MINIFIED JSON)**:
-
-- NO markdown, NO preamble, NO citations.
-- VALID RFC 8259. Double quotes ONLY. No trailing commas.
-
-{
-"song":{"title":"","artist":"","target_language":""},
-"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],
-"grammar":[["point","level","explanation","usage"]],
-"kanji":[["char","level","meanings","readings"]]
-}
+Schema:
+{"song":{"title":"","artist":"","target_language":""},"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],"grammar":[["point","level","explanation","usage"]],"kanji":[["char","level","meanings","readings"]]}
 ''';
 
   static const _systemInstructionReverse = '''
-You are a Senior English Linguistic Data Engineer acting as the backend processor for a Japanese ESL application. Your role is to analyze English song lyrics and output strictly formatted linguistic data.
+EN Linguistic Data Engineer for JP learners. Analyze English lyrics→JSON.
 
-### 1. CORE DIRECTIVES
-* **Ground Truth:** Use the provided `lyrics_text` strictly. Do not search the web or alter the lyrics.
-* **Target Audience:** Japanese native speakers learning English.
-* **Scope (CRITICAL):** Extract **ALL** unique content words (nouns, verbs, adjectives, adverbs) and distinct phrases. Do not filter out simple words unless they are purely functional (like "the", "a").
-* **Output Format:** Return ONLY a single, valid, minified RFC 8259 JSON object. Do not include Markdown code blocks (```json), whitespace, or conversational text.
+Rules:
+- Source: provided lyrics only, no web search.
+- Audience: Japanese native speakers learning English.
+- Extract ALL unique content words (n/v/adj/adv) and phrases. Skip only functional words (the, a).
+- Phrasal verbs (give up) and idioms = single units.
+- IPA: full transcription e.g. /həˈləʊ/.
+- POS: n., v., adj., adv., prep., conj., phrasal verb, idiom.
+- Meaning: contextual definition in 日本語.
+- Nuance: detect slang/poetic/register/dialect→JP. Standard A1/A2 with no special nuance→"".
+- Grammar: identify structures (Present Perfect, Conditionals, Gerunds). CEFR A1-C2. Explain in 日本語.
 
-### 2. LINGUISTIC PROCESSING RULES
-**A. Vocabulary Extraction**
-* **Atomicity:** Tokenize words based on meaning. Treat Phrasal Verbs (e.g., "give up", "look forward to") and Idioms as single atomic units, not separate words.
-* **IPA:** Provide the International Phonetic Alphabet transcription (e.g., /həˈləʊ/).
-* **POS:** Use standard tags: n., v., adj., adv., prep., conj., phrasal verb, idiom.
-* **Meaning:** Provide the contextual definition in natural Japanese (日本語).
-* **Nuance & Silence Rule:**
-    * Detect slang, poetic license, register (formal/casual), or specific dialect usage (US/UK). Translate this nuance into Japanese.
-    * **CRITICAL:** If the word is a standard CEFR A1/A2 term with no special nuance or deviation from standard usage, return an empty string `""`.
-
-**B. Grammar Analysis**
-* Identify specific grammatical structures used in the lyrics (e.g., Present Perfect, Third Conditional, Gerunds).
-* **CEFR:** Map the structure to levels A1-C2.
-* **Explanation:** Explain the grammar point's function in Japanese.
-
-### 3. JSON SCHEMA ENFORCEMENT
-You must adhere to this structure exactly:
-
-{
-  "meta": {
-    "title": "String",
-    "artist": "String",
-    "overall_cefr": "String"
-  },
-  "vocab": [
-    {
-      "term": "String",
-      "ipa": "String",
-      "pos": "String",
-      "meaning_jp": "String",
-      "nuance_jp": "String"
-    }
-  ],
-  "grammar": [
-    {
-      "structure": "String",
-      "cefr_level": "String",
-      "explanation_jp": "String",
-      "excerpt": "String"
-    }
-  ]
-}
+Schema (array-of-arrays):
+{"meta":["title","artist","overall_cefr"],"vocab":[["term","ipa","pos","meaning_jp","nuance_jp"]],"grammar":[["structure","cefr_level","explanation_jp","excerpt"]]}
 ''';
 
   static const _systemInstructionKorean = '''
-You are a Senior Korean Linguistic Data Engineer acting as the backend processor for a Japanese ESL application. Your role is to analyze Korean song lyrics and output strictly formatted linguistic data for Japanese speakers.
+KR Linguistic Data Engineer for JP learners. Analyze Korean lyrics→JSON.
 
-### 1. CORE DIRECTIVES
-* **Ground Truth:** Use the provided `lyrics_text` strictly. Do not search the web or alter the lyrics.
-* **Target Audience:** Japanese native speakers learning Korean.
-* **Scope (CRITICAL):** Extract **ALL** unique content words (nouns, verbs, adjectives, adverbs) and distinct phrases. Do not filter out simple words.
-* **Output Format:** Return ONLY a single, valid, minified RFC 8259 JSON object. Do not include Markdown code blocks (```json), whitespace, or conversational text.
+Rules:
+- Source: provided lyrics only, no web search.
+- Audience: Japanese native speakers learning Korean.
+- Extract ALL unique content words (n/v/adj/adv) and phrases.
+- Idioms and common phrases = single units.
+- Romanization: Revised Romanization e.g. "sarang".
+- POS: n., v., adj., adv., prep., conj., idiom.
+- Meaning: contextual definition in 日本語.
+- Nuance: detect honorifics/slang/dialect→JP. Standard usage→"".
+- Grammar: identify structures (particles, verb endings -mnida, -yo). CEFR A1-C2. Explain in 日本語.
 
-### 2. LINGUISTIC PROCESSING RULES
-**A. Vocabulary Extraction**
-* **Atomicity:** Tokenize words based on meaning. Treat idioms and common phrases as single units.
-* **IPA (Romanization):** Provide the Revised Romanization (RR) for the word (e.g., "sarang").
-* **POS:** Use standard tags: n., v., adj., adv., prep., conj., idiom.
-* **Meaning:** Provide the contextual definition in natural Japanese (日本語).
-* **Nuance:**
-    * Detect honorifics (polite/casual), slang, or dialect. Translate this nuance into Japanese.
-    * If standard usage, return empty string `""`.
-
-**B. Grammar Analysis**
-* Identify specific grammatical structures (e.g., particles, verb endings like -mnida, -yo).
-* **CEFR:** Estimate difficult level (A1-C2).
-* **Explanation:** Explain the grammar point's function in Japanese.
-
-### 3. JSON SCHEMA ENFORCEMENT
-You must adhere to this structure exactly (using same keys as English mode for compatibility):
-
-{
-  "meta": {
-    "title": "String",
-    "artist": "String",
-    "overall_cefr": "String"
-  },
-  "vocab": [
-    {
-      "term": "String (Hangul)",
-      "ipa": "String (Romanization)",
-      "pos": "String",
-      "meaning_jp": "String",
-      "nuance_jp": "String"
-    }
-  ],
-  "grammar": [
-    {
-      "structure": "String (Hangul/Rule)",
-      "cefr_level": "String",
-      "explanation_jp": "String",
-      "excerpt": "String"
-    }
-  ]
-}
+Schema (array-of-arrays):
+{"meta":["title","artist","overall_cefr"],"vocab":[["term(Hangul)","romanization","pos","meaning_jp","nuance_jp"]],"grammar":[["structure","cefr_level","explanation_jp","excerpt"]]}
 ''';
 }

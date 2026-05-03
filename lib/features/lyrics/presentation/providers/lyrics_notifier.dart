@@ -21,6 +21,7 @@ class LyricsNotifier extends _$LyricsNotifier {
   String? _lastArtist;
   String? _lastLanguage;
   LearningMode? _lastMode;
+  String? _lastCustomLyrics;
 
   Future<void> retry() async {
     if (_lastTitle != null &&
@@ -32,6 +33,7 @@ class LyricsNotifier extends _$LyricsNotifier {
         _lastArtist!,
         _lastLanguage!,
         learningMode: _lastMode!,
+        customLyrics: _lastCustomLyrics,
       );
     }
   }
@@ -41,11 +43,13 @@ class LyricsNotifier extends _$LyricsNotifier {
     String artist,
     String language, {
     LearningMode learningMode = LearningMode.japanese,
+    String? customLyrics,
   }) async {
     _lastTitle = title;
     _lastArtist = artist;
     _lastLanguage = language;
     _lastMode = learningMode;
+    _lastCustomLyrics = customLyrics;
     state = const AsyncValue.loading();
 
     final repository = ref.read(lyricsRepositoryProvider);
@@ -57,6 +61,7 @@ class LyricsNotifier extends _$LyricsNotifier {
         artist,
         language,
         learningMode: learningMode,
+        customLyrics: customLyrics,
       );
 
       await for (final result in stream) {

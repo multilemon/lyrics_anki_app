@@ -24,7 +24,7 @@ class SettingsPage extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         titleTextStyle: theme.textTheme.headlineSmall?.copyWith(
-          color: AppColors.sakuraDark,
+          color: AppColors.sakura,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -32,7 +32,7 @@ class SettingsPage extends ConsumerWidget {
         children: [
           const SizedBox(height: 16),
           ListTile(
-            leading: const Icon(Icons.language, color: AppColors.sakuraDark),
+            leading: const Icon(Icons.language, color: AppColors.sakura),
             title: Text(l10n.uiLanguage),
             subtitle: Text(localeName),
             trailing: const Icon(Icons.chevron_right),
@@ -47,7 +47,7 @@ class SettingsPage extends ConsumerWidget {
           // TEMPORARY FEATURE: QR Code Share
           // TODO: Remove this block when no longer needed
           ListTile(
-            leading: const Icon(Icons.qr_code, color: AppColors.sakuraDark),
+            leading: const Icon(Icons.qr_code, color: AppColors.sakura),
             title: const Text('Share App'),
             subtitle: const Text('Show QR Code'),
             trailing: const Icon(Icons.chevron_right),
@@ -141,23 +141,23 @@ class _ShareDialog extends StatelessWidget {
             Text(
               'Share HanaUta',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.sakuraDark,
+                    color: AppColors.sakura,
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 24),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: QrImageView(
                 data: 'https://multilemon.github.io/lyrics_anki_app/',
                 size: 200,
-                backgroundColor: Colors.white,
+                backgroundColor: AppColors.surfaceLight,
                 eyeStyle: const QrEyeStyle(
                   eyeShape: QrEyeShape.square,
-                  color: AppColors.sakuraDark,
+                  color: AppColors.sakura,
                 ),
                 dataModuleStyle: const QrDataModuleStyle(
                   dataModuleShape: QrDataModuleShape.square,

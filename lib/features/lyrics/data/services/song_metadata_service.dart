@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:firebase_ai/firebase_ai.dart';
 
-
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/song_metadata.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -29,17 +28,10 @@ class SongMetadataService {
         ),
       );
 
-      final prompt = '''
-Find the OFFICIAL YouTube video ID for "$title" by "$artist".
-Return strictly valid JSON:
-{
-  "title": "Official Song Title (Original Language)",
-  "artist": "Official Artist Name (Original Language)",
-  "youtube_url": "https://www.youtube.com/watch?v=VIDEO_ID"
-}
-If not found, return { "youtube_url": "" }.
-Do NOT use markdown.
-''';
+      final prompt = 'Find official YouTube video for "$title" by "$artist". '
+          'Return JSON: {"title":"Official Title","artist":"Official Artist",'
+          ' "youtube_url":"https://www.youtube.com/watch?v=ID"}'
+          ' If not found: {"youtube_url":""}.';
 
       final content = [Content.text(prompt)];
       final response = await model.generateContent(content);

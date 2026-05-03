@@ -110,11 +110,11 @@ class _NotesPainter extends CustomPainter {
 
   static const _colors = [
     AppColors.sakura,
-    AppColors.sakuraDark,
-    AppColors.sakuraLight,
+    AppColors.accent,
+    AppColors.accentLight,
     AppColors.peach,
-    AppColors.sakuraDark,
     AppColors.sakura,
+    AppColors.accent,
     AppColors.matcha,
   ];
 

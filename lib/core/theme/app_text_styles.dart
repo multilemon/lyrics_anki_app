@@ -16,8 +16,9 @@ class AppTextStyles {
         fontFamily: 'Outfit',
         fontFamilyFallback: _fontFallbacks,
         fontSize: 32,
-        fontWeight: FontWeight.w300,
-        color: AppColors.sakuraDark,
+        fontWeight: FontWeight.w700,
+        color: AppColors.sakura,
+        letterSpacing: -0.5,
       );
 
   static TextStyle get heading1 => const TextStyle(
@@ -26,6 +27,7 @@ class AppTextStyles {
         fontSize: 24,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
+        letterSpacing: -0.3,
       );
 
   static TextStyle get heading2 => const TextStyle(

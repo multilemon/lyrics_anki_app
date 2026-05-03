@@ -99,6 +99,14 @@ class EnVocab {
 
   factory EnVocab.fromJson(Map<String, dynamic> json) =>
       _$EnVocabFromJson(json);
+
+  factory EnVocab.fromArray(List<dynamic> a) => EnVocab(
+        term: a.isNotEmpty ? a[0]?.toString() ?? '' : '',
+        ipa: a.length > 1 ? a[1]?.toString() ?? '' : '',
+        pos: a.length > 2 ? a[2]?.toString() ?? '' : '',
+        meaningJp: a.length > 3 ? a[3]?.toString() ?? '' : '',
+        nuanceJp: a.length > 4 ? a[4]?.toString() ?? '' : '',
+      );
   @HiveField(0)
   final String term;
   @HiveField(1)
@@ -126,6 +134,13 @@ class EnGrammar {
 
   factory EnGrammar.fromJson(Map<String, dynamic> json) =>
       _$EnGrammarFromJson(json);
+
+  factory EnGrammar.fromArray(List<dynamic> a) => EnGrammar(
+        structure: a.isNotEmpty ? a[0]?.toString() ?? '' : '',
+        cefrLevel: a.length > 1 ? a[1]?.toString() ?? '' : '',
+        explanationJp: a.length > 2 ? a[2]?.toString() ?? '' : '',
+        excerpt: a.length > 3 ? a[3]?.toString() ?? '' : '',
+      );
   @HiveField(0)
   final String structure;
   @HiveField(1)

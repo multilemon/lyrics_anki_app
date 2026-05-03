@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -11,14 +12,17 @@ import 'package:lyrics_anki_app/features/home/presentation/widgets/storage_warni
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/pages/lyrics_page.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/pages/settings_page.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({
-    required this.onNavigateToAnalyze,
-    this.onHistoryItemClick,
     super.key,
+    this.onNavigateToAnalyze,
+    this.onHistoryItemClick,
   });
 
   final void Function(
@@ -26,7 +30,9 @@ class HomePage extends ConsumerStatefulWidget {
     String artist,
     String language, {
     LearningMode learningMode,
-  }) onNavigateToAnalyze;
+    String? customLyrics,
+  })? onNavigateToAnalyze;
+
   final void Function(HistoryItem item)? onHistoryItemClick;
 
   @override
@@ -36,7 +42,9 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final _titleController = TextEditingController();
   final _artistController = TextEditingController();
+  final _lyricsController = TextEditingController();
   String _selectedLanguage = 'English';
+  bool _showLyricsInput = false;
 
   @override
   void initState() {
@@ -63,6 +71,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void dispose() {
     _titleController.dispose();
     _artistController.dispose();
+    _lyricsController.dispose();
     super.dispose();
   }
 
@@ -84,37 +93,67 @@ class _HomePageState extends ConsumerState<HomePage> {
       return;
     }
 
-    widget.onNavigateToAnalyze(
-      title,
-      artist,
-      _selectedLanguage,
-      learningMode: learningMode,
-    );
+    final customLyrics = _lyricsController.text.trim();
+
+    if (widget.onNavigateToAnalyze != null) {
+      widget.onNavigateToAnalyze!(
+        title,
+        artist,
+        _selectedLanguage,
+        learningMode: learningMode,
+        customLyrics: customLyrics.isNotEmpty ? customLyrics : null,
+      );
+    } else {
+      // Clear any previous selection state
+      ref.read(selectionManagerProvider.notifier).clear();
+
+      // Trigger analysis (fire and forget for UI,
+      // but provider handles state)
+      unawaited(
+        ref.read(lyricsProvider.notifier).analyzeSong(
+              title,
+              artist,
+              _selectedLanguage,
+              learningMode: learningMode,
+              customLyrics: customLyrics.isNotEmpty ? customLyrics : null,
+            ),
+      );
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const LyricsPage(),
+        ),
+      );
+    }
   }
 
   void _onHistoryItemTap(HistoryItem item) {
+    // Restore mode from item logic if needed
+    var mode = LearningMode.japanese;
+    if (item.learningModeIndex != null) {
+      mode = LearningMode.values[item.learningModeIndex!];
+    } else {
+      // Fallback
+      if (item.targetLanguage.toLowerCase() == 'korean') {
+        mode = LearningMode.korean;
+      } else if (item.enVocab != null && item.enVocab!.isNotEmpty) {
+        mode = LearningMode.english;
+      }
+    }
+
     if (widget.onHistoryItemClick != null) {
       widget.onHistoryItemClick!(item);
     } else {
-      // Restore mode from item logic if needed, or just pass it
-      // For now, onNavigateToAnalyze usually just checks args
-      var mode = LearningMode.japanese;
-      if (item.learningModeIndex != null) {
-        mode = LearningMode.values[item.learningModeIndex!];
-      } else {
-        // Fallback
-        if (item.targetLanguage.toLowerCase() == 'korean') {
-          mode = LearningMode.korean;
-        } else if (item.enVocab != null && item.enVocab!.isNotEmpty) {
-          mode = LearningMode.english;
-        }
-      }
+      // Clear any previous selection state
+      ref.read(selectionManagerProvider.notifier).clear();
 
-      widget.onNavigateToAnalyze(
-        item.songTitle,
-        item.artist,
-        item.targetLanguage,
-        learningMode: mode,
+      // Load from history
+      ref.read(lyricsProvider.notifier).loadFromHistory(item);
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const LyricsPage(),
+        ),
       );
     }
   }
@@ -125,6 +164,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     ref.listen(clearHomeFormSignalProvider, (_, __) {
       _titleController.clear();
       _artistController.clear();
+      _lyricsController.clear();
+      setState(() => _showLyricsInput = false);
     });
 
     final learningMode = ref.watch(learningModeProvider);
@@ -132,37 +173,69 @@ class _HomePageState extends ConsumerState<HomePage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      // backgroundColor: theme.scaffoldBackgroundColor, // Handled by theme
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: CustomScrollView(
-            slivers: [
-              // Header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 72, 32, 36),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.appTitle,
-                        style: theme.textTheme.displayLarge?.copyWith(
-                          color: AppColors.sakuraDark,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            color: AppColors.sakura,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SettingsPage(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.background,
+              AppColors.matcha.withValues(alpha: 0.15),
+              AppColors.background,
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: CustomScrollView(
+              slivers: [
+                // Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(32, 100, 32, 36),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.appTitle,
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            color: AppColors.sakura,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.homeSubtitle,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontStyle: FontStyle.italic,
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.homeSubtitle,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               // Analysis Card
               SliverToBoxAdapter(
@@ -177,18 +250,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.frost,
+                          color: AppColors.surface.withValues(
+                            alpha: 0.85,
+                          ),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withValues(
-                              alpha: 0.4,
+                            color: AppColors.sakura.withValues(
+                              alpha: 0.15,
                             ),
                           ),
                           boxShadow: [
                             BoxShadow(
                               color:
-                                  AppColors.sakuraDark.withValues(alpha: 0.08),
-                              blurRadius: 24,
+                                  AppColors.sakura.withValues(alpha: 0.06),
+                              blurRadius: 32,
                               offset: const Offset(0, 12),
                             ),
                           ],
@@ -266,6 +341,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 prefixIcon: const Icon(Icons.person),
                               ),
                             ),
+                            const SizedBox(height: 12),
+
+                            // Custom Lyrics Toggle
+                            _LyricsInputSection(
+                              controller: _lyricsController,
+                              isExpanded: _showLyricsInput,
+                              onToggle: () {
+                                setState(() {
+                                  _showLyricsInput = !_showLyricsInput;
+                                  if (!_showLyricsInput) {
+                                    _lyricsController.clear();
+                                  }
+                                });
+                              },
+                            ),
 
                             // Target Language Selector
                             if (learningMode == LearningMode.japanese) ...[
@@ -294,7 +384,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     vertical: 18,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.white,
+                                    color: AppColors.surfaceLight,
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
                                       color: AppColors.border,
@@ -304,7 +394,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     children: [
                                       const Icon(
                                         Icons.language,
-                                        color: AppColors.sakuraDark,
+                                        color: AppColors.sakura,
                                       ),
                                       const SizedBox(width: 16),
                                       Expanded(
@@ -344,9 +434,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                             const SizedBox(height: 32),
 
                             // Analyze Button
-                            ElevatedButton(
-                              onPressed: _handleAnalyze,
-                              child: Text(l10n.analyzeButton),
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    AppColors.sakura,
+                                    AppColors.accent,
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.sakura.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: _handleAnalyze,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                ),
+                                child: Text(l10n.analyzeButton),
+                              ),
                             ),
                           ],
                         ),
@@ -432,14 +546,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   boxShadow: [
                                     BoxShadow(
                                       color:
-                                          Colors.black.withValues(alpha: 0.04),
+                                          AppColors.sakura.withValues(
+                                            alpha: 0.06,
+                                          ),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
                                 child: Material(
-                                  color: AppColors.white,
+                                  color: AppColors.surface,
                                   borderRadius: BorderRadius.circular(20),
                                   clipBehavior: Clip.antiAlias,
                                   child: ListTile(
@@ -447,9 +563,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       horizontal: 24,
                                       vertical: 16,
                                     ),
-                                    hoverColor: AppColors.sakuraLight
-                                        .withValues(alpha: 0.3),
-                                    splashColor: AppColors.sakuraLight,
+                                    hoverColor: AppColors.sakura
+                                        .withValues(alpha: 0.1),
+                                    splashColor: AppColors.sakura.withValues(
+                                      alpha: 0.15,
+                                    ),
                                     title: Text(
                                       item.songTitle,
                                       style:
@@ -464,13 +582,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           : '$artist • ${item.targetLanguage}',
                                       style:
                                           theme.textTheme.bodyMedium?.copyWith(
-                                        color: AppColors.sakuraDark,
+                                        color: AppColors.sakura,
                                       ),
                                     ),
                                     trailing: const Icon(
                                       Icons.arrow_forward_ios_rounded,
                                       size: 16,
-                                      color: AppColors.sakuraDark,
+                                      color: AppColors.sakura,
                                     ),
                                     onTap: () => _onHistoryItemTap(item),
                                   ),
@@ -486,8 +604,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
+                          baseColor: AppColors.surfaceLight,
+                          highlightColor: AppColors.surface,
                           child: Column(
                             children: List.generate(
                               3,
@@ -497,7 +615,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 child: Container(
                                   height: 80,
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AppColors.surfaceLight,
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                 ),
@@ -517,6 +635,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -619,7 +738,7 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
                     subtitle: lang.englishName != lang.nativeName
                         ? Text(
                             lang.nativeName,
-                            style: const TextStyle(color: AppColors.sakuraDark),
+                            style: const TextStyle(color: AppColors.sakura),
                           )
                         : null,
                     onTap: () => Navigator.pop(context, lang),
@@ -650,22 +769,24 @@ class _ModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    Widget buildSymbol(String symbol, bool isSelected) {
+    Widget buildSymbol(String symbol, {required bool isSelected}) {
       return Text(
         symbol,
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: isSelected ? AppColors.sakuraDark : AppColors.textTertiary,
+          color: isSelected ? AppColors.sakura : AppColors.textTertiary,
         ),
       );
     }
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.greyLight.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.5),
+        ),
       ),
       padding: const EdgeInsets.all(4),
       child: LayoutBuilder(
@@ -677,8 +798,8 @@ class _ModeSelector extends StatelessWidget {
                 Expanded(
                   child: _ModeCard(
                     title: l10n.modeJapanese,
-                    iconWidget:
-                        buildSymbol('あ', selectedMode == LearningMode.japanese),
+                    iconWidget: buildSymbol('あ',
+                        isSelected: selectedMode == LearningMode.japanese),
                     isSelected: selectedMode == LearningMode.japanese,
                     onTap: () => onModeChanged(LearningMode.japanese),
                   ),
@@ -687,8 +808,8 @@ class _ModeSelector extends StatelessWidget {
                 Expanded(
                   child: _ModeCard(
                     title: l10n.modeEnglish,
-                    iconWidget:
-                        buildSymbol('A', selectedMode == LearningMode.english),
+                    iconWidget: buildSymbol('A',
+                        isSelected: selectedMode == LearningMode.english),
                     isSelected: selectedMode == LearningMode.english,
                     onTap: () => onModeChanged(LearningMode.english),
                   ),
@@ -697,8 +818,8 @@ class _ModeSelector extends StatelessWidget {
                 Expanded(
                   child: _ModeCard(
                     title: l10n.modeKorean,
-                    iconWidget:
-                        buildSymbol('가', selectedMode == LearningMode.korean),
+                    iconWidget: buildSymbol('가',
+                        isSelected: selectedMode == LearningMode.korean),
                     isSelected: selectedMode == LearningMode.korean,
                     onTap: () => onModeChanged(LearningMode.korean),
                   ),
@@ -735,11 +856,11 @@ class _ModeCard extends StatelessWidget {
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
         color: isSelected
-            ? AppColors.sakuraLight.withValues(alpha: 0.3)
+            ? AppColors.sakura.withValues(alpha: 0.15)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSelected ? AppColors.sakuraDark : Colors.transparent,
+          color: isSelected ? AppColors.sakura : Colors.transparent,
           width: 1.5,
         ),
       ),
@@ -758,7 +879,7 @@ class _ModeCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isSelected
-                      ? AppColors.sakuraDark
+                      ? AppColors.sakura
                       : AppColors.textSecondary,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -769,6 +890,118 @@ class _ModeCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LyricsInputSection extends StatelessWidget {
+  const _LyricsInputSection({
+    required this.controller,
+    required this.isExpanded,
+    required this.onToggle,
+  });
+
+  final TextEditingController controller;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Toggle Button
+        InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  isExpanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                  color: AppColors.sakura,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Paste Lyrics (Optional)',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.sakura,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (controller.text.trim().isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.sakura.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Added',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.sakura,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+
+        // Expandable Text Area
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 4),
+              Text(
+                'Paste song lyrics here to skip automatic fetching.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textTertiary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: controller,
+                maxLines: 8,
+                minLines: 4,
+                decoration: InputDecoration(
+                  hintText: 'Paste lyrics here...',
+                  alignLabelWithHint: true,
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(bottom: 80),
+                    child: Icon(Icons.lyrics_outlined),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.6,
+                ),
+              ),
+            ],
+          ),
+          crossFadeState:
+              isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 250),
+          sizeCurve: Curves.easeInOut,
+        ),
+      ],
     );
   }
 }

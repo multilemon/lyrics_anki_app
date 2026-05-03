@@ -38,6 +38,7 @@ class MainPage extends ConsumerWidget {
           artist,
           language, {
           learningMode = LearningMode.japanese,
+          customLyrics,
         }) async {
           // Switch to Lyrics Tab IMMEDIATELY
           ref.read(navIndexProvider.notifier).index = 1;
@@ -52,6 +53,7 @@ class MainPage extends ConsumerWidget {
                   artist,
                   language,
                   learningMode: learningMode,
+                  customLyrics: customLyrics,
                 ),
           );
         },
@@ -79,42 +81,52 @@ class MainPage extends ConsumerWidget {
       extendBody: true,
       bottomNavigationBar: ClipRRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: NavigationBar(
-            selectedIndex: currentIndex,
-            onDestinationSelected: (index) {
-              ref.read(navIndexProvider.notifier).index = index;
-            },
-            backgroundColor: AppColors.frost,
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            indicatorColor: AppColors.sakuraDark.withValues(alpha: 0.15),
-            destinations: [
-              NavigationDestination(
-                icon: const Icon(Icons.home_outlined),
-                selectedIcon: const Icon(
-                  Icons.home,
-                  color: AppColors.sakuraDark,
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.background.withValues(alpha: 0.85),
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.sakura.withValues(alpha: 0.1),
                 ),
-                label: l10n.homeTab,
               ),
-              NavigationDestination(
-                icon: const Icon(Icons.music_note_outlined),
-                selectedIcon: const Icon(
-                  Icons.music_note,
-                  color: AppColors.sakuraDark,
+            ),
+            child: NavigationBar(
+              selectedIndex: currentIndex,
+              onDestinationSelected: (index) {
+                ref.read(navIndexProvider.notifier).index = index;
+              },
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              indicatorColor: AppColors.sakura.withValues(alpha: 0.15),
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(
+                    Icons.home,
+                    color: AppColors.sakura,
+                  ),
+                  label: l10n.homeTab,
                 ),
-                label: l10n.lyricsTab,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(
-                  Icons.settings,
-                  color: AppColors.sakuraDark,
+                NavigationDestination(
+                  icon: const Icon(Icons.music_note_outlined),
+                  selectedIcon: const Icon(
+                    Icons.music_note,
+                    color: AppColors.sakura,
+                  ),
+                  label: l10n.lyricsTab,
                 ),
-                label: l10n.settingsTitle,
-              ),
-            ],
+                NavigationDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(
+                    Icons.settings,
+                    color: AppColors.sakura,
+                  ),
+                  label: l10n.settingsTitle,
+                ),
+              ],
+            ),
           ),
         ),
       ),

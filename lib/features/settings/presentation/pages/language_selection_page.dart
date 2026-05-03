@@ -20,10 +20,10 @@ class LanguageSelectionPage extends ConsumerWidget {
         elevation: 0,
         centerTitle: false,
         titleTextStyle: theme.textTheme.headlineSmall?.copyWith(
-          color: AppColors.sakuraDark,
+          color: AppColors.sakura,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: const IconThemeData(color: AppColors.sakuraDark),
+        iconTheme: const IconThemeData(color: AppColors.sakura),
       ),
       body: ListView(
         children: [
@@ -143,7 +143,7 @@ class _LanguageTile extends StatelessWidget {
         if (v != null) onChanged(v);
       },
       title: Text(label),
-      activeColor: AppColors.sakuraDark,
+      activeColor: AppColors.sakura,
       selected: isSelected,
       controlAffinity: ListTileControlAffinity.trailing,
     );
