@@ -9,7 +9,7 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_l
 
 class GrammarList extends StatefulWidget {
   const GrammarList(
-      {required this.grammarList, required this.isLoading, super.key});
+      {required this.grammarList, required this.isLoading, super.key,});
   final List<Grammar> grammarList;
   final bool isLoading;
 

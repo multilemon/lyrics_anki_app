@@ -9,7 +9,7 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_l
 
 class VocabList extends StatefulWidget {
   const VocabList(
-      {required this.vocabList, required this.isLoading, super.key});
+      {required this.vocabList, required this.isLoading, super.key,});
   final List<Vocab> vocabList;
   final bool isLoading;
 

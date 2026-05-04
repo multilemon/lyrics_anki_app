@@ -21,9 +21,7 @@ void main() async {
       ..registerAdapter(HistoryItemAdapter())
       ..registerAdapter(VocabAdapter())
       ..registerAdapter(GrammarAdapter())
-      ..registerAdapter(KanjiAdapter())
-      ..registerAdapter(EnVocabAdapter())
-      ..registerAdapter(EnGrammarAdapter());
+      ..registerAdapter(KanjiAdapter());
 
     try {
       box = await Hive.openBox<HistoryItem>('history_box');

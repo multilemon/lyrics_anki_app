@@ -1,4 +1,3 @@
-import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -10,15 +9,14 @@ class HistoryNotifier extends _$HistoryNotifier {
   @override
   FutureOr<List<HistoryItem>> build() async {
     final repo = ref.watch(lyricsRepositoryProvider);
-    final mode = ref.watch(learningModeProvider);
 
     // Observe database changes in real-time
-    final subscription = repo.watchHistory(mode: mode).listen((items) {
+    final subscription = repo.watchHistory().listen((items) {
       state = AsyncValue.data(items);
     });
     ref.onDispose(subscription.cancel);
 
-    return repo.getHistory(mode: mode);
+    return repo.getHistory();
   }
 
   Future<void> addHistoryItem(

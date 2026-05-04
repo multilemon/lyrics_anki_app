@@ -5,7 +5,7 @@ import 'package:lyrics_anki_app/core/theme/app_theme.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
-import 'package:universal_html/html.dart' as html;
+import 'package:web/web.dart' as web;
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -22,7 +22,7 @@ class _AppState extends ConsumerState<App> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Remove skeleton loader after the first frame
         try {
-          html.document.getElementById('app_skeleton')?.remove();
+          web.document.getElementById('app_skeleton')?.remove();
         } catch (_) {
           // Ignore
         }

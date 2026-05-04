@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
+import 'dart:js_interop';
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:universal_html/html.dart' as html;
+import 'package:web/web.dart' as web;
 
 Future<String> saveContentToFile(String content, String filenamePrefix) async {
   final filename =
@@ -13,12 +14,13 @@ Future<String> saveContentToFile(String content, String filenamePrefix) async {
   if (kIsWeb) {
     // Web implementation: Trigger browser download
     final bytes = utf8.encode(content);
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute('download', filename)
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    final blob = web.Blob([bytes.toJS].toJS);
+    final url = web.URL.createObjectURL(blob);
+    final anchor = web.HTMLAnchorElement()
+      ..href = url
+      ..download = filename;
+    anchor.click();
+    web.URL.revokeObjectURL(url);
     return 'Downloads/$filename';
   } else {
     // Mobile/Desktop implementation

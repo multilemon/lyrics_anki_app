@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
-import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/pages/lyrics_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
-import 'package:lyrics_anki_app/features/settings/presentation/pages/settings_page.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -37,7 +35,6 @@ class MainPage extends ConsumerWidget {
           title,
           artist,
           language, {
-          learningMode = LearningMode.japanese,
           customLyrics,
         }) async {
           // Switch to Lyrics Tab IMMEDIATELY
@@ -52,7 +49,6 @@ class MainPage extends ConsumerWidget {
                   title,
                   artist,
                   language,
-                  learningMode: learningMode,
                   customLyrics: customLyrics,
                 ),
           );
@@ -70,7 +66,6 @@ class MainPage extends ConsumerWidget {
         },
       ),
       const LyricsPage(),
-      const SettingsPage(),
     ];
 
     return Scaffold(
@@ -116,14 +111,6 @@ class MainPage extends ConsumerWidget {
                     color: AppColors.sakura,
                   ),
                   label: l10n.lyricsTab,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.settings_outlined),
-                  selectedIcon: const Icon(
-                    Icons.settings,
-                    color: AppColors.sakura,
-                  ),
-                  label: l10n.settingsTitle,
                 ),
               ],
             ),

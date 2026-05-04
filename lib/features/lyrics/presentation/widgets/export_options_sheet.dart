@@ -15,7 +15,6 @@ void showExportOptionsSheet({
   if (analysis == null) return;
 
   final selectedState = ref.read(selectionManagerProvider);
-  final isReverse = analysis.enVocab != null;
 
   final selectedVocabs = <Vocab>[];
   final selectedGrammar = <Grammar>[];
@@ -26,50 +25,28 @@ void showExportOptionsSheet({
   final plainTextKanji = <String>[];
 
   // Collect normal Vocab/Grammar/Kanji
-  if (!isReverse) {
-    for (final i in selectedState.vocabIndices) {
-      if (i < analysis.vocabs.length) {
-        selectedVocabs.add(analysis.vocabs[i]);
-        if (analysis.vocabs[i].word.isNotEmpty) {
-          plainTextVocabs.add(analysis.vocabs[i].word);
-        }
+  for (final i in selectedState.vocabIndices) {
+    if (i < analysis.vocabs.length) {
+      selectedVocabs.add(analysis.vocabs[i]);
+      if (analysis.vocabs[i].word.isNotEmpty) {
+        plainTextVocabs.add(analysis.vocabs[i].word);
       }
     }
-    for (final i in selectedState.grammarIndices) {
-      if (i < analysis.grammar.length) {
-        selectedGrammar.add(analysis.grammar[i]);
-        if (analysis.grammar[i].point.isNotEmpty) {
-          plainTextGrammar.add(analysis.grammar[i].point);
-        }
+  }
+  for (final i in selectedState.grammarIndices) {
+    if (i < analysis.grammar.length) {
+      selectedGrammar.add(analysis.grammar[i]);
+      if (analysis.grammar[i].point.isNotEmpty) {
+        plainTextGrammar.add(analysis.grammar[i].point);
       }
     }
-    for (final i in selectedState.kanjiIndices) {
-      if (i < analysis.kanji.length) {
-        selectedKanji.add(analysis.kanji[i]);
-        if (analysis.kanji[i].char.isNotEmpty &&
-            !plainTextVocabs.contains(analysis.kanji[i].char)) {
-          plainTextKanji.add(analysis.kanji[i].char);
-        }
-      }
-    }
-  } else {
-    // Reverse learning
-    if (analysis.enVocab != null) {
-      for (final i in selectedState.vocabIndices) {
-        if (i < analysis.enVocab!.length) {
-          if (analysis.enVocab![i].term.isNotEmpty) {
-            plainTextVocabs.add(analysis.enVocab![i].term);
-          }
-        }
-      }
-    }
-    if (analysis.enGrammar != null) {
-      for (final i in selectedState.grammarIndices) {
-        if (i < analysis.enGrammar!.length) {
-          if (analysis.enGrammar![i].structure.isNotEmpty) {
-            plainTextGrammar.add(analysis.enGrammar![i].structure);
-          }
-        }
+  }
+  for (final i in selectedState.kanjiIndices) {
+    if (i < analysis.kanji.length) {
+      selectedKanji.add(analysis.kanji[i]);
+      if (analysis.kanji[i].char.isNotEmpty &&
+          !plainTextVocabs.contains(analysis.kanji[i].char)) {
+        plainTextKanji.add(analysis.kanji[i].char);
       }
     }
   }
@@ -119,8 +96,7 @@ void showExportOptionsSheet({
                     ),
               ),
               const SizedBox(height: 16),
-              if (!isReverse)
-                ListTile(
+              ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -156,8 +132,7 @@ void showExportOptionsSheet({
                     );
                   },
                 ),
-              if (!isReverse)
-                const Divider(indent: 72, endIndent: 16, height: 1),
+              const Divider(indent: 72, endIndent: 16, height: 1),
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),

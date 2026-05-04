@@ -14,41 +14,15 @@ class LyricsTabBar extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final isReverseLearning = analysis.enVocab != null;
-
     // Calculate counts based on learning mode
-    final int vocabCount;
-    final int grammarCount;
-    final int kanjiCount;
-
-    if (isReverseLearning) {
-      vocabCount = analysis.enVocab?.length ?? 0;
-      grammarCount = analysis.enGrammar?.length ?? 0;
-      kanjiCount = 0; // Not applicable for reverse learning
-    } else {
-      vocabCount = analysis.vocabs.length;
-      grammarCount = analysis.grammar.length;
-      kanjiCount = analysis.kanji.length;
-    }
+    final vocabCount = analysis.vocabs.length;
+    final grammarCount = analysis.grammar.length;
+    final kanjiCount = analysis.kanji.length;
 
     // Prepare labels
     final vocabLabel = '${context.l10n.vocabTab} ($vocabCount)';
     final grammarLabel = '${context.l10n.grammarTab} ($grammarCount)';
-    final structureLabel = '${context.l10n.structureType} ($grammarCount)';
     final kanjiLabel = '${context.l10n.kanjiTab} ($kanjiCount)';
-
-    if (isReverseLearning) {
-      return TabBar(
-        labelColor: AppColors.sakura,
-        unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.sakura,
-        tabs: [
-          Tab(text: context.l10n.lyricsTab),
-          Tab(text: vocabLabel),
-          Tab(text: structureLabel),
-        ],
-      );
-    }
 
     return TabBar(
       labelColor: AppColors.sakura,

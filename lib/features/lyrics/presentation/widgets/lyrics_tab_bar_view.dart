@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/en_grammar_list.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/en_vocab_list.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/grammar_list.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/kanji_list.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/lyrics_error_view.dart';
@@ -34,23 +32,6 @@ class LyricsTabBarView extends ConsumerWidget {
         }
 
         final isLoading = !analysis.isComplete;
-        final isReverseLearning = analysis.enVocab != null;
-
-        if (isReverseLearning) {
-          return TabBarView(
-            children: [
-              LyricsView(analysis: analysis),
-              EnVocabList(
-                vocabList: analysis.enVocab ?? [],
-                isLoading: isLoading,
-              ),
-              EnGrammarList(
-                grammarList: analysis.enGrammar ?? [],
-                isLoading: isLoading,
-              ),
-            ],
-          );
-        }
 
         return TabBarView(
           children: [

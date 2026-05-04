@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/en_grammar_list.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/en_vocab_list.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/grammar_list.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/kanji_list.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/vocab_list.dart';
@@ -46,42 +44,22 @@ class LyricsView extends StatelessWidget {
         String title;
         if (match.type == 'vocab') {
           title = context.l10n.vocabType;
-          if (match.data is EnVocab) {
-            final v = match.data as EnVocab;
-            content = EnVocabItem(index: match.index, vocab: v);
-            analyticsService.logItemView(
-              type: 'vocab',
-              item: v.term,
-              source: 'lyrics_highlight',
-            );
-          } else {
-            final v = match.data as Vocab;
-            content = VocabItem(index: match.index, vocab: v);
-            analyticsService.logItemView(
-              type: 'vocab',
-              item: v.word,
-              source: 'lyrics_highlight',
-            );
-          }
+          final v = match.data as Vocab;
+          content = VocabItem(index: match.index, vocab: v);
+          analyticsService.logItemView(
+            type: 'vocab',
+            item: v.word,
+            source: 'lyrics_highlight',
+          );
         } else if (match.type == 'grammar') {
           title = context.l10n.grammarType;
-          if (match.data is EnGrammar) {
-            final g = match.data as EnGrammar;
-            content = EnGrammarItem(index: match.index, grammar: g);
-            analyticsService.logItemView(
-              type: 'grammar',
-              item: g.structure,
-              source: 'lyrics_highlight',
-            );
-          } else {
-            final g = match.data as Grammar;
-            content = GrammarItem(index: match.index, grammar: g);
-            analyticsService.logItemView(
-              type: 'grammar',
-              item: g.point,
-              source: 'lyrics_highlight',
-            );
-          }
+          final g = match.data as Grammar;
+          content = GrammarItem(index: match.index, grammar: g);
+          analyticsService.logItemView(
+            type: 'grammar',
+            item: g.point,
+            source: 'lyrics_highlight',
+          );
         } else {
           title = context.l10n.kanjiType;
           final k = match.data as Kanji;
@@ -162,17 +140,6 @@ class LyricsView extends StatelessWidget {
     addMatches(analysis.vocabs, 'vocab', (d) => (d as Vocab).word);
     addMatches(analysis.grammar, 'grammar', (d) => (d as Grammar).point);
     addMatches(analysis.kanji, 'kanji', (d) => (d as Kanji).char);
-
-    if (analysis.enVocab != null) {
-      addMatches(analysis.enVocab!, 'vocab', (d) => (d as EnVocab).term);
-    }
-    if (analysis.enGrammar != null) {
-      addMatches(
-        analysis.enGrammar!,
-        'grammar',
-        (d) => (d as EnGrammar).structure,
-      );
-    }
 
     // Sort: Start Time asc, Length desc (Longest match wins)
     matches.sort((a, b) {

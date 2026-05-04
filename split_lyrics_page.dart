@@ -2,13 +2,13 @@ import 'dart:io';
 
 void main() async {
   final file = File('lib/features/lyrics/presentation/pages/lyrics_page.dart');
-  var lines = await file.readAsLines();
+  final lines = await file.readAsLines();
   
   // We want to extract specific classes to other files
   // Instead of a complex regex, we'll just extract from known start to end line
   // Let's find the start of each section
   int findClass(String name) {
-    for (int i = 0; i < lines.length; i++) {
+    for (var i = 0; i < lines.length; i++) {
       if (lines[i].startsWith('class $name ')) return i;
     }
     return -1;
@@ -16,11 +16,11 @@ void main() async {
   
   int endOfClass(int startIdx) {
     if (startIdx == -1) return -1;
-    int braceCount = 0;
-    bool started = false;
-    for (int i = startIdx; i < lines.length; i++) {
+    var braceCount = 0;
+    var started = false;
+    for (var i = startIdx; i < lines.length; i++) {
       final line = lines[i];
-      for (int j = 0; j < line.length; j++) {
+      for (var j = 0; j < line.length; j++) {
         if (line[j] == '{') {
           braceCount++;
           started = true;
@@ -34,7 +34,7 @@ void main() async {
   }
 
   void extract(String path, List<String> classes) {
-    List<String> imports = [
+    final imports = <String>[
       "import 'dart:async';",
       "import 'dart:convert';",
       "import 'package:flutter/material.dart';",
@@ -48,17 +48,17 @@ void main() async {
       "import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';",
       "import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';",
       "import 'package:lyrics_anki_app/l10n/l10n.dart';",
-      "// Add more imports as needed"
+      '// Add more imports as needed',
     ];
     
-    List<String> content = [...imports, ''];
-    List<int> linesToRemove = [];
+    final content = <String>[...imports, ''];
+    final linesToRemove = <int>[];
     
     for (final c in classes) {
-      int start = findClass(c);
+      var start = findClass(c);
       if (start == -1) {
         // Maybe it's a function? Check for void name(
-        for (int i = 0; i < lines.length; i++) {
+        for (var i = 0; i < lines.length; i++) {
           if (lines[i].startsWith('void $c(')) {
             start = i;
             break;
@@ -69,16 +69,16 @@ void main() async {
       if (start == -1) continue;
       
       // Look for comments before class
-      int realStart = start;
+      var realStart = start;
       while (realStart > 0 && (lines[realStart - 1].trim().startsWith('///') || lines[realStart - 1].trim().startsWith('//'))) {
         realStart--;
       }
       
-      int end = endOfClass(start);
+      final end = endOfClass(start);
       if (end != -1) {
         content.addAll(lines.sublist(realStart, end + 1));
         content.add('');
-        for (int i = realStart; i <= end; i++) {
+        for (var i = realStart; i <= end; i++) {
           linesToRemove.add(i);
         }
       }
@@ -122,7 +122,7 @@ void main() async {
     '_EnGrammarList', '_EnGrammarItem', 
     '_Match', '_LyricsView', 
     '_ResultCard', '_Tag', 
-    '_ExportDialog', '_showAnkiExportDialog', '_PlainTextExportDialog'
+    '_ExportDialog', '_showAnkiExportDialog', '_PlainTextExportDialog',
   ];
   for (final c in classesToRename) {
     final publicName = c.startsWith('_') ? c.substring(1) : c;
@@ -138,12 +138,12 @@ void main() async {
     "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/en_grammar_list.dart';",
     "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/lyrics_view.dart';",
     "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/result_card.dart';",
-    "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/export_dialogs.dart';"
+    "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/export_dialogs.dart';",
   ];
   
   final importIdx = text.lastIndexOf("import '");
   final endOfImports = text.indexOf('\n', importIdx) + 1;
-  text = text.substring(0, endOfImports) + importsToAdd.join('\n') + '\n' + text.substring(endOfImports);
+  text = '${text.substring(0, endOfImports)}${importsToAdd.join('\n')}\n${text.substring(endOfImports)}';
   
   File('lib/features/lyrics/presentation/pages/lyrics_page.dart').writeAsStringSync(text);
   print('Done splitting!');

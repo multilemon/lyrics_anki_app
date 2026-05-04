@@ -86,74 +86,6 @@ class Kanji {
   Map<String, dynamic> toJson() => _$KanjiToJson(this);
 }
 
-@HiveType(typeId: 4)
-@JsonSerializable()
-class EnVocab {
-  EnVocab({
-    required this.term,
-    required this.ipa,
-    required this.pos,
-    required this.meaningJp,
-    required this.nuanceJp,
-  });
-
-  factory EnVocab.fromJson(Map<String, dynamic> json) =>
-      _$EnVocabFromJson(json);
-
-  factory EnVocab.fromArray(List<dynamic> a) => EnVocab(
-        term: a.isNotEmpty ? a[0]?.toString() ?? '' : '',
-        ipa: a.length > 1 ? a[1]?.toString() ?? '' : '',
-        pos: a.length > 2 ? a[2]?.toString() ?? '' : '',
-        meaningJp: a.length > 3 ? a[3]?.toString() ?? '' : '',
-        nuanceJp: a.length > 4 ? a[4]?.toString() ?? '' : '',
-      );
-  @HiveField(0)
-  final String term;
-  @HiveField(1)
-  final String ipa;
-  @HiveField(2)
-  final String pos;
-  @HiveField(3)
-  @JsonKey(name: 'meaning_jp')
-  final String meaningJp;
-  @HiveField(4)
-  @JsonKey(name: 'nuance_jp')
-  final String nuanceJp;
-  Map<String, dynamic> toJson() => _$EnVocabToJson(this);
-}
-
-@HiveType(typeId: 5)
-@JsonSerializable()
-class EnGrammar {
-  EnGrammar({
-    required this.structure,
-    required this.cefrLevel,
-    required this.explanationJp,
-    required this.excerpt,
-  });
-
-  factory EnGrammar.fromJson(Map<String, dynamic> json) =>
-      _$EnGrammarFromJson(json);
-
-  factory EnGrammar.fromArray(List<dynamic> a) => EnGrammar(
-        structure: a.isNotEmpty ? a[0]?.toString() ?? '' : '',
-        cefrLevel: a.length > 1 ? a[1]?.toString() ?? '' : '',
-        explanationJp: a.length > 2 ? a[2]?.toString() ?? '' : '',
-        excerpt: a.length > 3 ? a[3]?.toString() ?? '' : '',
-      );
-  @HiveField(0)
-  final String structure;
-  @HiveField(1)
-  @JsonKey(name: 'cefr_level')
-  final String cefrLevel;
-  @HiveField(2)
-  @JsonKey(name: 'explanation_jp')
-  final String explanationJp;
-  @HiveField(3)
-  final String excerpt;
-  Map<String, dynamic> toJson() => _$EnGrammarToJson(this);
-}
-
 @HiveType(typeId: 0)
 class HistoryItem extends HiveObject {
   HistoryItem({
@@ -163,7 +95,6 @@ class HistoryItem extends HiveObject {
     required this.analyzedAt,
     this.tags = const [],
     this.targetLanguage = 'English',
-    this.learningModeIndex,
   });
   @HiveField(0)
   late String songTitle;
@@ -198,17 +129,9 @@ class HistoryItem extends HiveObject {
   @HiveField(10)
   String? lyrics;
 
-  @HiveField(11)
-  List<EnVocab>? enVocab;
-
-  @HiveField(12)
-  List<EnGrammar>? enGrammar;
-
-  @HiveField(13)
-  String? overallCefr;
-
-  @HiveField(14)
-  int? learningModeIndex;
+  /// Computes difficulty from stored vocab/kanji JLPT data.
+  SongDifficulty get difficulty =>
+      SongDifficulty.fromVocabsAndKanji(vocabs, kanji);
 }
 
 class SongNotFoundException implements Exception {
@@ -240,9 +163,6 @@ class AnalysisResult {
     this.youtubeId,
     this.lyrics = '',
     this.isComplete = true,
-    this.enVocab,
-    this.enGrammar,
-    this.overallCefr,
   });
 
   final List<Vocab> vocabs;
@@ -253,7 +173,68 @@ class AnalysisResult {
   final String? youtubeId;
   final String lyrics;
   final bool isComplete;
-  final List<EnVocab>? enVocab;
-  final List<EnGrammar>? enGrammar;
-  final String? overallCefr;
+
+  /// Human-readable difficulty label.
+  SongDifficulty get difficulty =>
+      SongDifficulty.fromVocabsAndKanji(vocabs, kanji);
+}
+
+/// Song difficulty derived from JLPT distribution.
+enum SongDifficulty {
+  beginner,
+  intermediate,
+  advanced;
+
+  /// Computes difficulty from a list of vocab and kanji items.
+  static SongDifficulty fromVocabsAndKanji(
+    List<Vocab> vocabs,
+    List<Kanji> kanji,
+  ) {
+    final dist = jlptDistributionOf(vocabs, kanji);
+    final total = dist.values.fold(0, (s, v) => s + v);
+    if (total == 0) return SongDifficulty.beginner;
+
+    const weights = {'N5': 1, 'N4': 2, 'N3': 3, 'N2': 4, 'N1': 5};
+    var weightedSum = 0.0;
+    for (final entry in dist.entries) {
+      weightedSum += (weights[entry.key] ?? 0) * entry.value;
+    }
+
+    final avgLevel = weightedSum / total;
+    final score = ((avgLevel - 1) / 4).clamp(0.0, 1.0);
+
+    if (score < 0.35) return SongDifficulty.beginner;
+    if (score < 0.65) return SongDifficulty.intermediate;
+    return SongDifficulty.advanced;
+  }
+
+  /// JLPT distribution across vocab (jlptV) and kanji (level).
+  static Map<String, int> jlptDistributionOf(
+    List<Vocab> vocabs,
+    List<Kanji> kanji,
+  ) {
+    final dist = <String, int>{
+      'N5': 0,
+      'N4': 0,
+      'N3': 0,
+      'N2': 0,
+      'N1': 0,
+    };
+
+    for (final v in vocabs) {
+      final level = v.jlptV.toUpperCase().trim();
+      if (dist.containsKey(level)) {
+        dist[level] = dist[level]! + 1;
+      }
+    }
+
+    for (final k in kanji) {
+      final level = k.level.toUpperCase().trim();
+      if (dist.containsKey(level)) {
+        dist[level] = dist[level]! + 1;
+      }
+    }
+
+    return dist;
+  }
 }

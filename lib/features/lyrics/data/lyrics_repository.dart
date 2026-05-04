@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/song_metadata_service.dart';
-import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -35,10 +35,8 @@ class LyricsRepository {
     String title,
     String artist,
     String language, {
-    LearningMode learningMode = LearningMode.japanese,
     String? customLyrics,
   }) async* {
-    final isReverseLearning = learningMode.isReverse;
     // 1. Check Local Cache First
     final normalizedTitle = title.trim().toLowerCase();
     final normalizedArtist = artist.trim().toLowerCase();
@@ -51,12 +49,7 @@ class LyricsRepository {
           final t = item.songTitle.trim().toLowerCase();
           final a = item.artist.trim().toLowerCase();
           final l = item.targetLanguage;
-          // Soft match: title + artist must match, language preferred
           if (t != normalizedTitle || a != normalizedArtist) return false;
-
-          if (isReverseLearning) {
-            return item.enVocab != null && item.enVocab!.isNotEmpty;
-          }
 
           return l == language && item.vocabs.isNotEmpty;
         },
@@ -72,9 +65,6 @@ class LyricsRepository {
           artist: cachedItem.artist,
           lyrics: cachedItem.lyrics ?? '',
           youtubeId: cachedItem.youtubeId,
-          enVocab: cachedItem.enVocab,
-          enGrammar: cachedItem.enGrammar,
-          overallCefr: cachedItem.overallCefr,
         );
         return;
       }
@@ -82,18 +72,10 @@ class LyricsRepository {
       // Ignore cache check error
     }
 
-    String systemInstruction;
-    switch (learningMode) {
-      case LearningMode.english:
-        systemInstruction = _systemInstructionReverse;
-      case LearningMode.korean:
-        systemInstruction = _systemInstructionKorean;
-      case LearningMode.japanese:
-        systemInstruction = _buildSystemInstruction(language);
-    }
+    final systemInstruction = _buildSystemInstruction(language);
 
     final model = FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-2.0-flash', // Use faster model for English/Japanese
+      model: 'gemini-2.5-flash', // Use faster model for English/Japanese
       generationConfig: GenerationConfig(
         candidateCount: 1,
         temperature: 0,
@@ -113,6 +95,7 @@ class LyricsRepository {
         title: title,
         artist: artist,
       );
+      debugPrint('[LRCLIB] metadata: $metadata');
 
       officialTitle = metadata.title;
       officialArtist = metadata.artist;
@@ -194,7 +177,6 @@ class LyricsRepository {
 
       final parsedPart = await parseAnalysisResult(
         cleanText,
-        isReverseLearning: isReverseLearning,
       );
 
       yield AnalysisResult(
@@ -205,21 +187,14 @@ class LyricsRepository {
         artist: officialArtist ?? artist,
         lyrics: lyricsToAnalyze,
         youtubeId: refinedYoutubeId,
-        enVocab: parsedPart.enVocab,
-        enGrammar: parsedPart.enGrammar,
-        overallCefr: parsedPart.overallCefr,
       );
 
       unawaited(
         analyticsService.logAnalysisComplete(
           songTitle: title,
           artist: artist,
-          vocabCount: isReverseLearning
-              ? (parsedPart.enVocab?.length ?? 0)
-              : parsedPart.vocabs.length,
-          grammarCount: isReverseLearning
-              ? (parsedPart.enGrammar?.length ?? 0)
-              : parsedPart.grammar.length,
+          vocabCount: parsedPart.vocabs.length,
+          grammarCount: parsedPart.grammar.length,
           kanjiCount: parsedPart.kanji.length,
           durationMs: stopwatch.elapsedMilliseconds,
         ),
@@ -256,44 +231,32 @@ class LyricsRepository {
 
   Future<void> saveAnalysisResult(
     AnalysisResult result,
-    String language, {
-    LearningMode learningMode = LearningMode.japanese,
-  }) async {
+    String language,
+  ) async {
     final item = HistoryItem(
       songTitle: result.song,
       artist: result.artist,
       lyricsSnippet: result.vocabs.isNotEmpty
           ? 'Analysis Complete (${result.vocabs.length} words)'
-          : result.enVocab != null && result.enVocab!.isNotEmpty
-              ? 'Analysis Complete (${result.enVocab!.length} words)'
-              : 'No Data',
+          : 'No Data',
       analyzedAt: DateTime.now(),
       targetLanguage: language,
-      learningModeIndex: learningMode.index,
     )
       ..vocabs = result.vocabs
       ..grammar = result.grammar
       ..kanji = result.kanji
       ..youtubeId = result.youtubeId
-      ..lyrics = result.lyrics
-      ..enVocab = result.enVocab
-      ..enGrammar = result.enGrammar
-      ..overallCefr = result.overallCefr;
+      ..lyrics = result.lyrics;
 
     await saveToHistory(item);
   }
 
   List<HistoryItem> getHistory({
     int limit = 50,
-    LearningMode? mode,
   }) {
     if (_box == null) {
       // Memory store fallback
-      var source = _memoryStore;
-      if (mode != null) {
-        source = source.where((item) => _itemMatchesMode(item, mode)).toList();
-      }
-
+      final source = _memoryStore;
       final count = limit < source.length ? limit : source.length;
       if (count == 0) return [];
       return source.sublist(source.length - count).reversed.toList();
@@ -310,49 +273,21 @@ class LyricsRepository {
 
       final item = _box!.getAt(i);
       if (item != null) {
-        if (mode == null || _itemMatchesMode(item, mode)) {
-          items.add(item);
-        }
+        items.add(item);
       }
     }
     return items;
   }
 
-  bool _itemMatchesMode(HistoryItem item, LearningMode mode) {
-    // 1. If explicit mode index is saved (New Items)
-    if (item.learningModeIndex != null) {
-      return item.learningModeIndex == mode.index;
-    }
-
-    // 2. Legacy Migration Logic (Old Items)
-    if (mode == LearningMode.japanese) {
-      // Assume Japanese if it has Japanese vocabs
-      return item.vocabs.isNotEmpty;
-    } else if (mode == LearningMode.english) {
-      // Assume English if it has enVocab and is NOT Japanese
-      // (or if it has enVocab and user is asking for English mode)
-      return item.enVocab != null && item.enVocab!.isNotEmpty;
-    } else if (mode == LearningMode.korean) {
-      // Legacy Korean might rely on enVocab structure but different language?
-      // For now, assume legacy items are rarely Korean unless we strictly
-      // checked targetLanguage string, but that is unreliable.
-      // Simplest: only show if explicitly tagged or match targetLanguage
-      // string.
-      return item.targetLanguage.toLowerCase() == 'korean';
-    }
-
-    return true;
-  }
-
-  Stream<List<HistoryItem>> watchHistory({LearningMode? mode}) async* {
-    yield getHistory(mode: mode);
+  Stream<List<HistoryItem>> watchHistory() async* {
+    yield getHistory();
     if (_box != null) {
       await for (final _ in _box!.watch()) {
-        yield getHistory(mode: mode);
+        yield getHistory();
       }
     } else {
       await for (final _ in _memoryStreamController.stream) {
-        yield getHistory(mode: mode);
+        yield getHistory();
       }
     }
   }
@@ -367,67 +302,12 @@ class LyricsRepository {
   }
 
   Future<AnalysisResult> parseAnalysisResult(
-    String jsonString, {
-    bool isReverseLearning = false,
-  }) async {
+    String jsonString,
+  ) async {
     try {
       final parsed = jsonDecode(jsonString);
       if (parsed is! Map<String, dynamic>) {
         return AnalysisResult(vocabs: [], grammar: [], kanji: []);
-      }
-
-      if (isReverseLearning) {
-        final enVocab = <EnVocab>[];
-        if (parsed.containsKey('vocab')) {
-          final list = parsed['vocab'] as List<dynamic>;
-          enVocab.addAll(
-            list.map((e) {
-              // Support both array (optimized) and object (legacy) formats
-              if (e is List<dynamic>) return EnVocab.fromArray(e);
-              return EnVocab.fromJson(e as Map<String, dynamic>);
-            }),
-          );
-        }
-
-        final enGrammar = <EnGrammar>[];
-        if (parsed.containsKey('grammar')) {
-          final list = parsed['grammar'] as List<dynamic>;
-          enGrammar.addAll(
-            list.map((e) {
-              if (e is List<dynamic>) return EnGrammar.fromArray(e);
-              return EnGrammar.fromJson(e as Map<String, dynamic>);
-            }),
-          );
-        }
-
-        var songTitle = '';
-        var artistName = '';
-        String? overallCefr;
-
-        if (parsed.containsKey('meta')) {
-          final meta = parsed['meta'];
-          if (meta is Map<String, dynamic>) {
-            songTitle = meta['title']?.toString() ?? '';
-            artistName = meta['artist']?.toString() ?? '';
-            overallCefr = meta['overall_cefr']?.toString();
-          } else if (meta is List<dynamic>) {
-            songTitle = _safeString(meta, 0);
-            artistName = _safeString(meta, 1);
-            overallCefr = _safeString(meta, 2);
-          }
-        }
-
-        return AnalysisResult(
-          vocabs: [],
-          grammar: [],
-          kanji: [],
-          song: songTitle,
-          artist: artistName,
-          lyrics: parsed['lyrics']?.toString() ?? '',
-          enVocab: enVocab,
-          enGrammar: enGrammar,
-          overallCefr: overallCefr,
-        );
       }
 
       final vocabs = <Vocab>[];
@@ -601,6 +481,9 @@ class LyricsRepository {
     required String trackName,
     required String artistName,
   }) async {
+    debugPrint('[LRCLIB] trackName: $trackName');
+    debugPrint('[LRCLIB] artistName: $artistName');
+
     // 1. Try precise search with track_name + artist_name
     final precise = await _searchLrclib({
       'track_name': trackName,
@@ -622,6 +505,8 @@ class LyricsRepository {
         queryParams,
       );
 
+      debugPrint('[LRCLIB] Request: $uri');
+
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -640,9 +525,13 @@ class LyricsRepository {
 
         return (plainLyrics?.isNotEmpty ?? false) ? plainLyrics : syncedLyrics;
       } else {
+        debugPrint(
+          '[LRCLIB] Error Response: ${response.statusCode} - ${response.body}',
+        );
         return null;
       }
     } catch (e) {
+      debugPrint('[LRCLIB] Request Failed: $e');
       return null;
     }
   }
@@ -663,41 +552,5 @@ Rules:
 
 Schema:
 {"song":{"title":"","artist":"","target_language":""},"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],"grammar":[["point","level","explanation","usage"]],"kanji":[["char","level","meanings","readings"]]}
-''';
-
-  static const _systemInstructionReverse = '''
-EN Linguistic Data Engineer for JP learners. Analyze English lyrics→JSON.
-
-Rules:
-- Source: provided lyrics only, no web search.
-- Audience: Japanese native speakers learning English.
-- Extract ALL unique content words (n/v/adj/adv) and phrases. Skip only functional words (the, a).
-- Phrasal verbs (give up) and idioms = single units.
-- IPA: full transcription e.g. /həˈləʊ/.
-- POS: n., v., adj., adv., prep., conj., phrasal verb, idiom.
-- Meaning: contextual definition in 日本語.
-- Nuance: detect slang/poetic/register/dialect→JP. Standard A1/A2 with no special nuance→"".
-- Grammar: identify structures (Present Perfect, Conditionals, Gerunds). CEFR A1-C2. Explain in 日本語.
-
-Schema (array-of-arrays):
-{"meta":["title","artist","overall_cefr"],"vocab":[["term","ipa","pos","meaning_jp","nuance_jp"]],"grammar":[["structure","cefr_level","explanation_jp","excerpt"]]}
-''';
-
-  static const _systemInstructionKorean = '''
-KR Linguistic Data Engineer for JP learners. Analyze Korean lyrics→JSON.
-
-Rules:
-- Source: provided lyrics only, no web search.
-- Audience: Japanese native speakers learning Korean.
-- Extract ALL unique content words (n/v/adj/adv) and phrases.
-- Idioms and common phrases = single units.
-- Romanization: Revised Romanization e.g. "sarang".
-- POS: n., v., adj., adv., prep., conj., idiom.
-- Meaning: contextual definition in 日本語.
-- Nuance: detect honorifics/slang/dialect→JP. Standard usage→"".
-- Grammar: identify structures (particles, verb endings -mnida, -yo). CEFR A1-C2. Explain in 日本語.
-
-Schema (array-of-arrays):
-{"meta":["title","artist","overall_cefr"],"vocab":[["term(Hangul)","romanization","pos","meaning_jp","nuance_jp"]],"grammar":[["structure","cefr_level","explanation_jp","excerpt"]]}
 ''';
 }

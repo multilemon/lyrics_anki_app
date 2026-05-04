@@ -13,7 +13,7 @@ void main() {
     "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/en_vocab_list.dart';",
     "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/en_grammar_list.dart';",
     "import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';",
-    "import 'package:lyrics_anki_app/core/providers/hive_provider.dart';"
+    "import 'package:lyrics_anki_app/core/providers/hive_provider.dart';",
   ];
   
   for (final file in files) {
@@ -38,7 +38,7 @@ void main() {
       final restOfContent = content.substring(endOfImports);
       
       final importsToAdd = commonImports.where((imp) => !existingImports.contains(imp)).toList();
-      content = existingImports + importsToAdd.join('\n') + '\n' + restOfContent;
+      content = '$existingImports${importsToAdd.join('\n')}\n$restOfContent';
     }
     
     file.writeAsStringSync(content);

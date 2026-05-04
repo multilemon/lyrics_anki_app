@@ -9,7 +9,7 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_l
 
 class KanjiList extends StatefulWidget {
   const KanjiList(
-      {required this.kanjiList, required this.isLoading, super.key});
+      {required this.kanjiList, required this.isLoading, super.key,});
   final List<Kanji> kanjiList;
   final bool isLoading;
 

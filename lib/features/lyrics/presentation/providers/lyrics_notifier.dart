@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
-import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -14,25 +13,19 @@ class LyricsNotifier extends _$LyricsNotifier {
     return null;
   }
 
-  // Expose the current learning mode for UI to use even during loading
-  LearningMode get currentMode => _lastMode ?? LearningMode.japanese;
-
   String? _lastTitle;
   String? _lastArtist;
   String? _lastLanguage;
-  LearningMode? _lastMode;
   String? _lastCustomLyrics;
 
   Future<void> retry() async {
     if (_lastTitle != null &&
         _lastArtist != null &&
-        _lastLanguage != null &&
-        _lastMode != null) {
+        _lastLanguage != null) {
       await analyzeSong(
         _lastTitle!,
         _lastArtist!,
         _lastLanguage!,
-        learningMode: _lastMode!,
         customLyrics: _lastCustomLyrics,
       );
     }
@@ -42,13 +35,11 @@ class LyricsNotifier extends _$LyricsNotifier {
     String title,
     String artist,
     String language, {
-    LearningMode learningMode = LearningMode.japanese,
     String? customLyrics,
   }) async {
     _lastTitle = title;
     _lastArtist = artist;
     _lastLanguage = language;
-    _lastMode = learningMode;
     _lastCustomLyrics = customLyrics;
     state = const AsyncValue.loading();
 
@@ -60,7 +51,6 @@ class LyricsNotifier extends _$LyricsNotifier {
         title,
         artist,
         language,
-        learningMode: learningMode,
         customLyrics: customLyrics,
       );
 
@@ -70,19 +60,15 @@ class LyricsNotifier extends _$LyricsNotifier {
       }
 
       // Check final result logic
-      // Check final result logic
       if (lastResult != null) {
-        final hasJapaneseData = lastResult.vocabs.isNotEmpty ||
+        final hasData = lastResult.vocabs.isNotEmpty ||
             lastResult.grammar.isNotEmpty ||
             lastResult.kanji.isNotEmpty;
-        final hasEnglishData = (lastResult.enVocab?.isNotEmpty ?? false) ||
-            (lastResult.enGrammar?.isNotEmpty ?? false);
 
-        if (hasJapaneseData || hasEnglishData) {
+        if (hasData) {
           await repository.saveAnalysisResult(
             lastResult,
             language,
-            learningMode: learningMode,
           );
         }
       }
@@ -97,18 +83,10 @@ class LyricsNotifier extends _$LyricsNotifier {
   }
 
   void loadFromHistory(HistoryItem item) {
-    if (item.learningModeIndex != null) {
-      _lastMode = LearningMode.values[item.learningModeIndex!];
-    } else {
-      // Legacy Fallback
-      if (item.targetLanguage.toLowerCase() == 'korean') {
-        _lastMode = LearningMode.korean;
-      } else if (item.enVocab != null && item.enVocab!.isNotEmpty) {
-        _lastMode = LearningMode.english;
-      } else {
-        _lastMode = LearningMode.japanese;
-      }
-    }
+    _lastTitle = item.songTitle;
+    _lastArtist = item.artist;
+    _lastLanguage = item.targetLanguage;
+    _lastCustomLyrics = item.lyrics;
 
     state = AsyncValue.data(
       AnalysisResult(
@@ -211,16 +189,6 @@ class SelectionManager extends _$SelectionManager {
       }
     }
 
-    // English/Korean Levels (CEFR) - Only Grammar has level currently
-    if (analysis.enGrammar != null) {
-      for (var i = 0; i < analysis.enGrammar!.length; i++) {
-        if (analysis.enGrammar![i].cefrLevel.toUpperCase() ==
-            level.toUpperCase()) {
-          grammarIndices.add(i);
-        }
-      }
-    }
-
     final kanjiIndices = <int>{};
     for (var i = 0; i < analysis.kanji.length; i++) {
       if (analysis.kanji[i].level.toUpperCase() == level.toUpperCase()) {
@@ -245,9 +213,8 @@ class SelectionManager extends _$SelectionManager {
 
   void toggleAll(AnalysisResult analysis, {required bool select}) {
     if (select) {
-      final vocabCount = analysis.enVocab?.length ?? analysis.vocabs.length;
-      final grammarCount =
-          analysis.enGrammar?.length ?? analysis.grammar.length;
+      final vocabCount = analysis.vocabs.length;
+      final grammarCount = analysis.grammar.length;
 
       state = SelectionState(
         vocabIndices: List.generate(vocabCount, (i) => i).toSet(),

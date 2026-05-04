@@ -5,17 +5,21 @@ void main() {
   final lines = file.readAsLinesSync();
   
   // 1. Extract Header
-  int headerStart = lines.indexWhere((l) => l.contains('// Song Title & Artist Header'));
-  int headerEnd = lines.indexWhere((l) => l.contains('// Filters (Quick Select)')) - 1;
-  while(lines[headerEnd].trim().isEmpty) headerEnd--;
+  final headerStart = lines.indexWhere((l) => l.contains('// Song Title & Artist Header'));
+  var headerEnd = lines.indexWhere((l) => l.contains('// Filters (Quick Select)')) - 1;
+  while(lines[headerEnd].trim().isEmpty) {
+    headerEnd--;
+  }
 
   // 2. Extract Filters
-  int filterStart = lines.indexWhere((l) => l.contains('// Filters (Quick Select)'));
-  int filterEnd = lines.indexWhere((l) => l.contains('// Tabs')) - 1;
-  while(lines[filterEnd].trim().isEmpty) filterEnd--;
+  final filterStart = lines.indexWhere((l) => l.contains('// Filters (Quick Select)'));
+  var filterEnd = lines.indexWhere((l) => l.contains('// Tabs')) - 1;
+  while(lines[filterEnd].trim().isEmpty) {
+    filterEnd--;
+  }
 
   // Write LyricsHeader
-  final headerContent = '''
+  const headerContent = '''
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
@@ -74,7 +78,7 @@ class LyricsHeader extends ConsumerWidget {
 
   // Quick Select Filters
   // We need to rewrite it slightly as a separate widget
-  var filterLines = lines.sublist(filterStart + 1, filterEnd + 1).join('\n');
+  final filterLines = lines.sublist(filterStart + 1, filterEnd + 1).join('\n');
   final filterContent = '''
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,6 +136,6 @@ class FilterChip extends StatelessWidget {
   final finalFilterContent = filterContent.replaceAll('_FilterChip', 'FilterChip');
   File('lib/features/lyrics/presentation/widgets/quick_select_filters.dart').writeAsStringSync(finalFilterContent);
 
-  print('Generated header: \${headerStart} to \${headerEnd}');
-  print('Generated filters: \${filterStart} to \${filterEnd}');
+  print(r'Generated header: ${headerStart} to ${headerEnd}');
+  print(r'Generated filters: ${filterStart} to ${filterEnd}');
 }

@@ -7,16 +7,28 @@ import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
-import 'package:lyrics_anki_app/features/home/presentation/providers/home_ui_providers.dart';
+import 'package:lyrics_anki_app/features/home/presentation/widgets/song_suggestion_card.dart';
 import 'package:lyrics_anki_app/features/home/presentation/widgets/storage_warning_banner.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
-import 'package:lyrics_anki_app/features/lyrics/domain/entities/learning_mode.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/pages/lyrics_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
-import 'package:lyrics_anki_app/features/settings/presentation/pages/settings_page.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/pages/language_selection_page.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shimmer/shimmer.dart';
+
+part 'home_page.g.dart';
+
+@riverpod
+class ClearHomeFormSignal extends _$ClearHomeFormSignal {
+  @override
+  int build() => 0;
+
+  void increment() => state++;
+}
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({
@@ -29,7 +41,6 @@ class HomePage extends ConsumerStatefulWidget {
     String title,
     String artist,
     String language, {
-    LearningMode learningMode,
     String? customLyrics,
   })? onNavigateToAnalyze;
 
@@ -57,13 +68,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           _selectedLanguage = saved;
         });
       }
-
-      final savedModeIndex = box?.get('learning_mode_index');
-      if (savedModeIndex != null && savedModeIndex is int) {
-        ref.read(learningModeProvider.notifier).set(
-              LearningMode.values[savedModeIndex],
-            );
-      }
     });
   }
 
@@ -78,7 +82,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _handleAnalyze() {
     final title = _titleController.text.trim();
     final artist = _artistController.text.trim();
-    final learningMode = ref.read(learningModeProvider);
 
     if (title.isEmpty || artist.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,7 +103,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         title,
         artist,
         _selectedLanguage,
-        learningMode: learningMode,
         customLyrics: customLyrics.isNotEmpty ? customLyrics : null,
       );
     } else {
@@ -114,13 +116,12 @@ class _HomePageState extends ConsumerState<HomePage> {
               title,
               artist,
               _selectedLanguage,
-              learningMode: learningMode,
               customLyrics: customLyrics.isNotEmpty ? customLyrics : null,
             ),
       );
 
       Navigator.of(context).push(
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (_) => const LyricsPage(),
         ),
       );
@@ -128,18 +129,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _onHistoryItemTap(HistoryItem item) {
-    // Restore mode from item logic if needed
-    var mode = LearningMode.japanese;
-    if (item.learningModeIndex != null) {
-      mode = LearningMode.values[item.learningModeIndex!];
-    } else {
-      // Fallback
-      if (item.targetLanguage.toLowerCase() == 'korean') {
-        mode = LearningMode.korean;
-      } else if (item.enVocab != null && item.enVocab!.isNotEmpty) {
-        mode = LearningMode.english;
-      }
-    }
+    // Restore logic removed
 
     if (widget.onHistoryItemClick != null) {
       widget.onHistoryItemClick!(item);
@@ -151,11 +141,100 @@ class _HomePageState extends ConsumerState<HomePage> {
       ref.read(lyricsProvider.notifier).loadFromHistory(item);
 
       Navigator.of(context).push(
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (_) => const LyricsPage(),
         ),
       );
     }
+  }
+
+  void _handleSuggestionTap(String title, String artist) {
+    // Auto-fill the text fields
+    _titleController.text = title;
+    _artistController.text = artist;
+
+    // Trigger analysis immediately
+    if (widget.onNavigateToAnalyze != null) {
+      widget.onNavigateToAnalyze!(
+        title,
+        artist,
+        _selectedLanguage,
+      );
+    } else {
+      ref.read(selectionManagerProvider.notifier).clear();
+
+      unawaited(
+        ref.read(lyricsProvider.notifier).analyzeSong(
+              title,
+              artist,
+              _selectedLanguage,
+            ),
+      );
+
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const LyricsPage(),
+        ),
+      );
+    }
+  }
+
+  void _showSettingsSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                context.l10n.settingsTitle,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.sakura,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.qr_code, color: AppColors.sakura),
+                title: const Text('Share App'),
+                subtitle: const Text('Show QR Code'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  showDialog<void>(
+                    context: context,
+                    builder: (context) => const _ShareDialog(),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Consumer(
+                builder: (context, ref, child) {
+                  final versionAsync = ref.watch(versionProvider);
+                  return versionAsync.when(
+                    data: (version) => Text(
+                      version,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontFamily: 'Outfit',
+                          ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, st) => const SizedBox.shrink(),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -168,7 +247,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() => _showLyricsInput = false);
     });
 
-    final learningMode = ref.watch(learningModeProvider);
     final theme = Theme.of(context);
     final l10n = context.l10n;
 
@@ -181,13 +259,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             color: AppColors.sakura,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const SettingsPage(),
-                ),
-              );
-            },
+            onPressed: () => _showSettingsSheet(context),
           ),
           const SizedBox(width: 16),
         ],
@@ -237,128 +309,119 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ),
 
-              // Analysis Card
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(
-                        sigmaX: 12,
-                        sigmaY: 12,
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surface.withValues(
-                            alpha: 0.85,
-                          ),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: AppColors.sakura.withValues(
-                              alpha: 0.15,
-                            ),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  AppColors.sakura.withValues(alpha: 0.06),
-                              blurRadius: 32,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
+                // Analysis Card
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(
+                          sigmaX: 12,
+                          sigmaY: 12,
                         ),
-                        padding: const EdgeInsets.all(28),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              l10n.analyzeNewSong,
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surface.withValues(
+                              alpha: 0.85,
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: AppColors.sakura.withValues(
+                                alpha: 0.15,
                               ),
                             ),
-                            const SizedBox(height: 16),
-
-                            // Learning Mode Toggle
-                            _ModeSelector(
-                              selectedMode: learningMode,
-                              onModeChanged: (mode) {
-                                ref
-                                    .read(learningModeProvider.notifier)
-                                    .set(mode);
-                                // Clear inputs when switching mode
-                                _titleController.clear();
-                                _artistController.clear();
-
-                                ref.read(settingsBoxProvider)?.put(
-                                      'learning_mode_index',
-                                      mode.index,
-                                    );
-                              },
-                            ),
-
-                            if (learningMode != LearningMode.japanese) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                l10n.reverseLearningDescription,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                                textAlign: TextAlign.center,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.sakura.withValues(alpha: 0.06),
+                                blurRadius: 32,
+                                offset: const Offset(0, 12),
                               ),
                             ],
-
-                            const SizedBox(height: 24),
-
-                            // Song Title
-                            TextField(
-                              controller: _titleController,
-                              decoration: InputDecoration(
-                                labelText: l10n.songTitleLabel,
-                                hintText: learningMode == LearningMode.english
-                                    ? l10n.songTitleHintEn
-                                    : learningMode == LearningMode.korean
-                                        ? l10n.songTitleHintKo
-                                        : l10n.songTitleHint,
-                                prefixIcon: const Icon(Icons.music_note),
+                          ),
+                          padding: const EdgeInsets.all(28),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    l10n.analyzeNewSong,
+                                    style:
+                                        theme.textTheme.headlineSmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(
+                                      Icons.more_horiz,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    onSelected: (value) {
+                                      if (value == 'paste_lyrics') {
+                                        setState(() {
+                                          _showLyricsInput = !_showLyricsInput;
+                                          if (!_showLyricsInput) {
+                                            _lyricsController.clear();
+                                          }
+                                        });
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: 'paste_lyrics',
+                                        child: Text(
+                                          _showLyricsInput
+                                              ? 'Hide Paste Lyrics'
+                                              : 'Paste Lyrics (Optional)',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 16),
+                              const SizedBox(height: 24),
 
-                            // Artist Name
-                            TextField(
-                              controller: _artistController,
-                              decoration: InputDecoration(
-                                labelText: l10n.artistNameLabel,
-                                hintText: learningMode == LearningMode.english
-                                    ? l10n.artistNameHintEn
-                                    : learningMode == LearningMode.korean
-                                        ? l10n.artistNameHintKo
-                                        : l10n.artistNameHint,
-                                prefixIcon: const Icon(Icons.person),
+                              // Song Title
+                              TextField(
+                                controller: _titleController,
+                                decoration: InputDecoration(
+                                  labelText: l10n.songTitleLabel,
+                                  hintText: l10n.songTitleHint,
+                                  prefixIcon: const Icon(Icons.music_note),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
+                              const SizedBox(height: 16),
 
-                            // Custom Lyrics Toggle
-                            _LyricsInputSection(
-                              controller: _lyricsController,
-                              isExpanded: _showLyricsInput,
-                              onToggle: () {
-                                setState(() {
-                                  _showLyricsInput = !_showLyricsInput;
-                                  if (!_showLyricsInput) {
-                                    _lyricsController.clear();
-                                  }
-                                });
-                              },
-                            ),
+                              // Artist Name
+                              TextField(
+                                controller: _artistController,
+                                decoration: InputDecoration(
+                                  labelText: l10n.artistNameLabel,
+                                  hintText: l10n.artistNameHint,
+                                  prefixIcon: const Icon(Icons.person),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
 
-                            // Target Language Selector
-                            if (learningMode == LearningMode.japanese) ...[
+                              if (_showLyricsInput) ...[
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _lyricsController,
+                                  maxLines: 5,
+                                  minLines: 3,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Custom Lyrics',
+                                    hintText: 'Paste lyrics here...',
+                                    alignLabelWithHint: true,
+                                  ),
+                                ),
+                              ],
+
+                              // Target Language Selector
                               const SizedBox(height: 16),
                               InkWell(
                                 onTap: () async {
@@ -429,213 +492,253 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ),
                                 ),
                               ),
-                            ],
 
-                            const SizedBox(height: 32),
+                              const SizedBox(height: 32),
 
-                            // Analyze Button
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    AppColors.sakura,
-                                    AppColors.accent,
+                              // Analyze Button
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      AppColors.sakura,
+                                      AppColors.accent,
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.sakura.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 6),
+                                    ),
                                   ],
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.sakura.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 6),
+                                child: ElevatedButton(
+                                  onPressed: _handleAnalyze,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
                                   ),
-                                ],
-                              ),
-                              child: ElevatedButton(
-                                onPressed: _handleAnalyze,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
+                                  child: Text(l10n.analyzeButton),
                                 ),
-                                child: Text(l10n.analyzeButton),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 56)),
+
+                // History Section — Title + List (or Suggestions if empty)
+                Consumer(
+                  builder: (context, ref, child) {
+                    final historyAsync = ref.watch(historyProvider);
+                    return historyAsync.when(
+                      data: (items) {
+                        if (items.isEmpty) {
+                          // ─── Empty State: Song Suggestions ───
+                          return SliverToBoxAdapter(
+                            child: SongSuggestionCard(
+                              onSuggestionTap: _handleSuggestionTap,
+                            ),
+                          );
+                        }
+
+                        // ─── Has History: Show header + list ───
+                        return SliverMainAxisGroup(
+                          slivers: [
+                            // Section title
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      l10n.recentAnalysisTitle,
+                                      style: theme.textTheme.headlineSmall
+                                          ?.copyWith(
+                                        fontFamily: 'Serif',
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Storage warning (if applicable)
+                            SliverToBoxAdapter(
+                              child: Consumer(
+                                builder: (context, ref, _) {
+                                  final repo =
+                                      ref.watch(lyricsRepositoryProvider);
+                                  if (!repo.isReady) {
+                                    return const StorageWarningBanner();
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ),
+
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 16),
+                            ),
+
+                            // History list
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final item = items[index];
+                                  final artist = item.artist.isNotEmpty
+                                      ? item.artist
+                                      : l10n.unknownArtist;
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 8,
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.sakura
+                                                .withValues(alpha: 0.06),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Material(
+                                        color: AppColors.surface,
+                                        borderRadius: BorderRadius.circular(20),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: ListTile(
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 12,
+                                          ),
+                                          hoverColor: AppColors.sakura
+                                              .withValues(alpha: 0.1),
+                                          splashColor: AppColors.sakura
+                                              .withValues(alpha: 0.15),
+                                          title: Text(
+                                            item.songTitle,
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          subtitle: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '$artist · '
+                                                '${item.targetLanguage}',
+                                                style: theme
+                                                    .textTheme.bodyMedium
+                                                    ?.copyWith(
+                                                  color: AppColors.sakura,
+                                                ),
+                                              ),
+                                              if (item.vocabs.isNotEmpty ||
+                                                  item.kanji.isNotEmpty) ...[
+                                                const SizedBox(height: 6),
+                                                _HistoryDifficultyChip(
+                                                  item: item,
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          trailing: const Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: 16,
+                                            color: AppColors.sakura,
+                                          ),
+                                          onTap: () => _onHistoryItemTap(item),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                childCount: items.length,
                               ),
                             ),
                           ],
+                        );
+                      },
+                      loading: () => SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Shimmer.fromColors(
+                            baseColor: AppColors.surfaceLight,
+                            highlightColor: AppColors.surface,
+                            child: Column(
+                              children: List.generate(
+                                3,
+                                (index) => Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  child: Container(
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceLight,
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 56)),
-
-              // History Section Title
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      Text(
-                        l10n.recentAnalysisTitle,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontFamily: 'Serif',
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              SliverToBoxAdapter(
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    final repo = ref.watch(lyricsRepositoryProvider);
-                    if (!repo.isReady) {
-                      return const StorageWarningBanner();
-                    }
-                    return const SizedBox.shrink();
+                      error: (e, s) =>
+                          SliverToBoxAdapter(child: Text('Error: $e')),
+                    );
                   },
                 ),
-              ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-              // History List
-              Consumer(
-                builder: (context, ref, child) {
-                  // if (!repo.isReady) { ... } // Removed blocking error
-
-                  final historyAsync = ref.watch(historyProvider);
-                  return historyAsync.when(
-                    data: (items) {
-                      if (items.isEmpty) {
-                        return SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: Center(
-                              child: Text(
-                                l10n.noHistory,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textTertiary,
-                                ),
-                              ),
-                            ),
+                // UI Language Settings
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    child: ListTile(
+                      leading:
+                          const Icon(Icons.language, color: AppColors.sakura),
+                      title: Text(l10n.uiLanguage),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => const LanguageSelectionPage(),
                           ),
                         );
-                      }
-
-                      return SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final item = items[index];
-                            final artist = item.artist.isNotEmpty
-                                ? item.artist
-                                : l10n.unknownArtist;
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 8,
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          AppColors.sakura.withValues(
-                                            alpha: 0.06,
-                                          ),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Material(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(20),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 16,
-                                    ),
-                                    hoverColor: AppColors.sakura
-                                        .withValues(alpha: 0.1),
-                                    splashColor: AppColors.sakura.withValues(
-                                      alpha: 0.15,
-                                    ),
-                                    title: Text(
-                                      item.songTitle,
-                                      style:
-                                          theme.textTheme.bodyLarge?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      (item.learningModeIndex == 1 ||
-                                              item.learningModeIndex == 2)
-                                          ? artist
-                                          : '$artist • ${item.targetLanguage}',
-                                      style:
-                                          theme.textTheme.bodyMedium?.copyWith(
-                                        color: AppColors.sakura,
-                                      ),
-                                    ),
-                                    trailing: const Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      size: 16,
-                                      color: AppColors.sakura,
-                                    ),
-                                    onTap: () => _onHistoryItemTap(item),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                          childCount: items.length,
-                        ),
-                      );
-                    },
-                    loading: () => SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Shimmer.fromColors(
-                          baseColor: AppColors.surfaceLight,
-                          highlightColor: AppColors.surface,
-                          child: Column(
-                            children: List.generate(
-                              3,
-                              (index) => Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                child: Container(
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceLight,
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: AppColors.border),
                       ),
                     ),
-                    error: (e, s) =>
-                        SliverToBoxAdapter(child: Text('Error: $e')),
-                  );
-                },
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -654,20 +757,11 @@ class LanguageData {
 const _kLanguageList = [
   LanguageData(englishName: 'English', nativeName: 'English'),
   LanguageData(englishName: 'Thai', nativeName: 'ไทย'),
-  LanguageData(englishName: 'Korean', nativeName: '한국어'),
-  LanguageData(englishName: 'Indonesian', nativeName: 'Bahasa Indonesia'),
-  LanguageData(englishName: 'Burmese', nativeName: 'ဗမာစာ'),
-  LanguageData(englishName: 'Uzbek', nativeName: 'Oʻzbek'),
-  LanguageData(englishName: 'Vietnamese', nativeName: 'Tiếng Việt'),
   LanguageData(englishName: 'Chinese (Simplified)', nativeName: '简体中文'),
-  LanguageData(englishName: 'Chinese (Traditional)', nativeName: '繁體中文'),
+  LanguageData(englishName: 'Korean', nativeName: '한국어'),
+  LanguageData(englishName: 'Vietnamese', nativeName: 'Tiếng Việt'),
   LanguageData(englishName: 'Spanish', nativeName: 'Español'),
-  LanguageData(englishName: 'French', nativeName: 'Français'),
-  LanguageData(englishName: 'Japanese', nativeName: '日本語'),
-  LanguageData(englishName: 'German', nativeName: 'Deutsch'),
-  LanguageData(englishName: 'Portuguese', nativeName: 'Português'),
-  LanguageData(englishName: 'Italian', nativeName: 'Italiano'),
-  LanguageData(englishName: 'Russian', nativeName: 'Русский'),
+  LanguageData(englishName: 'Uzbek', nativeName: 'Oʻzbek'),
 ];
 
 class _LanguageSearchDialog extends StatefulWidget {
@@ -756,251 +850,147 @@ class _LanguageSearchDialogState extends State<_LanguageSearchDialog> {
   }
 }
 
-class _ModeSelector extends StatelessWidget {
-  const _ModeSelector({
-    required this.selectedMode,
-    required this.onModeChanged,
-  });
-
-  final LearningMode selectedMode;
-  final ValueChanged<LearningMode> onModeChanged;
+class _ShareDialog extends StatelessWidget {
+  const _ShareDialog();
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    Widget buildSymbol(String symbol, {required bool isSelected}) {
-      return Text(
-        symbol,
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: isSelected ? AppColors.sakura : AppColors.textTertiary,
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.border.withValues(alpha: 0.5),
-        ),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _ModeCard(
-                    title: l10n.modeJapanese,
-                    iconWidget: buildSymbol('あ',
-                        isSelected: selectedMode == LearningMode.japanese),
-                    isSelected: selectedMode == LearningMode.japanese,
-                    onTap: () => onModeChanged(LearningMode.japanese),
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Share HanaUta',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.sakura,
+                    fontWeight: FontWeight.bold,
                   ),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: _ModeCard(
-                    title: l10n.modeEnglish,
-                    iconWidget: buildSymbol('A',
-                        isSelected: selectedMode == LearningMode.english),
-                    isSelected: selectedMode == LearningMode.english,
-                    onTap: () => onModeChanged(LearningMode.english),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: _ModeCard(
-                    title: l10n.modeKorean,
-                    iconWidget: buildSymbol('가',
-                        isSelected: selectedMode == LearningMode.korean),
-                    isSelected: selectedMode == LearningMode.korean,
-                    onTap: () => onModeChanged(LearningMode.korean),
-                  ),
-                ),
-              ],
             ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _ModeCard extends StatelessWidget {
-  const _ModeCard({
-    required this.title,
-    required this.iconWidget,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String title;
-  final Widget iconWidget;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // Using AnimatedContainer for smooth transition
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      decoration: BoxDecoration(
-        color: isSelected
-            ? AppColors.sakura.withValues(alpha: 0.15)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? AppColors.sakura : Colors.transparent,
-          width: 1.5,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              iconWidget,
-              const SizedBox(height: 6),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: isSelected
-                      ? AppColors.sakura
-                      : AppColors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 24),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(16),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LyricsInputSection extends StatelessWidget {
-  const _LyricsInputSection({
-    required this.controller,
-    required this.isExpanded,
-    required this.onToggle,
-  });
-
-  final TextEditingController controller;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Toggle Button
-        InkWell(
-          onTap: onToggle,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                Icon(
-                  isExpanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  size: 20,
+              child: QrImageView(
+                data: 'https://multilemon.github.io/lyrics_anki_app/',
+                size: 200,
+                backgroundColor: AppColors.surfaceLight,
+                eyeStyle: const QrEyeStyle(
+                  eyeShape: QrEyeShape.square,
                   color: AppColors.sakura,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Paste Lyrics (Optional)',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.sakura,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (controller.text.trim().isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.sakura.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Added',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.sakura,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-
-        // Expandable Text Area
-        AnimatedCrossFade(
-          firstChild: const SizedBox.shrink(),
-          secondChild: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 4),
-              Text(
-                'Paste song lyrics here to skip automatic fetching.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                  fontStyle: FontStyle.italic,
+                dataModuleStyle: const QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.square,
+                  color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: controller,
-                maxLines: 8,
-                minLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Paste lyrics here...',
-                  alignLabelWithHint: true,
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.only(bottom: 80),
-                    child: Icon(Icons.lyrics_outlined),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  height: 1.6,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Scan to open app',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────
+//  History Difficulty Chip
+// ─────────────────────────────────────────────────
+
+class _HistoryDifficultyChip extends StatelessWidget {
+  const _HistoryDifficultyChip({required this.item});
+
+  final HistoryItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final difficulty = item.difficulty;
+
+    final (label, color, icon) = switch (difficulty) {
+      SongDifficulty.beginner => (
+          'Beginner',
+          AppColors.success,
+          Icons.sentiment_satisfied_alt_rounded,
+        ),
+      SongDifficulty.intermediate => (
+          'Intermediate',
+          AppColors.sakura,
+          Icons.trending_up_rounded,
+        ),
+      SongDifficulty.advanced => (
+          'Advanced',
+          AppColors.accent,
+          Icons.local_fire_department_rounded,
+        ),
+    };
+
+    final counts = <String>[];
+    if (item.vocabs.isNotEmpty) {
+      counts.add('${item.vocabs.length} vocab');
+    }
+    if (item.grammar.isNotEmpty) {
+      counts.add('${item.grammar.length} grammar');
+    }
+    if (item.kanji.isNotEmpty) {
+      counts.add('${item.kanji.length} kanji');
+    }
+
+    return Row(
+      children: [
+        // Difficulty badge
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 3,
+          ),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 11, color: color),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
                 ),
               ),
             ],
           ),
-          crossFadeState:
-              isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 250),
-          sizeCurve: Curves.easeInOut,
         ),
+
+        if (counts.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Text(
+            counts.join(' · '),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.textTertiary,
+              fontSize: 10,
+            ),
+          ),
+        ],
       ],
     );
   }
