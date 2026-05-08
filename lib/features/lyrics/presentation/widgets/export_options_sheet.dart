@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
-
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/export_dialogs.dart';
+import 'package:lyrics_anki_app/features/srs/data/repositories/hive_srs_repository.dart';
+import 'package:lyrics_anki_app/features/srs/domain/entities/srs_card.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 
 void showExportOptionsSheet({
@@ -96,6 +97,82 @@ void showExportOptionsSheet({
                     ),
               ),
               const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.matcha.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.psychology_rounded,
+                    color: AppColors.matcha,
+                  ),
+                ),
+                title: const Text('Add to Study List'),
+                subtitle: const Text(
+                  'Save to in-app Spaced Repetition System',
+                  style: TextStyle(
+                    color: AppColors.textTertiary,
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textTertiary,
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final repo = ref.read(srsRepositoryProvider);
+                  
+                  int count = 0;
+                  
+                  for (final v in selectedVocabs) {
+                    await repo.saveCard(SrsCard.newCard(
+                      word: v.word,
+                      reading: v.reading,
+                      meaning: v.meaning,
+                      songTitle: analysis.song,
+                      artist: analysis.artist,
+                      jlptV: v.jlptV,
+                    ));
+                    count++;
+                  }
+                  
+                  for (final g in selectedGrammar) {
+                    await repo.saveCard(SrsCard.newCard(
+                      word: g.point,
+                      reading: g.usage,
+                      meaning: g.explanation,
+                      songTitle: analysis.song,
+                      artist: analysis.artist,
+                    ));
+                    count++;
+                  }
+                  
+                  for (final k in selectedKanji) {
+                    await repo.saveCard(SrsCard.newCard(
+                      word: k.char,
+                      reading: k.readings,
+                      meaning: k.meanings,
+                      songTitle: analysis.song,
+                      artist: analysis.artist,
+                    ));
+                    count++;
+                  }
+
+                  if (context.mounted) {
+                    ref.read(selectionManagerProvider.notifier).clear();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Added $count items to your study list!'),
+                        backgroundColor: AppColors.matcha,
+                      ),
+                    );
+                  }
+                },
+              ),
+              const Divider(indent: 72, endIndent: 16, height: 1),
               ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),

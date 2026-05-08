@@ -4,7 +4,7 @@ version: 1.0.0+20260121
 publish_to: none
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.10.0 <4.0.0"
 
 dependencies:
   ankidroid_for_flutter: ^1.0.3
@@ -12,8 +12,8 @@ dependencies:
   archive: ^4.0.7
   file_saver: ^0.3.1
   firebase_ai: ^3.7.0
-  firebase_app_check: ^0.4.1+4
   firebase_analytics: ^12.1.0
+  firebase_app_check: ^0.4.1+4
   firebase_core: ^4.4.0
   flutter:
     sdk: flutter
@@ -26,13 +26,13 @@ dependencies:
   http: ^1.6.0
   intl: ">=0.19.0 <0.21.0"
   json_annotation: ^4.8.1
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.1.0
   path: ^1.9.1
   path_provider: ^2.1.2
   qr_flutter: ^4.1.0
   riverpod_annotation: ^4.0.0
   shimmer: ^3.0.0
-  sqlite3: ^2.9.4
+  sqlite3: ^3.3.1
   url_launcher: ^6.3.2
   web: ^1.1.1
 
@@ -46,7 +46,7 @@ dev_dependencies:
   json_serializable: ^6.11.2
   mocktail: ^1.0.3
   riverpod_generator: ^4.0.0+1
-  very_good_analysis: ^5.1.0
+  very_good_analysis: ^10.1.0
 
 flutter:
   uses-material-design: true

@@ -108,7 +108,7 @@ class _NotesPainter extends CustomPainter {
 
   static const _notes = ['♩', '♪', '♫', '♬', '♪', '♫', '♩'];
 
-  static const _colors = [
+  static const List<Color> _colors = [
     AppColors.sakura,
     AppColors.accent,
     AppColors.accentLight,

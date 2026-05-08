@@ -8,6 +8,8 @@ import 'package:lyrics_anki_app/app/app.dart';
 
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
+import 'package:lyrics_anki_app/features/srs/data/repositories/hive_srs_repository.dart';
+import 'package:lyrics_anki_app/features/srs/domain/entities/srs_card.dart';
 import 'package:lyrics_anki_app/firebase_options.dart';
 
 void main() async {
@@ -15,31 +17,36 @@ void main() async {
 
   Box<HistoryItem>? box;
   Box<dynamic>? settingsBox;
+  Box<SrsCard>? srsBox;
   try {
     await Hive.initFlutter();
     Hive
       ..registerAdapter(HistoryItemAdapter())
       ..registerAdapter(VocabAdapter())
       ..registerAdapter(GrammarAdapter())
-      ..registerAdapter(KanjiAdapter());
+      ..registerAdapter(KanjiAdapter())
+      ..registerAdapter(SrsCardAdapter());
 
     try {
       box = await Hive.openBox<HistoryItem>('history_box');
       settingsBox = await Hive.openBox('settings');
-    } catch (e) {
+      srsBox = await Hive.openBox<SrsCard>(HiveSrsRepository.boxName);
+    } on Exception catch (e) {
       debugPrint(
         '⚠️ Hive openBox failed. Attempting to recover by clearing box...',
       );
       try {
         await Hive.deleteBoxFromDisk('history_box');
         await Hive.deleteBoxFromDisk('settings');
+        await Hive.deleteBoxFromDisk(HiveSrsRepository.boxName);
         box = await Hive.openBox<HistoryItem>('history_box');
         settingsBox = await Hive.openBox('settings');
-      } catch (e2) {
+        srsBox = await Hive.openBox<SrsCard>(HiveSrsRepository.boxName);
+      } on Exception catch (e2) {
         debugPrint('🔴 Critical: Failed to recover Hive box: $e2');
       }
     }
-  } catch (e, st) {
+  } on Exception catch (e, st) {
     debugPrint('Hive initialization failed: $e\n$st');
   }
 
@@ -50,8 +57,9 @@ void main() async {
     if (!kDebugMode) {
       try {
         await FirebaseAppCheck.instance.activate(
-          providerWeb:
-              ReCaptchaV3Provider('6LeJBkksAAAAAPtCvtySXr4qr5F7T2o9m0tBr7tF'),
+          providerWeb: ReCaptchaV3Provider(
+            '6LeJBkksAAAAAPtCvtySXr4qr5F7T2o9m0tBr7tF',
+          ),
           providerAndroid: const AndroidDebugProvider(),
           providerApple: const AppleDebugProvider(),
         );
@@ -62,7 +70,7 @@ void main() async {
         }
       }
     }
-  } catch (e, st) {
+  } on Exception catch (e, st) {
     debugPrint('Firebase initialization failed: $e\n$st');
   }
 
@@ -72,6 +80,8 @@ void main() async {
         if (box != null) historyBoxProvider.overrideWithValue(box),
         if (settingsBox != null)
           settingsBoxProvider.overrideWithValue(settingsBox),
+        if (srsBox != null)
+          srsRepositoryProvider.overrideWithValue(HiveSrsRepository(srsBox)),
       ],
       child: const App(),
     ),

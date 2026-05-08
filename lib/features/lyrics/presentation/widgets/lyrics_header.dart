@@ -20,14 +20,18 @@ class LyricsHeader extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // ─── Back button row ───
-          Align(
-            alignment: Alignment.topLeft,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded),
-              color: AppColors.sakura,
-              onPressed: () => Navigator.of(context).pop(),
-            ),
+          // ─── Action row (Back + YouTube) ───
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                color: AppColors.sakura,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              if (analysis.youtubeId != null)
+                _YouTubeButton(youtubeId: analysis.youtubeId!),
+            ],
           ),
 
           // ─── Song title ───
@@ -72,26 +76,13 @@ class LyricsHeader extends ConsumerWidget {
             ),
           ],
 
-          // ─── Stats + Difficulty (only when complete) ───
+          // ─── Difficulty & Stats Card (only when complete) ───
           if (analysis.isComplete) ...[
-            const SizedBox(height: 16),
-
-            // Stats row
-            _StatsRow(analysis: analysis),
-
-            const SizedBox(height: 12),
-
-            // Difficulty badge + JLPT bar
+            const SizedBox(height: 10),
             _DifficultySection(analysis: analysis),
-
-            // YouTube button
-            if (analysis.youtubeId != null) ...[
-              const SizedBox(height: 12),
-              _YouTubeButton(youtubeId: analysis.youtubeId!),
-            ],
           ],
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -99,107 +90,8 @@ class LyricsHeader extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────
-//  Stats Row — "23 vocab · 8 grammar · 12 kanji"
+//  Difficulty Section — Badge + JLPT Breakdown Bar
 // ─────────────────────────────────────────────────────
-
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.analysis});
-
-  final AnalysisResult analysis;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final items = <_StatItem>[
-      _StatItem(
-        count: analysis.vocabs.length,
-        label: 'vocab',
-        icon: Icons.translate_rounded,
-      ),
-      _StatItem(
-        count: analysis.grammar.length,
-        label: 'grammar',
-        icon: Icons.auto_stories_rounded,
-      ),
-      _StatItem(
-        count: analysis.kanji.length,
-        label: 'kanji',
-        icon: Icons.brush_rounded,
-      ),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 10,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.border.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          for (var i = 0; i < items.length; i++) ...[
-            if (i > 0)
-              Container(
-                width: 1,
-                height: 28,
-                color: AppColors.border.withValues(alpha: 0.5),
-              ),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    items[i].icon,
-                    size: 14,
-                    color: AppColors.sakura.withValues(alpha: 0.7),
-                  ),
-                  const SizedBox(width: 6),
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${items[i].count}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' ${items[i].label}',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _StatItem {
-  const _StatItem({
-    required this.count,
-    required this.label,
-    required this.icon,
-  });
-
-  final int count;
-  final String label;
-  final IconData icon;
-}
 
 // ─────────────────────────────────────────────────────
 //  Difficulty Section — Badge + JLPT Breakdown Bar
@@ -238,13 +130,13 @@ class _DifficultySection extends StatelessWidget {
 
               const Spacer(),
 
-              // Score label
+              // Stats summary instead of score label
               Text(
-                'JLPT Breakdown',
+                '${analysis.vocabs.length} voc · ${analysis.grammar.length} gram · ${analysis.kanji.length} kan',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: AppColors.textTertiary,
-                  letterSpacing: 0.5,
                   fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],

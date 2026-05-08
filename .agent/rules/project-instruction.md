@@ -34,6 +34,12 @@ trigger: always_on
 - **Data Persistence**: Use Hive's web-compatible storage.
 - **Export**: Priority on **TSV File Download** for Anki instead of native Android/iOS intents during the web phase.
 
+## 6. Agent Skills & Guidelines
+
+- **Permanent Context**: This project requires specialized **Agent Skills** (Clean Architecture, JLPT Calibration, Premium UX).
+- **Reference**: Always adhere to the rules defined in [agent-skills.md](file:///Users/multilemon/Development/Flutter/Projects/lyrics_anki_app/.agent/rules/agent-skills.md).
+
+
 ## 5. Code Style & Formatting (Strict)
 
 - **Trailing Commas**: ALWAYS include a trailing comma for arguments, parameters, and collection elements that span multiple lines. This is mandatory to satisfy the Dart Linter and ensure clean diffs.

@@ -28,7 +28,7 @@ class SongMetadataService {
       );
 
       final prompt = 'Find official YouTube video for "$title" by "$artist". '
-          'Return JSON: {"title":"Official Title","artist":"Official Artist",'
+          'Return JSON: {"title":"Official Song\'s Title","artist":"Official Artist Name",'
           ' "youtube_url":"https://www.youtube.com/watch?v=ID"}'
           ' If not found: {"youtube_url":""}.';
 

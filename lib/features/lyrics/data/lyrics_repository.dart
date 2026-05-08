@@ -68,7 +68,7 @@ class LyricsRepository {
         );
         return;
       }
-    } catch (e) {
+    } on Exception catch (_) {
       // Ignore cache check error
     }
 
@@ -100,7 +100,7 @@ class LyricsRepository {
       officialTitle = metadata.title;
       officialArtist = metadata.artist;
       refinedYoutubeId = metadata.youtubeId;
-    } catch (e) {
+    } on Exception catch (_) {
       // Ignore metadata fetch error
     }
 
@@ -221,8 +221,9 @@ class LyricsRepository {
   }
 
   Future<void> saveToHistory(HistoryItem item) async {
-    if (_box != null) {
-      await _box!.add(item);
+    final box = _box;
+    if (box != null) {
+      await box.add(item);
     } else {
       _memoryStore.add(item);
       _memoryStreamController.add(null);
@@ -254,7 +255,8 @@ class LyricsRepository {
   List<HistoryItem> getHistory({
     int limit = 50,
   }) {
-    if (_box == null) {
+    final box = _box;
+    if (box == null) {
       // Memory store fallback
       final source = _memoryStore;
       final count = limit < source.length ? limit : source.length;
@@ -263,7 +265,7 @@ class LyricsRepository {
     }
 
     // Optimization: Use getAt(i) which is O(1) for standard Boxes
-    final length = _box!.length;
+    final length = box.length;
     final items = <HistoryItem>[];
 
     // Iterate backwards to get most recent first
@@ -271,7 +273,7 @@ class LyricsRepository {
       // Break early if we have enough items
       if (items.length >= limit) break;
 
-      final item = _box!.getAt(i);
+      final item = box.getAt(i);
       if (item != null) {
         items.add(item);
       }
@@ -281,8 +283,9 @@ class LyricsRepository {
 
   Stream<List<HistoryItem>> watchHistory() async* {
     yield getHistory();
-    if (_box != null) {
-      await for (final _ in _box!.watch()) {
+    final box = _box;
+    if (box != null) {
+      await for (final _ in box.watch()) {
         yield getHistory();
       }
     } else {
@@ -293,8 +296,9 @@ class LyricsRepository {
   }
 
   Future<void> clearHistory() async {
-    if (_box != null) {
-      await _box!.clear();
+    final box = _box;
+    if (box != null) {
+      await box.clear();
     } else {
       _memoryStore.clear();
       _memoryStreamController.add(null);
@@ -347,7 +351,7 @@ class LyricsRepository {
         artist: artistName,
         lyrics: parsed['lyrics']?.toString() ?? '',
       );
-    } catch (e) {
+    } on Exception catch (_) {
       throw const FormatException(
         'Failed to parse AI response: Invalid JSON format.',
       );
@@ -530,7 +534,7 @@ class LyricsRepository {
         );
         return null;
       }
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('[LRCLIB] Request Failed: $e');
       return null;
     }
@@ -540,11 +544,12 @@ class LyricsRepository {
 JP Linguistic Data Engineer. Analyze lyrics→JSON.
 
 1. Verify lyrics are primarily Japanese. If NO: {"error":"NOT_JAPANESE"}
+1b. Verify song exists. If NO: {"error":"NOT_FOUND"}
 2. Extract atomic vocab, functional grammar, exhaustive kanji.
 
 Rules:
 - All meanings/explanations/context/nuance in $targetLanguage, formal linguistics (e.g. "Intransitive Verb").
-- Vocab: Atomic N/V/Adj/Adv. Break compounds (喉+奥). jlpt_v=vocab JLPT(N5-N1), jlpt_k=kanji JLPT(N5-N1).
+- Vocab: Atomic N/V/Adj/Adv. Break compounds (喉+奥). jlpt_v=vocab JLPT(N5-N1), jlpt_k=kanji JLPT(N5-N1). Nuance: explain register (e.g. slang, feminine).
 - Grammar: NO N5. Format: "V.て","V.る","V.た". level=JLPT(N4-N1).
 - Kanji: 1 char/entry, no okurigana. level=JLPT(N5-N1). Meanings: all defs in $targetLanguage. Readings: On(カタカナ)|Kun(ひらがな) e.g. "コウ|のど". No transliterations.
 - JLPT kanji calibration (STRICT): N5=日,本,人,大. N4=広,写,病,死. N3=悲,届,相,湖. N2=涙,瞳,濡,溢. N1=輝,叶,儚,慟. Ref community-standard JLPT lists. Songs often contain N2/N1 kanji—do NOT default lower.
@@ -552,5 +557,6 @@ Rules:
 
 Schema:
 {"song":{"title":"","artist":"","target_language":""},"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],"grammar":[["point","level","explanation","usage"]],"kanji":[["char","level","meanings","readings"]]}
+Example vocab entry: ["喉奥","のどおく","deep in the throat","Noun","N1","N2","Poetic compound of 喉+奥"]
 ''';
 }

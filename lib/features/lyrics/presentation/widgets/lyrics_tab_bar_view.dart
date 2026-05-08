@@ -56,7 +56,7 @@ class LyricsTabBarView extends ConsumerWidget {
           message: context.l10n.analysisInProgress,
         ),
       ),
-      error: (Object e, StackTrace s) {
+      error: (e, s) {
         return LyricsErrorView(error: e);
       },
     );

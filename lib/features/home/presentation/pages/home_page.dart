@@ -17,6 +17,8 @@ import 'package:lyrics_anki_app/features/settings/presentation/pages/language_se
 import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:lyrics_anki_app/features/srs/presentation/pages/srs_review_page.dart';
+import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -532,6 +534,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ),
 
+                // SRS Dashboard
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    child: _SrsDashboard(),
+                  ),
+                ),
+
                 const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
                 // History Section — Title + List (or Suggestions if empty)
@@ -991,6 +1001,135 @@ class _HistoryDifficultyChip extends StatelessWidget {
             ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+class _SrsDashboard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(srsStatsProvider);
+    final theme = Theme.of(context);
+    
+    final dueCount = stats['due'] ?? 0;
+    final totalCount = stats['total'] ?? 0;
+    final newCount = stats['new'] ?? 0;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: AppColors.surface.withValues(alpha: 0.6),
+        border: Border.all(
+          color: AppColors.sakura.withValues(alpha: 0.1),
+        ),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.psychology, color: AppColors.sakura),
+              const SizedBox(width: 12),
+              Text(
+                'Vocabulary Mastery',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              if (dueCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$dueCount due',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _SrsStatItem(label: 'Total', value: totalCount.toString()),
+              _SrsStatItem(label: 'New', value: newCount.toString(), color: AppColors.matcha),
+              _SrsStatItem(
+                label: 'Due', 
+                value: dueCount.toString(), 
+                color: dueCount > 0 ? AppColors.error : AppColors.textTertiary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: dueCount > 0 
+                ? () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SrsReviewPage(),
+                      ),
+                    );
+                  }
+                : null,
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(dueCount > 0 ? 'Start Review' : 'Nothing to review yet'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.sakura,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: AppColors.surfaceLight,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SrsStatItem extends StatelessWidget {
+  const _SrsStatItem({
+    required this.label,
+    required this.value,
+    this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Text(
+          value,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color ?? AppColors.textPrimary,
+          ),
+        ),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: AppColors.textTertiary,
+          ),
+        ),
       ],
     );
   }
