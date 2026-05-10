@@ -13,6 +13,7 @@ import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/pages/lyrics_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/providers/paste_lyrics_provider.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/pages/language_selection_page.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
@@ -247,6 +248,17 @@ class _HomePageState extends ConsumerState<HomePage> {
       _artistController.clear();
       _lyricsController.clear();
       setState(() => _showLyricsInput = false);
+    });
+
+    // Listen for "paste lyrics" signal from error view
+    ref.listen<bool>(showPasteLyricsProvider, (prev, next) {
+      if (next && prev != true) {
+        setState(() => _showLyricsInput = true);
+        // Reset the signal
+        Future.microtask(
+          () => ref.read(showPasteLyricsProvider.notifier).reset(),
+        );
+      }
     });
 
     final theme = Theme.of(context);
@@ -1012,9 +1024,9 @@ class _SrsDashboard extends ConsumerWidget {
     final stats = ref.watch(srsStatsProvider);
     final theme = Theme.of(context);
     
-    final dueCount = stats['due'] ?? 0;
-    final totalCount = stats['total'] ?? 0;
-    final newCount = stats['new'] ?? 0;
+    final dueCount = stats['due'] as int? ?? 0;
+    final totalCount = stats['total'] as int? ?? 0;
+    final newCount = stats['new'] as int? ?? 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -1095,6 +1107,12 @@ class _SrsDashboard extends ConsumerWidget {
               ),
             ),
           ),
+          if (totalCount > 0) ...[
+            const SizedBox(height: 24),
+            Divider(color: AppColors.sakura.withValues(alpha: 0.1)),
+            const SizedBox(height: 16),
+            _LearningProgressSection(stats: stats),
+          ],
         ],
       ),
     );
@@ -1131,6 +1149,178 @@ class _SrsStatItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Learning Progress Section ───
+
+const _jlptColors = {
+  'N5': Color(0xFF6BCB77), // Green
+  'N4': Color(0xFF97D98F), // Light green
+  'N3': Color(0xFFE8A87C), // Amber (sakura)
+  'N2': Color(0xFFD4749C), // Pink (accent)
+  'N1': Color(0xFFE06060), // Red
+};
+
+class _LearningProgressSection extends StatelessWidget {
+  const _LearningProgressSection({required this.stats});
+
+  final Map<String, dynamic> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final totalWords = stats['total'] as int? ?? 0;
+    final totalSongs = stats['songs'] as int? ?? 0;
+    final jlptCounts = stats['jlpt'] as Map<String, int>? ?? {};
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.trending_up_rounded,
+              size: 18,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Learning Progress',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          '$totalWords words learned from $totalSongs songs',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        _HomeJlptBarChart(distribution: jlptCounts),
+        const SizedBox(height: 8),
+        _HomeJlptLegend(distribution: jlptCounts),
+      ],
+    );
+  }
+}
+
+class _HomeJlptBarChart extends StatelessWidget {
+  const _HomeJlptBarChart({required this.distribution});
+
+  final Map<String, int> distribution;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = distribution.values.fold(0, (s, v) => s + v);
+    if (total == 0) {
+      return Container(
+        height: 12,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(6),
+        ),
+      );
+    }
+
+    final segments = <_BarSegment>[];
+    for (final level in ['N5', 'N4', 'N3', 'N2', 'N1']) {
+      final count = distribution[level] ?? 0;
+      if (count > 0) {
+        segments.add(
+          _BarSegment(
+            fraction: count / total,
+            color: _jlptColors[level]!,
+          ),
+        );
+      }
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        height: 12,
+        child: Row(
+          children: [
+            for (var i = 0; i < segments.length; i++)
+              Flexible(
+                flex: (segments[i].fraction * 1000).round(),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutCubic,
+                  decoration: BoxDecoration(
+                    color: segments[i].color,
+                    borderRadius: BorderRadius.horizontal(
+                      left: i == 0 ? const Radius.circular(6) : Radius.zero,
+                      right: i == segments.length - 1
+                          ? const Radius.circular(6)
+                          : Radius.zero,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BarSegment {
+  const _BarSegment({
+    required this.fraction,
+    required this.color,
+  });
+
+  final double fraction;
+  final Color color;
+}
+
+class _HomeJlptLegend extends StatelessWidget {
+  const _HomeJlptLegend({required this.distribution});
+
+  final Map<String, int> distribution;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final levels = ['N5', 'N4', 'N3', 'N2', 'N1'];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: levels.map((level) {
+        final count = distribution[level] ?? 0;
+        final color = count > 0 ? _jlptColors[level]! : AppColors.surfaceLight;
+        
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              level,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: count > 0 ? AppColors.textSecondary : AppColors.textTertiary,
+                fontWeight: count > 0 ? FontWeight.bold : FontWeight.normal,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        );
+      }).toList(),
     );
   }
 }

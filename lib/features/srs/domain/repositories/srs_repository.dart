@@ -16,7 +16,7 @@ abstract class SrsRepository {
   Future<void> deleteCard(String word);
   
   /// Get stats (total learned, due today, etc)
-  Map<String, int> getStats();
+  Map<String, dynamic> getStats();
 
   /// Watch for changes in the SRS database
   Stream<List<SrsCard>> watchCards();

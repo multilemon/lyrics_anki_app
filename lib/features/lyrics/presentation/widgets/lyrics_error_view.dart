@@ -4,6 +4,7 @@ import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/providers/paste_lyrics_provider.dart';
 import 'package:lyrics_anki_app/features/main/presentation/pages/main_page.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 
@@ -15,12 +16,12 @@ class LyricsErrorView extends ConsumerWidget {
 
   final Object error;
 
-  void _goBack(WidgetRef ref, {bool clearForm = false}) {
+  void _goBack(BuildContext context, WidgetRef ref, {bool clearForm = false}) {
     if (clearForm) {
       ref.read(clearHomeFormSignalProvider.notifier).increment();
     }
-    ref.read(navIndexProvider.notifier).index = 0;
     ref.invalidate(lyricsProvider);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -30,19 +31,17 @@ class LyricsErrorView extends ConsumerWidget {
 
     if (e is SongNotFoundException) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 32,
-          ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 48),
               const Icon(
                 Icons.search_off_rounded,
                 size: 48,
                 color: AppColors.error,
               ),
-              const SizedBox(height: 16),
               const SizedBox(height: 16),
               Text(
                 context.l10n.songNotFound,
@@ -60,9 +59,9 @@ class LyricsErrorView extends ConsumerWidget {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () => _goBack(ref),
+                onPressed: () => _goBack(context, ref),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.sakura,
                   foregroundColor: Colors.white,
@@ -74,11 +73,64 @@ class LyricsErrorView extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(
-                  Icons.edit_rounded,
-                ),
+                icon: const Icon(Icons.edit_rounded),
                 label: const Text('Edit Search'),
               ),
+              const SizedBox(height: 32),
+
+              // ─── Song Suggestions ───
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Try these popular songs instead:',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.textTertiary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ..._kSongSuggestions.map(
+                      (s) => _SuggestionChip(
+                        title: s.title,
+                        artist: s.artist,
+                        onTap: () {
+                          ref.read(
+                            clearHomeFormSignalProvider.notifier,
+                          ).increment();
+                          ref.read(navIndexProvider.notifier).index = 0;
+                          // Small delay to let home rebuild
+                          Future.delayed(
+                            const Duration(milliseconds: 100),
+                            () {
+                              if (context.mounted) {
+                          ref.read(
+                            lyricsProvider.notifier,
+                          ).analyzeSong(
+                            s.title,
+                            s.artist,
+                            'English',
+                          );
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 48),
             ],
           ),
         ),
@@ -118,7 +170,7 @@ class LyricsErrorView extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   OutlinedButton.icon(
-                    onPressed: () => _goBack(ref),
+                    onPressed: () => _goBack(context, ref),
                     icon: const Icon(Icons.arrow_back),
                     label: const Text('Go Back'),
                     style: OutlinedButton.styleFrom(
@@ -188,7 +240,7 @@ class LyricsErrorView extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
               ElevatedButton.icon(
-                onPressed: () => _goBack(ref),
+                onPressed: () => _goBack(context, ref),
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('Go Back'),
                 style: ElevatedButton.styleFrom(
@@ -221,43 +273,41 @@ class LyricsErrorView extends ConsumerWidget {
     );
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            isNotJapanese
-                ? Icons.translate_rounded
-                : isLyricsNotFound
-                    ? Icons.library_music_rounded
-                    : Icons.error_outline,
-            size: 48,
-            color: AppColors.error,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isNotJapanese
-                ? 'Language Mismatch'
-                : isLyricsNotFound
-                    ? 'Lyrics Unavailable'
-                    : 'Analysis Failed',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textSecondary,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 48),
+            Icon(
+              isNotJapanese
+                  ? Icons.translate_rounded
+                  : isLyricsNotFound
+                      ? Icons.library_music_rounded
+                      : Icons.error_outline,
+              size: 48,
+              color: AppColors.error,
             ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 32,
+            const SizedBox(height: 16),
+            Text(
+              isNotJapanese
+                  ? 'Language Mismatch'
+                  : isLyricsNotFound
+                      ? 'Lyrics Unavailable'
+                      : 'Analysis Failed',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textSecondary,
+              ),
             ),
-            child: Text(
+            const SizedBox(height: 8),
+            Text(
               isJsonError
                   ? 'Sometimes AI makes a mistake.\n'
                       'Please try again.'
                   : isLyricsNotFound
-                      ? 'The AI could not find the full official lyrics '
-                          'for this song.\n'
-                          'Please try a different song or artist variation.'
+                      ? 'Could not find lyrics for this song.\n'
+                          'You can paste your own lyrics instead!'
                       : errorMsg.replaceAll(
                           'Exception: ',
                           '',
@@ -265,69 +315,198 @@ class LyricsErrorView extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
             ),
-          ),
           const SizedBox(height: 32),
-          if (isNotJapanese || isLyricsNotFound)
-            ElevatedButton.icon(
-              onPressed: () => _goBack(ref),
-              icon: const Icon(Icons.edit_rounded),
-              label: const Text('Edit Search'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.sakura,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            // ─── Lyrics Not Found: Paste shortcut ───
+            if (isLyricsNotFound) ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () {
+                  _goBack(context, ref);
+                  // Signal home to show paste field
+                  ref.read(
+                    showPasteLyricsProvider.notifier,
+                  ).show();
+                },
+                icon: const Icon(Icons.content_paste_rounded),
+                label: const Text('Paste Your Own Lyrics'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.sakura,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
-            )
-          else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => _goBack(ref),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Go Back'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.sakura,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+            ],
+            const SizedBox(height: 12),
+            if (isNotJapanese || isLyricsNotFound)
+              ElevatedButton.icon(
+                onPressed: () => _goBack(context, ref),
+                icon: const Icon(Icons.edit_rounded),
+                label: const Text('Edit Search'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.sakura,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _goBack(context, ref),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Go Back'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.sakura,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      ref.read(lyricsProvider.notifier).retry();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry Analysis'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.sakura,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 48),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+// ─────────────────────────────────────────────────────
+//  Song Suggestions for Error Recovery
+// ─────────────────────────────────────────────────────
+
+class _SongSuggestionData {
+  const _SongSuggestionData({
+    required this.title,
+    required this.artist,
+  });
+
+  final String title;
+  final String artist;
+}
+
+const _kSongSuggestions = [
+  _SongSuggestionData(
+    title: 'Lemon',
+    artist: '米津玄師',
+  ),
+  _SongSuggestionData(
+    title: '夜に駆ける',
+    artist: 'YOASOBI',
+  ),
+  _SongSuggestionData(
+    title: 'Pretender',
+    artist: 'Official髭男dism',
+  ),
+];
+
+class _SuggestionChip extends StatelessWidget {
+  const _SuggestionChip({
+    required this.title,
+    required this.artist,
+    required this.onTap,
+  });
+
+  final String title;
+  final String artist;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.music_note_rounded,
+                  size: 16,
+                  color: AppColors.sakura,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: title,
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' — $artist',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    ref.read(lyricsProvider.notifier).retry();
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry Analysis'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.sakura,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: AppColors.textTertiary,
                 ),
               ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }

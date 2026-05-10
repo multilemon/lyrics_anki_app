@@ -49,10 +49,23 @@ class HiveSrsRepository implements SrsRepository {
   }
 
   @override
-  Map<String, int> getStats() {
+  Map<String, dynamic> getStats() {
     final cards = getAllCards();
     final now = DateTime.now();
     
+    final uniqueSongs = cards
+        .map((c) => c.songTitle)
+        .where((title) => title != null)
+        .toSet()
+        .length;
+
+    final jlptCounts = <String, int>{};
+    for (final card in cards) {
+      if (card.jlptV != null) {
+        jlptCounts[card.jlptV!] = (jlptCounts[card.jlptV!] ?? 0) + 1;
+      }
+    }
+
     return {
       'total': cards.length,
       'due': cards
@@ -60,6 +73,8 @@ class HiveSrsRepository implements SrsRepository {
           .length,
       'new': cards.where((c) => c.repetitions == 0).length,
       'suspended': cards.where((c) => c.isSuspended).length,
+      'songs': uniqueSongs,
+      'jlpt': jlptCounts,
     };
   }
 

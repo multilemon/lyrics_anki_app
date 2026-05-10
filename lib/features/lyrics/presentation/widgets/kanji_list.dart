@@ -85,7 +85,11 @@ class KanjiItem extends ConsumerWidget {
         ),
       ),
       subtitle: Text(
-        kanji.readings,
+        kanji.readings
+            .split('|')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .join(' ｜ '),
         style: theme.textTheme.bodySmall?.copyWith(
           color: AppColors.textTertiary,
         ),

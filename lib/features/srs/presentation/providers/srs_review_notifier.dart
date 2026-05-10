@@ -34,8 +34,12 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
 }
 
 @riverpod
-Map<String, int> srsStats(Ref ref) {
-  // Watch for repository changes to update stats in real-time
-  ref.watch(srsRepositoryProvider).watchCards();
+Map<String, dynamic> srsStats(Ref ref) {
+  // Listen to the stream and invalidate this provider when the repository changes
+  final sub = ref.read(srsRepositoryProvider).watchCards().listen((_) {
+    ref.invalidateSelf();
+  });
+  ref.onDispose(sub.cancel);
+
   return ref.read(srsRepositoryProvider).getStats();
 }

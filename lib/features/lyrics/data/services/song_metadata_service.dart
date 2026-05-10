@@ -27,10 +27,13 @@ class SongMetadataService {
         ),
       );
 
-      final prompt = 'Find official YouTube video for "$title" by "$artist". '
-          'Return JSON: {"title":"Official Song\'s Title","artist":"Official Artist Name",'
-          ' "youtube_url":"https://www.youtube.com/watch?v=ID"}'
-          ' If not found: {"youtube_url":""}.';
+      final prompt = 'Identify the exact official song title and artist for '
+          '"$title" by "$artist", and find its official YouTube music video. '
+          'Return JSON: {"title":"Exact Song Title (without any tags like MV, '
+          'Official, Audio, brackets, etc.)", "artist":"Exact Artist Name", '
+          '"youtube_url":"https://www.youtube.com/watch?v=ID"}. '
+          'If no video is found, still return the cleaned title and artist '
+          'with an empty youtube_url.';
 
       final content = [Content.text(prompt)];
       final response = await model.generateContent(content);
