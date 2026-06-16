@@ -69,7 +69,7 @@ class LyricsRepository {
         );
         return;
       }
-    } on Exception catch (_) {
+    } on Object catch (_) {
       // Ignore cache check error
     }
 
@@ -239,20 +239,21 @@ class LyricsRepository {
     AnalysisResult result,
     String language,
   ) async {
-    final item = HistoryItem(
-      songTitle: result.song,
-      artist: result.artist,
-      lyricsSnippet: result.vocabs.isNotEmpty
-          ? 'Analysis Complete (${result.vocabs.length} words)'
-          : 'No Data',
-      analyzedAt: DateTime.now(),
-      targetLanguage: language,
-    )
-      ..vocabs = result.vocabs
-      ..grammar = result.grammar
-      ..kanji = result.kanji
-      ..youtubeId = result.youtubeId
-      ..lyrics = result.lyrics;
+    final item =
+        HistoryItem(
+            songTitle: result.song,
+            artist: result.artist,
+            lyricsSnippet: result.vocabs.isNotEmpty
+                ? 'Analysis Complete (${result.vocabs.length} words)'
+                : 'No Data',
+            analyzedAt: DateTime.now(),
+            targetLanguage: language,
+          )
+          ..vocabs = result.vocabs
+          ..grammar = result.grammar
+          ..kanji = result.kanji
+          ..youtubeId = result.youtubeId
+          ..lyrics = result.lyrics;
 
     await saveToHistory(item);
   }
@@ -260,30 +261,44 @@ class LyricsRepository {
   List<HistoryItem> getHistory({
     int limit = 50,
   }) {
-    final box = _box;
-    if (box == null) {
-      // Memory store fallback
-      final source = _memoryStore;
-      final count = limit < source.length ? limit : source.length;
-      if (count == 0) return [];
-      return source.sublist(source.length - count).reversed.toList();
-    }
-
-    // Optimization: Use getAt(i) which is O(1) for standard Boxes
-    final length = box.length;
-    final items = <HistoryItem>[];
-
-    // Iterate backwards to get most recent first
-    for (var i = length - 1; i >= 0; i--) {
-      // Break early if we have enough items
-      if (items.length >= limit) break;
-
-      final item = box.getAt(i);
-      if (item != null) {
-        items.add(item);
+    try {
+      final box = _box;
+      if (box == null) {
+        // Memory store fallback
+        final source = _memoryStore;
+        final count = limit < source.length ? limit : source.length;
+        if (count == 0) return [];
+        return source.sublist(source.length - count).reversed.toList();
       }
+
+      // Optimization: Use getAt(i) which is O(1) for standard Boxes
+      final length = box.length;
+      final items = <HistoryItem>[];
+
+      // Iterate backwards to get most recent first
+      for (var i = length - 1; i >= 0; i--) {
+        // Break early if we have enough items
+        if (items.length >= limit) break;
+
+        try {
+          final item = box.getAt(i);
+          if (item != null) {
+            items.add(item);
+          }
+        } on Object catch (e) {
+          // If a specific item is corrupted, log and skip it
+          debugPrint('Failed to deserialize history item at index $i: $e');
+          try {
+            // Delete corrupt item from disk to clean up the DB
+            box.deleteAt(i);
+          } on Object catch (_) {}
+        }
+      }
+      return items;
+    } on Object catch (e) {
+      debugPrint('Failed to load history: $e');
+      return [];
     }
-    return items;
   }
 
   Stream<List<HistoryItem>> watchHistory() async* {
@@ -361,7 +376,7 @@ class LyricsRepository {
         artist: artistName,
         lyrics: parsed['lyrics']?.toString() ?? '',
       );
-    } catch (_) {
+    } on Exception catch (_) {
       throw const FormatException(
         'Failed to parse AI response: Invalid JSON format.',
       );
@@ -371,7 +386,16 @@ class LyricsRepository {
   static Vocab _mapToVocab(dynamic data) {
     if (data is List<dynamic>) {
       if (data.isEmpty) {
-        return Vocab(word: '', reading: '', partOfSpeech: '', meaning: '', jlptV: '', jlptK: '', context: '', nuanceNote: '');
+        return Vocab(
+          word: '',
+          reading: '',
+          partOfSpeech: '',
+          meaning: '',
+          jlptV: '',
+          jlptK: '',
+          context: '',
+          nuanceNote: '',
+        );
       }
       return Vocab(
         word: _safeString(data, 0),
@@ -395,7 +419,16 @@ class LyricsRepository {
         nuanceNote: data['nuance_note']?.toString() ?? '',
       );
     }
-    return Vocab(word: '', reading: '', partOfSpeech: '', meaning: '', jlptV: '', jlptK: '', context: '', nuanceNote: '');
+    return Vocab(
+      word: '',
+      reading: '',
+      partOfSpeech: '',
+      meaning: '',
+      jlptV: '',
+      jlptK: '',
+      context: '',
+      nuanceNote: '',
+    );
   }
 
   static Grammar _mapToGrammar(dynamic data) {
@@ -545,10 +578,12 @@ class LyricsRepository {
 
         // Find the first non-instrumental track if possible,
         // or just the first one
-        final match = list.firstWhere(
-          (e) => (e as Map<String, dynamic>)['instrumental'] == false,
-          orElse: () => list.first,
-        ) as Map<String, dynamic>;
+        final match =
+            list.firstWhere(
+                  (e) => (e as Map<String, dynamic>)['instrumental'] == false,
+                  orElse: () => list.first,
+                )
+                as Map<String, dynamic>;
 
         final plainLyrics = match['plainLyrics'] as String?;
         final syncedLyrics = match['syncedLyrics'] as String?;
@@ -566,7 +601,8 @@ class LyricsRepository {
     }
   }
 
-  static String _buildSystemInstruction(String targetLanguage) => '''
+  static String _buildSystemInstruction(String targetLanguage) =>
+      '''
 JP Linguistic Data Engineer. Analyze lyrics→JSON.
 
 1. Verify lyrics are primarily Japanese. If NO: {"error":"NOT_JAPANESE"}

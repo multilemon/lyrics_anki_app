@@ -186,7 +186,7 @@ void showAnkiExportDialog({
               content: Text('Export downloaded successfully'),
             ),
           );
-        } catch (e) {
+        } on Exception catch (e) {
           unawaited(
             analyticsService.logError(
               'Export failed: $e',

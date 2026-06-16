@@ -20,9 +20,7 @@ class LyricsNotifier extends _$LyricsNotifier {
   String? _lastCustomLyrics;
 
   Future<void> retry() async {
-    if (_lastTitle != null &&
-        _lastArtist != null &&
-        _lastLanguage != null) {
+    if (_lastTitle != null && _lastArtist != null && _lastLanguage != null) {
       await analyzeSong(
         _lastTitle!,
         _lastArtist!,
@@ -78,7 +76,8 @@ class LyricsNotifier extends _$LyricsNotifier {
 
       // Save to history (non-fatal if it fails)
       if (lastResult != null) {
-        final hasData = lastResult.vocabs.isNotEmpty ||
+        final hasData =
+            lastResult.vocabs.isNotEmpty ||
             lastResult.grammar.isNotEmpty ||
             lastResult.kanji.isNotEmpty;
 
@@ -90,7 +89,7 @@ class LyricsNotifier extends _$LyricsNotifier {
               language,
             );
             talker.debug('[5/5] Saved.');
-          } catch (saveError, saveSt) {
+          } on Exception catch (saveError, saveSt) {
             talker.warning(
               '[5/5] Save failed (non-fatal)',
               saveError,
@@ -107,8 +106,8 @@ class LyricsNotifier extends _$LyricsNotifier {
         'K:${lastResult?.kanji.length ?? 0}',
       );
       return lastResult;
-    } catch (e, st) {
-      String reason = e.toString();
+    } on Object catch (e, st) {
+      var reason = e.toString();
       if (e is FormatException) {
         reason = 'JSON Parse Error';
       } else if (e.runtimeType.toString().contains(

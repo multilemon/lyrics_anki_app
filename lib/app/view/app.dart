@@ -20,10 +20,13 @@ class _AppState extends ConsumerState<App> {
     super.initState();
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Remove skeleton loader after the first frame
+        // Remove skeleton loader and splash screen after the first frame
         try {
           web.document.getElementById('app_skeleton')?.remove();
-        } on Exception catch (_) {
+          web.document.getElementById('splash')?.remove();
+          web.document.getElementById('splash-branding')?.remove();
+          web.document.body?.style.background = 'transparent';
+        } catch (_) {
           // Ignore
         }
       });

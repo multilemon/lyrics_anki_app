@@ -23,7 +23,7 @@ class AnalyticsService {
 
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Analytics error: $e');
     }
   }
@@ -51,7 +51,7 @@ class AnalyticsService {
 
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Analytics error: $e');
     }
   }
@@ -79,7 +79,7 @@ class AnalyticsService {
 
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Analytics error: $e');
     }
   }
@@ -108,7 +108,7 @@ class AnalyticsService {
         name: 'view_item_detail',
         parameters: parameters,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Analytics error: $e');
     }
   }
@@ -117,7 +117,7 @@ class AnalyticsService {
     const name = 'app_exception';
     final parameters = {
       'message': error,
-      if (context != null) 'context': context,
+      'context': ?context,
       'fatal': false,
     };
 
@@ -125,7 +125,7 @@ class AnalyticsService {
 
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Analytics error: $e');
     }
   }
@@ -138,5 +138,6 @@ class AnalyticsService {
   }
 }
 
-// Global provider (simple DI, or use Riverpod if preferred, but this is stateless mostly)
+// Global provider (simple DI, or use Riverpod if preferred,
+// but this is stateless mostly)
 final analyticsService = AnalyticsService();

@@ -41,8 +41,8 @@
     <style>
       body {
         margin: 0;
-        background-color: #F9F6F7; /* AppColors.cream */
-        font-family: sans-serif;
+        background-color: #0D1B2A; /* AppColors.background */
+        font-family: 'Noto Sans', sans-serif;
       }
       .skeleton-loader {
         display: flex;
@@ -62,17 +62,17 @@
       .skeleton-title {
         height: 60px;
         width: 200px;
-        background-color: #D4A5A5; /* AppColors.sakuraDark */
-        border-radius: 8px;
-        margin-bottom: 8px;
-        opacity: 0.3;
+        background-color: #E8A87C; /* AppColors.sakura */
+        border-radius: 12px;
+        margin-bottom: 12px;
+        opacity: 0.8;
       }
       .skeleton-subtitle {
         height: 24px;
         width: 300px;
-        background-color: #8E7F7F; /* AppColors.textSecondary */
-        border-radius: 6px;
-        opacity: 0.1;
+        background-color: #8B9EC7; /* AppColors.textSecondary */
+        border-radius: 8px;
+        opacity: 0.5;
       }
       .skeleton-card-container {
         width: 100%;
@@ -81,116 +81,49 @@
         box-sizing: border-box;
       }
       .skeleton-card {
-        background-color: #FFFFFF;
+        background-color: #1B2838; /* AppColors.surface */
         border-radius: 24px;
-        padding: 24px;
-        box-shadow: 0 10px 20px rgba(212, 165, 165, 0.1);
+        padding: 28px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        border: 1px solid #2E4259; /* AppColors.border */
       }
       .skeleton-card-title {
         height: 32px;
         width: 180px;
-        background-color: #E0E0E0;
-        border-radius: 6px;
+        background-color: #E8E4DF; /* AppColors.textPrimary */
+        border-radius: 8px;
         margin-bottom: 24px;
-        opacity: 0.5;
+        opacity: 0.7;
       }
       .skeleton-input {
         height: 56px;
         width: 100%;
-        background-color: #F9F6F7;
+        background-color: #243447; /* AppColors.surfaceLight */
         border-radius: 16px;
         margin-bottom: 16px;
+        border: 1px solid #2E4259; /* AppColors.border */
+        box-sizing: border-box;
       }
       .skeleton-btn {
-        height: 48px;
-        width: 120px;
-        background-color: #E0E0E0;
-        border-radius: 20px;
+        height: 52px;
+        width: 140px;
+        background-color: #D4935A; /* AppColors.sakuraDark */
+        border-radius: 16px;
         margin-top: 16px;
-        opacity: 0.5;
+        opacity: 0.9;
       }
       @keyframes pulse {
-        0% { opacity: 0.3; }
-        50% { opacity: 0.6; }
-        100% { opacity: 0.3; }
+        0% { opacity: 0.4; }
+        50% { opacity: 0.8; }
+        100% { opacity: 0.4; }
       }
       .pulse {
         animation: pulse 1.5s infinite ease-in-out;
       }
     </style>
-    <style id="splash-screen-style">
-    html {
-      height: 100%
-    }
-
-    body {
-      margin: 0;
-      min-height: 100%;
-      background-color: #FFF5F7;
-          background-size: 100% 100%;
-    }
-
-    .center {
-      margin: 0;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      -ms-transform: translate(-50%, -50%);
-      transform: translate(-50%, -50%);
-    }
-
-    .contain {
-      display:block;
-      width:100%; height:100%;
-      object-fit: contain;
-    }
-
-    .stretch {
-      display:block;
-      width:100%; height:100%;
-    }
-
-    .cover {
-      display:block;
-      width:100%; height:100%;
-      object-fit: cover;
-    }
-
-    .bottom {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      -ms-transform: translate(-50%, 0);
-      transform: translate(-50%, 0);
-    }
-
-    .bottomLeft {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
-
-    .bottomRight {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-    }
-  </style>
-  <script id="splash-screen-script">
-    function removeSplashFromWeb() {
-      document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
-      document.body.style.background = "transparent";
-    }
-  </script>
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-</head>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+  </head>
   <body>
-  <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
-  </picture>
     <div id="app_skeleton" class="skeleton-loader">
       <div class="skeleton-header">
         <div class="skeleton-title pulse"></div>

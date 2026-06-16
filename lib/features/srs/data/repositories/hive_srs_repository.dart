@@ -13,27 +13,45 @@ class HiveSrsRepository implements SrsRepository {
   final _streamController = StreamController<List<SrsCard>>.broadcast();
 
   HiveSrsRepository(this._box) {
-    _emitCurrent();
+    try {
+      _emitCurrent();
+    } on Object catch (_) {
+      try {
+        _box.clear();
+      } on Object catch (_) {}
+      _emitCurrent();
+    }
   }
 
   @override
   Future<void> init() async {}
 
   void _emitCurrent() {
-    _streamController.add(_box.values.toList());
+    _streamController.add(getAllCards());
   }
 
   @override
   List<SrsCard> getAllCards() {
-    return _box.values.toList();
+    try {
+      return _box.values.toList();
+    } on Object catch (_) {
+      try {
+        _box.clear();
+      } on Object catch (_) {}
+      return [];
+    }
   }
 
   @override
   List<SrsCard> getDueCards() {
-    final now = DateTime.now();
-    return _box.values.where((card) {
-      return !card.isSuspended && now.isAfter(card.nextReview);
-    }).toList();
+    try {
+      final now = DateTime.now();
+      return _box.values.where((card) {
+        return !card.isSuspended && now.isAfter(card.nextReview);
+      }).toList();
+    } on Object catch (_) {
+      return [];
+    }
   }
 
   @override

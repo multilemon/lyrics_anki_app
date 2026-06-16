@@ -43,7 +43,7 @@ void main() async {
       box = await Hive.openBox<HistoryItem>('history_box');
       settingsBox = await Hive.openBox('settings');
       srsBox = await Hive.openBox<SrsCard>(HiveSrsRepository.boxName);
-    } on Exception catch (e, st) {
+    } on Object catch (e, st) {
       talker.warning(
         '⚠️ Hive openBox failed. Attempting to recover by clearing box...',
         e,
@@ -56,11 +56,11 @@ void main() async {
         box = await Hive.openBox<HistoryItem>('history_box');
         settingsBox = await Hive.openBox('settings');
         srsBox = await Hive.openBox<SrsCard>(HiveSrsRepository.boxName);
-      } on Exception catch (e2, st2) {
+      } on Object catch (e2, st2) {
         talker.critical('🔴 Critical: Failed to recover Hive box', e2, st2);
       }
     }
-  } on Exception catch (e, st) {
+  } on Object catch (e, st) {
     talker.error('Hive initialization failed', e, st);
   }
 
@@ -77,14 +77,14 @@ void main() async {
           providerAndroid: const AndroidDebugProvider(),
           providerApple: const AppleDebugProvider(),
         );
-      } catch (e) {
+      } on Object catch (e) {
         // Ignore 'already-initialized' error on hot restart
         if (!e.toString().contains('already-initialized')) {
           rethrow;
         }
       }
     }
-  } on Exception catch (e, st) {
+  } on Object catch (e, st) {
     talker.error('Firebase initialization failed', e, st);
   }
 
