@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
@@ -21,7 +22,7 @@ class LyricsErrorView extends ConsumerWidget {
       ref.read(clearHomeFormSignalProvider.notifier).increment();
     }
     ref.invalidate(lyricsProvider);
-    Navigator.of(context).pop();
+    context.pop();
   }
 
   @override

@@ -9,13 +9,43 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/lyrics_tab_
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/quick_select_filters.dart';
 
 class LyricsPage extends ConsumerStatefulWidget {
-  const LyricsPage({super.key});
+  const LyricsPage({
+    super.key,
+    this.title,
+    this.artist,
+    this.language,
+  });
+
+  final String? title;
+  final String? artist;
+  final String? language;
 
   @override
   ConsumerState<LyricsPage> createState() => _LyricsPageState();
 }
 
 class _LyricsPageState extends ConsumerState<LyricsPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.title != null && widget.artist != null) {
+        final currentAnalysis = ref.read(lyricsProvider).asData?.value;
+        final needsAnalysis = currentAnalysis == null ||
+            currentAnalysis.song.toLowerCase() != widget.title!.toLowerCase() ||
+            currentAnalysis.artist.toLowerCase() != widget.artist!.toLowerCase();
+
+        if (needsAnalysis) {
+          ref.read(lyricsProvider.notifier).analyzeSong(
+                widget.title!,
+                widget.artist!,
+                widget.language ?? 'English',
+              );
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     const tabCount = 4;

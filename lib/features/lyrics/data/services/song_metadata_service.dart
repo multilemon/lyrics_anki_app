@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:http/http.dart' as http;
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/song_metadata.dart';
+import 'package:retry/retry.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'song_metadata_service.g.dart';
@@ -32,11 +34,19 @@ class SongMetadataService {
           'Return JSON: {"title":"Exact Song Title (without any tags like MV, '
           'Official, Audio, brackets, etc.)", "artist":"Exact Artist Name", '
           '"youtube_url":"https://www.youtube.com/watch?v=ID"}. '
+          'CRITICAL FOR ARTIST NAME: If the artist uses an English/Romaji '
+          'stage name on international platforms (like Spotify/Apple Music), '
+          'return THAT Romaji name instead of the Japanese script '
+          '(e.g. return "Shimamo" instead of "しまも"). '
           'If no video is found, still return the cleaned title and artist '
           'with an empty youtube_url.';
 
       final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
+      final response = await retry(
+        () => model.generateContent(content),
+        retryIf: (e) => e is FirebaseAIException || e is http.ClientException,
+        maxAttempts: 3,
+      );
       final text = response.text;
 
       if (text == null) {

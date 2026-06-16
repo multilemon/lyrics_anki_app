@@ -9,6 +9,7 @@ import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/services/song_metadata_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
+import 'package:retry/retry.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'lyrics_repository.g.dart';
@@ -141,7 +142,11 @@ class LyricsRepository {
       final content = [Content.text(prompt.toString())];
 
       final stopwatch = Stopwatch()..start();
-      final response = await model.generateContent(content);
+      final response = await retry(
+        () => model.generateContent(content),
+        retryIf: (e) => e is FirebaseAIException || e is http.ClientException,
+        maxAttempts: 3,
+      );
       stopwatch.stop();
 
       final text = response.text;
@@ -308,6 +313,11 @@ class LyricsRepository {
   Future<AnalysisResult> parseAnalysisResult(
     String jsonString,
   ) async {
+    // compute() is web-safe (runs sync on web, isolate on native)
+    return compute(_parseAnalysisResultIsolate, jsonString);
+  }
+
+  static AnalysisResult _parseAnalysisResultIsolate(String jsonString) {
     try {
       final parsed = jsonDecode(jsonString);
       if (parsed is! Map<String, dynamic>) {
@@ -317,19 +327,19 @@ class LyricsRepository {
       final vocabs = <Vocab>[];
       if (parsed.containsKey('vocab')) {
         final list = parsed['vocab'] as List<dynamic>;
-        vocabs.addAll(list.map((e) => _mapToVocab(e as List<dynamic>)));
+        vocabs.addAll(list.map((e) => _mapToVocab(e)));
       }
 
       final grammar = <Grammar>[];
       if (parsed.containsKey('grammar')) {
         final list = parsed['grammar'] as List<dynamic>;
-        grammar.addAll(list.map((e) => _mapToGrammar(e as List<dynamic>)));
+        grammar.addAll(list.map((e) => _mapToGrammar(e)));
       }
 
       final kanji = <Kanji>[];
       if (parsed.containsKey('kanji')) {
         final list = parsed['kanji'] as List<dynamic>;
-        kanji.addAll(list.map((e) => _mapToKanji(e as List<dynamic>)));
+        kanji.addAll(list.map((e) => _mapToKanji(e)));
       }
 
       var songTitle = '';
@@ -351,77 +361,89 @@ class LyricsRepository {
         artist: artistName,
         lyrics: parsed['lyrics']?.toString() ?? '',
       );
-    } on Exception catch (_) {
+    } catch (_) {
       throw const FormatException(
         'Failed to parse AI response: Invalid JSON format.',
       );
     }
   }
 
-  Vocab _mapToVocab(List<dynamic> array) {
-    if (array.isEmpty) {
+  static Vocab _mapToVocab(dynamic data) {
+    if (data is List<dynamic>) {
+      if (data.isEmpty) {
+        return Vocab(word: '', reading: '', partOfSpeech: '', meaning: '', jlptV: '', jlptK: '', context: '', nuanceNote: '');
+      }
       return Vocab(
-        word: '',
-        reading: '',
+        word: _safeString(data, 0),
+        reading: _safeString(data, 1),
         partOfSpeech: '',
-        meaning: '',
-        jlptV: '',
-        jlptK: '',
-        context: '',
-        nuanceNote: '',
+        meaning: _safeString(data, 2),
+        jlptV: _safeString(data, 3),
+        jlptK: _safeString(data, 4),
+        context: _safeString(data, 5),
+        nuanceNote: _safeString(data, 6),
+      );
+    } else if (data is Map<String, dynamic>) {
+      return Vocab(
+        word: data['word']?.toString() ?? '',
+        reading: data['reading']?.toString() ?? '',
+        partOfSpeech: data['partOfSpeech']?.toString() ?? '',
+        meaning: data['meaning']?.toString() ?? '',
+        jlptV: data['jlpt_v']?.toString() ?? '',
+        jlptK: data['jlpt_k']?.toString() ?? '',
+        context: data['context']?.toString() ?? '',
+        nuanceNote: data['nuance_note']?.toString() ?? '',
       );
     }
-
-    return Vocab(
-      word: _safeString(array, 0),
-      reading: _safeString(array, 1),
-      partOfSpeech: '',
-      meaning: _safeString(array, 2),
-      jlptV: _safeString(array, 3),
-      jlptK: _safeString(array, 4),
-      context: _safeString(array, 5),
-      nuanceNote: _safeString(array, 6),
-    );
+    return Vocab(word: '', reading: '', partOfSpeech: '', meaning: '', jlptV: '', jlptK: '', context: '', nuanceNote: '');
   }
 
-  Grammar _mapToGrammar(List<dynamic> array) {
-    if (array.isEmpty) {
+  static Grammar _mapToGrammar(dynamic data) {
+    if (data is List<dynamic>) {
+      if (data.isEmpty) {
+        return Grammar(point: '', level: '', explanation: '', usage: '');
+      }
       return Grammar(
-        point: '',
-        level: '',
-        explanation: '',
-        usage: '',
+        point: _safeString(data, 0),
+        level: _safeString(data, 1),
+        explanation: _safeString(data, 2),
+        usage: _safeString(data, 3),
+      );
+    } else if (data is Map<String, dynamic>) {
+      return Grammar(
+        point: data['point']?.toString() ?? '',
+        level: data['level']?.toString() ?? '',
+        explanation: data['explanation']?.toString() ?? '',
+        usage: data['usage']?.toString() ?? '',
       );
     }
-
-    return Grammar(
-      point: _safeString(array, 0),
-      level: _safeString(array, 1),
-      explanation: _safeString(array, 2),
-      usage: _safeString(array, 3),
-    );
+    return Grammar(point: '', level: '', explanation: '', usage: '');
   }
 
-  Kanji _mapToKanji(List<dynamic> array) {
-    if (array.isEmpty) {
+  static Kanji _mapToKanji(dynamic data) {
+    if (data is List<dynamic>) {
+      if (data.isEmpty) {
+        return Kanji(char: '', level: '', meanings: '', readings: '');
+      }
       return Kanji(
-        char: '',
-        level: '',
-        meanings: '',
-        readings: '',
+        char: _safeString(data, 0),
+        level: _safeString(data, 1),
+        meanings: _safeString(data, 2),
+        readings: _safeString(data, 3),
+      );
+    } else if (data is Map<String, dynamic>) {
+      return Kanji(
+        char: data['char']?.toString() ?? '',
+        level: data['level']?.toString() ?? '',
+        meanings: data['meanings']?.toString() ?? '',
+        readings: data['readings']?.toString() ?? '',
       );
     }
-
-    return Kanji(
-      char: _safeString(array, 0),
-      level: _safeString(array, 1),
-      meanings: _safeString(array, 2),
-      readings: _safeString(array, 3),
-    );
+    return Kanji(char: '', level: '', meanings: '', readings: '');
   }
 
   // Helper to safely get string from index, handling potential nulls or bounds
-  String _safeString(List<dynamic> list, int index) {
+  static String _safeString(List<dynamic> list, int index) {
     if (index < 0 || index >= list.length) return '';
     final val = list[index];
     return val?.toString() ?? '';
@@ -511,7 +533,11 @@ class LyricsRepository {
 
       debugPrint('[LRCLIB] Request: $uri');
 
-      final response = await http.get(uri);
+      final response = await retry(
+        () => http.get(uri),
+        retryIf: (e) => e is http.ClientException || e is TimeoutException,
+        maxAttempts: 3,
+      );
 
       if (response.statusCode == 200) {
         final list = jsonDecode(response.body) as List<dynamic>;
@@ -554,6 +580,7 @@ Rules:
 - Kanji: 1 char/entry, no okurigana. level=JLPT(N5-N1). Meanings: all defs in $targetLanguage. Readings: On(カタカナ)|Kun(ひらがな) e.g. "コウ|のど". No transliterations.
 - JLPT kanji calibration (STRICT): N5=日,本,人,大. N4=広,写,病,死. N3=悲,届,相,湖. N2=涙,瞳,濡,溢. N1=輝,叶,儚,慟. Ref community-standard JLPT lists. Songs often contain N2/N1 kanji—do NOT default lower.
 - Every kanji in vocab/grammar must appear in kanji list. No duplicates.
+- CRITICAL JSON FORMAT: You MUST output an Array-of-Arrays for vocab, grammar, and kanji (e.g. `[["val1", "val2"]]`). DO NOT output Array-of-Objects (`[{"key":"val"}]`). This is strictly required to minimize tokens.
 
 Schema:
 {"song":{"title":"","artist":"","target_language":""},"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],"grammar":[["point","level","explanation","usage"]],"kanji":[["char","level","meanings","readings"]]}

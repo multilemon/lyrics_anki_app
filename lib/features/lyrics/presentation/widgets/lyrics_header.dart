@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
@@ -27,7 +28,7 @@ class LyricsHeader extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded),
                 color: AppColors.sakura,
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.pop(),
               ),
               if (analysis.youtubeId != null)
                 _YouTubeButton(youtubeId: analysis.youtubeId!),

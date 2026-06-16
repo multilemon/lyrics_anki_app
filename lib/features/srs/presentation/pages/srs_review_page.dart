@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 import 'package:lyrics_anki_app/features/srs/domain/entities/srs_card.dart';
@@ -105,7 +106,7 @@ class _SrsReviewPageState extends ConsumerState<SrsReviewPage> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
                 child: const Text('Back to Home'),
               ),
             ],
@@ -125,7 +126,7 @@ class _SrsReviewPageState extends ConsumerState<SrsReviewPage> {
         title: Text('Review (${dueCards.length} left)'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         actions: [
           // Suspend button — skip known words
@@ -315,7 +316,7 @@ class _SessionSummary extends StatelessWidget {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.sakura,
                       foregroundColor: Colors.white,

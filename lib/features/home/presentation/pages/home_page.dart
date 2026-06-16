@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
@@ -11,15 +12,12 @@ import 'package:lyrics_anki_app/features/home/presentation/widgets/song_suggesti
 import 'package:lyrics_anki_app/features/home/presentation/widgets/storage_warning_banner.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/pages/lyrics_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/paste_lyrics_provider.dart';
-import 'package:lyrics_anki_app/features/settings/presentation/pages/language_selection_page.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
+import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:lyrics_anki_app/features/srs/presentation/pages/srs_review_page.dart';
-import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -123,11 +121,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
       );
 
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const LyricsPage(),
-        ),
-      );
+      context.pushNamed('lyrics');
     }
   }
 
@@ -143,11 +137,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       // Load from history
       ref.read(lyricsProvider.notifier).loadFromHistory(item);
 
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const LyricsPage(),
-        ),
-      );
+      context.pushNamed('lyrics');
     }
   }
 
@@ -174,11 +164,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
       );
 
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const LyricsPage(),
-        ),
-      );
+      context.pushNamed('lyrics');
     }
   }
 
@@ -743,11 +729,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       title: Text(l10n.uiLanguage),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (context) => const LanguageSelectionPage(),
-                          ),
-                        );
+                        context.pushNamed('language');
                       },
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -1088,11 +1070,7 @@ class _SrsDashboard extends ConsumerWidget {
             child: ElevatedButton.icon(
               onPressed: dueCount > 0 
                 ? () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SrsReviewPage(),
-                      ),
-                    );
+                    context.pushNamed('review');
                   }
                 : null,
               icon: const Icon(Icons.play_arrow_rounded),

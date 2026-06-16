@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyrics_anki_app/core/routes/app_router.dart';
 import 'package:lyrics_anki_app/core/theme/app_theme.dart';
-import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:web/web.dart' as web;
@@ -23,7 +23,7 @@ class _AppState extends ConsumerState<App> {
         // Remove skeleton loader after the first frame
         try {
           web.document.getElementById('app_skeleton')?.remove();
-        } catch (_) {
+        } on Exception catch (_) {
           // Ignore
         }
       });
@@ -33,14 +33,15 @@ class _AppState extends ConsumerState<App> {
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
+    final router = ref.watch(appRouterProvider);
 
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'HanaUta',
       theme: AppTheme.light,
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const HomePage(),
+      routerConfig: router,
     );
   }
 }

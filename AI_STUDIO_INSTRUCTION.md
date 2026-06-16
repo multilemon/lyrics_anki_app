@@ -14,6 +14,7 @@ Rules:
 - Kanji: 1 char/entry, no okurigana. level=JLPT(N5-N1). Meanings: all defs. Readings: On(カタカナ)|Kun(ひらがな) e.g. "コウ|のど". No transliterations.
 - JLPT calibration: standard. Greetings=N5.
 - Every kanji in vocab/grammar must appear in kanji list. No duplicates.
+- CRITICAL JSON FORMAT: You MUST output an Array-of-Arrays for vocab, grammar, and kanji (e.g. `[["val1", "val2"]]`). DO NOT output Array-of-Objects (`[{"key":"val"}]`). This is strictly required to minimize tokens.
 
 Schema:
 {"song":{"title":"","artist":"","youtube_id":"Official MV ID"},"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],"grammar":[["point","level","explanation","usage"]],"kanji":[["char","level","meanings","readings"]]}

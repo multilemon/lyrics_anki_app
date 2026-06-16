@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:lyrics_anki_app/core/services/logger_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -47,6 +48,7 @@ class LyricsNotifier extends _$LyricsNotifier {
     AnalysisResult? lastResult;
 
     try {
+      talker.debug('[1/5] Starting analysis...');
       final stream = repository.analyzeSong(
         title,
         artist,
@@ -54,30 +56,80 @@ class LyricsNotifier extends _$LyricsNotifier {
         customLyrics: customLyrics,
       );
 
+      var yieldCount = 0;
       await for (final result in stream) {
+        yieldCount++;
+        talker.debug(
+          '[2/5] Yield #$yieldCount — '
+          'V:${result.vocabs.length} '
+          'G:${result.grammar.length} '
+          'K:${result.kanji.length}',
+        );
         state = AsyncValue.data(result);
         lastResult = result;
+
+        // Cache the lyrics so retry skips LRCLIB.
+        if (result.lyrics.isNotEmpty) {
+          _lastCustomLyrics = result.lyrics;
+        }
       }
 
-      // Check final result logic
+      talker.debug('[3/5] Stream done. Yields: $yieldCount');
+
+      // Save to history (non-fatal if it fails)
       if (lastResult != null) {
         final hasData = lastResult.vocabs.isNotEmpty ||
             lastResult.grammar.isNotEmpty ||
             lastResult.kanji.isNotEmpty;
 
         if (hasData) {
-          await repository.saveAnalysisResult(
-            lastResult,
-            language,
-          );
+          talker.debug('[4/5] Saving to history...');
+          try {
+            await repository.saveAnalysisResult(
+              lastResult,
+              language,
+            );
+            talker.debug('[5/5] Saved.');
+          } catch (saveError, saveSt) {
+            talker.warning(
+              '[5/5] Save failed (non-fatal)',
+              saveError,
+              saveSt,
+            );
+          }
         }
       }
+
+      talker.info(
+        '✓ "$title" by "$artist" — '
+        'V:${lastResult?.vocabs.length ?? 0} '
+        'G:${lastResult?.grammar.length ?? 0} '
+        'K:${lastResult?.kanji.length ?? 0}',
+      );
       return lastResult;
     } catch (e, st) {
+      String reason = e.toString();
+      if (e is FormatException) {
+        reason = 'JSON Parse Error';
+      } else if (e.runtimeType.toString().contains(
+        'FirebaseAIException',
+      )) {
+        reason = 'AI Provider Error';
+      } else if (e.runtimeType.toString().contains(
+        'SongNotFoundException',
+      )) {
+        reason = 'Song not found in LRCLIB';
+      } else if (e.runtimeType.toString().contains(
+        'ServerOverloadedException',
+      )) {
+        reason = 'Server Overloaded (503)';
+      }
+
+      talker.error(
+        '✗ "$title" by "$artist" — $reason',
+      );
+
       state = AsyncValue.error(e, st);
-      // Return null or rethrow? Future expects nullable result.
-      // Usually we don't rethrow if we set state to error in Riverpod,
-      // but the caller might await it.
       return null;
     }
   }

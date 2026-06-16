@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:lyrics_anki_app/app/app.dart';
-
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
+import 'package:lyrics_anki_app/core/services/logger_service.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/srs/data/repositories/hive_srs_repository.dart';
 import 'package:lyrics_anki_app/features/srs/domain/entities/srs_card.dart';
@@ -14,6 +14,18 @@ import 'package:lyrics_anki_app/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Log all unhandled Flutter framework errors
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    talker.handle(details.exception, details.stack);
+  };
+
+  // Log all unhandled asynchronous errors
+  PlatformDispatcher.instance.onError = (error, stack) {
+    talker.handle(error, stack);
+    return true;
+  };
 
   Box<HistoryItem>? box;
   Box<dynamic>? settingsBox;
@@ -31,9 +43,11 @@ void main() async {
       box = await Hive.openBox<HistoryItem>('history_box');
       settingsBox = await Hive.openBox('settings');
       srsBox = await Hive.openBox<SrsCard>(HiveSrsRepository.boxName);
-    } on Exception catch (e) {
-      debugPrint(
+    } on Exception catch (e, st) {
+      talker.warning(
         '⚠️ Hive openBox failed. Attempting to recover by clearing box...',
+        e,
+        st,
       );
       try {
         await Hive.deleteBoxFromDisk('history_box');
@@ -42,12 +56,12 @@ void main() async {
         box = await Hive.openBox<HistoryItem>('history_box');
         settingsBox = await Hive.openBox('settings');
         srsBox = await Hive.openBox<SrsCard>(HiveSrsRepository.boxName);
-      } on Exception catch (e2) {
-        debugPrint('🔴 Critical: Failed to recover Hive box: $e2');
+      } on Exception catch (e2, st2) {
+        talker.critical('🔴 Critical: Failed to recover Hive box', e2, st2);
       }
     }
   } on Exception catch (e, st) {
-    debugPrint('Hive initialization failed: $e\n$st');
+    talker.error('Hive initialization failed', e, st);
   }
 
   try {
@@ -71,11 +85,12 @@ void main() async {
       }
     }
   } on Exception catch (e, st) {
-    debugPrint('Firebase initialization failed: $e\n$st');
+    talker.error('Firebase initialization failed', e, st);
   }
 
   runApp(
     ProviderScope(
+      observers: [talkerRiverpodObserver],
       overrides: [
         if (box != null) historyBoxProvider.overrideWithValue(box),
         if (settingsBox != null)
