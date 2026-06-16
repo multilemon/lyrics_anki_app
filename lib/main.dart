@@ -71,8 +71,8 @@ void main() async {
     if (!kDebugMode) {
       try {
         await FirebaseAppCheck.instance.activate(
-          providerWeb: ReCaptchaV3Provider(
-            '6LeJBkksAAAAAPtCvtySXr4qr5F7T2o9m0tBr7tF',
+          providerWeb: ReCaptchaEnterpriseProvider(
+            '6LfrmCItAAAAAD1ru_O_WdWo5afm6GYCaZ0DPo84',
           ),
           providerAndroid: const AndroidDebugProvider(),
           providerApple: const AppleDebugProvider(),
