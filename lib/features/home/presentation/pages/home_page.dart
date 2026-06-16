@@ -14,6 +14,7 @@ import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/paste_lyrics_provider.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
@@ -59,6 +60,28 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _selectedLanguage = 'English';
   bool _showLyricsInput = false;
 
+  String _mapLocaleToTargetLanguage(Locale locale) {
+    final langCode = locale.languageCode;
+    final scriptCode = locale.scriptCode;
+    if (langCode == 'zh') {
+      if (scriptCode == 'Hant') {
+        return 'Chinese (Traditional)';
+      }
+      return 'Chinese (Simplified)';
+    }
+    return switch (langCode) {
+      'th' => 'Thai',
+      'ko' => 'Korean',
+      'vi' => 'Vietnamese',
+      'id' => 'Indonesian',
+      'my' => 'Myanmar',
+      'es' => 'Spanish',
+      'ru' => 'Russian',
+      'uz' => 'Uzbek',
+      _ => 'English',
+    };
+  }
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +91,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (saved != null && saved is String) {
         setState(() {
           _selectedLanguage = saved;
+        });
+      } else {
+        final currentLocale = ref.read(localeProvider);
+        setState(() {
+          _selectedLanguage = _mapLocaleToTargetLanguage(currentLocale);
         });
       }
     });
@@ -233,6 +261,16 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(localeProvider, (previous, next) {
+      if (previous != null && previous != next) {
+        final newTargetLang = _mapLocaleToTargetLanguage(next);
+        setState(() {
+          _selectedLanguage = newTargetLang;
+        });
+        ref.read(settingsBoxProvider)?.put('target_language', newTargetLang);
+      }
+    });
+
     // Listen for clear signal
     ref.listen(clearHomeFormSignalProvider, (_, _) {
       _titleController.clear();
