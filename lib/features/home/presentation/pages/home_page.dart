@@ -60,28 +60,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _selectedLanguage = 'English';
   bool _showLyricsInput = false;
 
-  String _mapLocaleToTargetLanguage(Locale locale) {
-    final langCode = locale.languageCode;
-    final scriptCode = locale.scriptCode;
-    if (langCode == 'zh') {
-      if (scriptCode == 'Hant') {
-        return 'Chinese (Traditional)';
-      }
-      return 'Chinese (Simplified)';
-    }
-    return switch (langCode) {
-      'th' => 'Thai',
-      'ko' => 'Korean',
-      'vi' => 'Vietnamese',
-      'id' => 'Indonesian',
-      'my' => 'Myanmar',
-      'es' => 'Spanish',
-      'ru' => 'Russian',
-      'uz' => 'Uzbek',
-      _ => 'English',
-    };
-  }
-
   @override
   void initState() {
     super.initState();
@@ -91,11 +69,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (saved != null && saved is String) {
         setState(() {
           _selectedLanguage = saved;
-        });
-      } else {
-        final currentLocale = ref.read(localeProvider);
-        setState(() {
-          _selectedLanguage = _mapLocaleToTargetLanguage(currentLocale);
         });
       }
     });
@@ -261,16 +234,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(localeProvider, (previous, next) {
-      if (previous != null && previous != next) {
-        final newTargetLang = _mapLocaleToTargetLanguage(next);
-        setState(() {
-          _selectedLanguage = newTargetLang;
-        });
-        ref.read(settingsBoxProvider)?.put('target_language', newTargetLang);
-      }
-    });
-
     // Listen for clear signal
     ref.listen(clearHomeFormSignalProvider, (_, _) {
       _titleController.clear();
@@ -813,12 +776,16 @@ class LanguageData {
 
 const _kLanguageList = [
   LanguageData(englishName: 'English', nativeName: 'English'),
-  LanguageData(englishName: 'Thai', nativeName: 'ไทย'),
   LanguageData(englishName: 'Chinese (Simplified)', nativeName: '简体中文'),
+  LanguageData(englishName: 'Chinese (Traditional)', nativeName: '繁體中文'),
+  LanguageData(englishName: 'Indonesian', nativeName: 'Bahasa Indonesia'),
   LanguageData(englishName: 'Korean', nativeName: '한국어'),
-  LanguageData(englishName: 'Vietnamese', nativeName: 'Tiếng Việt'),
+  LanguageData(englishName: 'Myanmar', nativeName: 'မြန်မာ'),
+  LanguageData(englishName: 'Russian', nativeName: 'Русский'),
   LanguageData(englishName: 'Spanish', nativeName: 'Español'),
+  LanguageData(englishName: 'Thai', nativeName: 'ไทย'),
   LanguageData(englishName: 'Uzbek', nativeName: 'Oʻzbek'),
+  LanguageData(englishName: 'Vietnamese', nativeName: 'Tiếng Việt'),
 ];
 
 class _LanguageSearchDialog extends StatefulWidget {
