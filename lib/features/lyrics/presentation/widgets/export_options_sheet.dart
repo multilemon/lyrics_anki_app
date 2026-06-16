@@ -92,9 +92,9 @@ void showExportOptionsSheet({
               Text(
                 l10n.exportOptions,
                 style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 16),
               ListTile(
@@ -124,40 +124,46 @@ void showExportOptionsSheet({
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   final repo = ref.read(srsRepositoryProvider);
-                  
-                  int count = 0;
-                  
+
+                  var count = 0;
+
                   for (final v in selectedVocabs) {
-                    await repo.saveCard(SrsCard.newCard(
-                      word: v.word,
-                      reading: v.reading,
-                      meaning: v.meaning,
-                      songTitle: analysis.song,
-                      artist: analysis.artist,
-                      jlptV: v.jlptV,
-                    ));
+                    await repo.saveCard(
+                      SrsCard.newCard(
+                        word: v.word,
+                        reading: v.reading,
+                        meaning: v.meaning,
+                        songTitle: analysis.song,
+                        artist: analysis.artist,
+                        jlptV: v.jlptV,
+                      ),
+                    );
                     count++;
                   }
-                  
+
                   for (final g in selectedGrammar) {
-                    await repo.saveCard(SrsCard.newCard(
-                      word: g.point,
-                      reading: g.usage,
-                      meaning: g.explanation,
-                      songTitle: analysis.song,
-                      artist: analysis.artist,
-                    ));
+                    await repo.saveCard(
+                      SrsCard.newCard(
+                        word: g.point,
+                        reading: g.usage,
+                        meaning: g.explanation,
+                        songTitle: analysis.song,
+                        artist: analysis.artist,
+                      ),
+                    );
                     count++;
                   }
-                  
+
                   for (final k in selectedKanji) {
-                    await repo.saveCard(SrsCard.newCard(
-                      word: k.char,
-                      reading: k.readings,
-                      meaning: k.meanings,
-                      songTitle: analysis.song,
-                      artist: analysis.artist,
-                    ));
+                    await repo.saveCard(
+                      SrsCard.newCard(
+                        word: k.char,
+                        reading: k.readings,
+                        meaning: k.meanings,
+                        songTitle: analysis.song,
+                        artist: analysis.artist,
+                      ),
+                    );
                     count++;
                   }
 
@@ -174,41 +180,41 @@ void showExportOptionsSheet({
               ),
               const Divider(indent: 72, endIndent: 16, height: 1),
               ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.sakura.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.style_rounded,
-                      color: AppColors.sakura,
-                    ),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.sakura.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  title: Text(l10n.exportAnkiOption),
-                  subtitle: Text(
-                    l10n.exportAnkiDescription,
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
-                      fontSize: 12,
-                    ),
+                  child: const Icon(
+                    Icons.style_rounded,
+                    color: AppColors.sakura,
                   ),
-                  trailing: const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppColors.textTertiary,
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    showAnkiExportDialog(
-                      context: context,
-                      ref: ref,
-                      analysis: analysis,
-                      selectedVocabs: selectedVocabs,
-                      selectedGrammar: selectedGrammar,
-                      selectedKanji: selectedKanji,
-                    );
-                  },
                 ),
+                title: Text(l10n.exportAnkiOption),
+                subtitle: Text(
+                  l10n.exportAnkiDescription,
+                  style: const TextStyle(
+                    color: AppColors.textTertiary,
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textTertiary,
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  showAnkiExportDialog(
+                    context: context,
+                    ref: ref,
+                    analysis: analysis,
+                    selectedVocabs: selectedVocabs,
+                    selectedGrammar: selectedGrammar,
+                    selectedKanji: selectedKanji,
+                  );
+                },
+              ),
               const Divider(indent: 72, endIndent: 16, height: 1),
               ListTile(
                 leading: Container(

@@ -14,7 +14,6 @@ import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/paste_lyrics_provider.dart';
-import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
@@ -44,7 +43,8 @@ class HomePage extends ConsumerStatefulWidget {
     String artist,
     String language, {
     String? customLyrics,
-  })? onNavigateToAnalyze;
+  })?
+  onNavigateToAnalyze;
 
   final void Function(HistoryItem item)? onHistoryItemClick;
 
@@ -59,28 +59,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _selectedLanguage = 'English';
   bool _showLyricsInput = false;
 
-  String _mapLocaleToTargetLanguage(Locale locale) {
-    final langCode = locale.languageCode;
-    final scriptCode = locale.scriptCode;
-    if (langCode == 'zh') {
-      if (scriptCode == 'Hant') {
-        return 'Chinese (Traditional)';
-      }
-      return 'Chinese (Simplified)';
-    }
-    return switch (langCode) {
-      'th' => 'Thai',
-      'ko' => 'Korean',
-      'vi' => 'Vietnamese',
-      'id' => 'Indonesian',
-      'my' => 'Myanmar',
-      'es' => 'Spanish',
-      'ru' => 'Russian',
-      'uz' => 'Uzbek',
-      _ => 'English',
-    };
-  }
-
   @override
   void initState() {
     super.initState();
@@ -90,11 +68,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (saved != null && saved is String) {
         setState(() {
           _selectedLanguage = saved;
-        });
-      } else {
-        final currentLocale = ref.read(localeProvider);
-        setState(() {
-          _selectedLanguage = _mapLocaleToTargetLanguage(currentLocale);
         });
       }
     });
@@ -141,7 +114,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       // Trigger analysis (fire and forget for UI,
       // but provider handles state)
       unawaited(
-        ref.read(lyricsProvider.notifier).analyzeSong(
+        ref
+            .read(lyricsProvider.notifier)
+            .analyzeSong(
               title,
               artist,
               _selectedLanguage,
@@ -185,7 +160,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       ref.read(selectionManagerProvider.notifier).clear();
 
       unawaited(
-        ref.read(lyricsProvider.notifier).analyzeSong(
+        ref
+            .read(lyricsProvider.notifier)
+            .analyzeSong(
               title,
               artist,
               _selectedLanguage,
@@ -212,9 +189,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               Text(
                 context.l10n.settingsTitle,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.sakura,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: AppColors.sakura,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 24),
               ListTile(
@@ -238,9 +215,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     data: (version) => Text(
                       version,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontFamily: 'Outfit',
-                          ),
+                        color: AppColors.textSecondary,
+                        fontFamily: 'Outfit',
+                      ),
                     ),
                     loading: () => const SizedBox.shrink(),
                     error: (e, st) => const SizedBox.shrink(),
@@ -256,18 +233,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(localeProvider, (previous, next) {
-      final savedLang =
-          ref.read(settingsBoxProvider)?.get('target_language') as String?;
-      if (savedLang == null) {
-        setState(() {
-          _selectedLanguage = _mapLocaleToTargetLanguage(next);
-        });
-      }
-    });
-
     // Listen for clear signal
-    ref.listen(clearHomeFormSignalProvider, (_, __) {
+    ref.listen(clearHomeFormSignalProvider, (_, _) {
       _titleController.clear();
       _artistController.clear();
       _lyricsController.clear();
@@ -387,11 +354,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 children: [
                                   Text(
                                     l10n.analyzeNewSong,
-                                    style:
-                                        theme.textTheme.headlineSmall?.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: theme.textTheme.headlineSmall
+                                        ?.copyWith(
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                   ),
                                   PopupMenuButton<String>(
                                     icon: const Icon(
@@ -472,7 +439,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     setState(() {
                                       _selectedLanguage = result.englishName;
                                     });
-                                    await ref.read(settingsBoxProvider)?.put(
+                                    await ref
+                                        .read(settingsBoxProvider)
+                                        ?.put(
                                           'target_language',
                                           result.englishName,
                                         );
@@ -507,17 +476,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                                               l10n.targetLanguageLabel,
                                               style: theme.textTheme.labelSmall
                                                   ?.copyWith(
-                                                color: AppColors.textTertiary,
-                                              ),
+                                                    color:
+                                                        AppColors.textTertiary,
+                                                  ),
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
                                               _selectedLanguage,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                color: AppColors.textPrimary,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                                    color:
+                                                        AppColors.textPrimary,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                             ),
                                           ],
                                         ),
@@ -610,9 +581,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       l10n.recentAnalysisTitle,
                                       style: theme.textTheme.headlineSmall
                                           ?.copyWith(
-                                        fontFamily: 'Serif',
-                                        color: AppColors.textSecondary,
-                                      ),
+                                            fontFamily: 'Serif',
+                                            color: AppColors.textSecondary,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -623,8 +594,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                             SliverToBoxAdapter(
                               child: Consumer(
                                 builder: (context, ref, _) {
-                                  final repo =
-                                      ref.watch(lyricsRepositoryProvider);
+                                  final repo = ref.watch(
+                                    lyricsRepositoryProvider,
+                                  );
                                   if (!repo.isReady) {
                                     return const StorageWarningBanner();
                                   }
@@ -655,8 +627,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                         borderRadius: BorderRadius.circular(20),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppColors.sakura
-                                                .withValues(alpha: 0.06),
+                                            color: AppColors.sakura.withValues(
+                                              alpha: 0.06,
+                                            ),
                                             blurRadius: 10,
                                             offset: const Offset(0, 4),
                                           ),
@@ -669,9 +642,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                         child: ListTile(
                                           contentPadding:
                                               const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 12,
-                                          ),
+                                                horizontal: 24,
+                                                vertical: 12,
+                                              ),
                                           hoverColor: AppColors.sakura
                                               .withValues(alpha: 0.1),
                                           splashColor: AppColors.sakura
@@ -680,8 +653,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                             item.songTitle,
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                           ),
                                           subtitle: Column(
                                             crossAxisAlignment:
@@ -692,10 +665,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                 '$artist · '
                                                 '${item.targetLanguage}',
                                                 style: theme
-                                                    .textTheme.bodyMedium
+                                                    .textTheme
+                                                    .bodyMedium
                                                     ?.copyWith(
-                                                  color: AppColors.sakura,
-                                                ),
+                                                      color: AppColors.sakura,
+                                                    ),
                                               ),
                                               if (item.vocabs.isNotEmpty ||
                                                   item.kanji.isNotEmpty) ...[
@@ -733,8 +707,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                               children: List.generate(
                                 3,
                                 (index) => Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
                                   child: Container(
                                     height: 80,
                                     decoration: BoxDecoration(
@@ -762,8 +737,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       vertical: 16,
                     ),
                     child: ListTile(
-                      leading:
-                          const Icon(Icons.language, color: AppColors.sakura),
+                      leading: const Icon(
+                        Icons.language,
+                        color: AppColors.sakura,
+                      ),
                       title: Text(l10n.uiLanguage),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
@@ -798,16 +775,12 @@ class LanguageData {
 
 const _kLanguageList = [
   LanguageData(englishName: 'English', nativeName: 'English'),
-  LanguageData(englishName: 'Chinese (Simplified)', nativeName: '简体中文'),
-  LanguageData(englishName: 'Chinese (Traditional)', nativeName: '繁體中文'),
-  LanguageData(englishName: 'Indonesian', nativeName: 'Bahasa Indonesia'),
-  LanguageData(englishName: 'Korean', nativeName: '한국어'),
-  LanguageData(englishName: 'Myanmar', nativeName: 'မြန်မာ'),
-  LanguageData(englishName: 'Russian', nativeName: 'Русский'),
-  LanguageData(englishName: 'Spanish', nativeName: 'Español'),
   LanguageData(englishName: 'Thai', nativeName: 'ไทย'),
-  LanguageData(englishName: 'Uzbek', nativeName: 'Oʻzbek'),
+  LanguageData(englishName: 'Chinese (Simplified)', nativeName: '简体中文'),
+  LanguageData(englishName: 'Korean', nativeName: '한국어'),
   LanguageData(englishName: 'Vietnamese', nativeName: 'Tiếng Việt'),
+  LanguageData(englishName: 'Spanish', nativeName: 'Español'),
+  LanguageData(englishName: 'Uzbek', nativeName: 'Oʻzbek'),
 ];
 
 class _LanguageSearchDialog extends StatefulWidget {
@@ -911,9 +884,9 @@ class _ShareDialog extends StatelessWidget {
             Text(
               'Share HanaUta',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.sakura,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: AppColors.sakura,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 24),
             Container(
@@ -971,20 +944,20 @@ class _HistoryDifficultyChip extends StatelessWidget {
 
     final (label, color, icon) = switch (difficulty) {
       SongDifficulty.beginner => (
-          'Beginner',
-          AppColors.success,
-          Icons.sentiment_satisfied_alt_rounded,
-        ),
+        'Beginner',
+        AppColors.success,
+        Icons.sentiment_satisfied_alt_rounded,
+      ),
       SongDifficulty.intermediate => (
-          'Intermediate',
-          AppColors.sakura,
-          Icons.trending_up_rounded,
-        ),
+        'Intermediate',
+        AppColors.sakura,
+        Icons.trending_up_rounded,
+      ),
       SongDifficulty.advanced => (
-          'Advanced',
-          AppColors.accent,
-          Icons.local_fire_department_rounded,
-        ),
+        'Advanced',
+        AppColors.accent,
+        Icons.local_fire_department_rounded,
+      ),
     };
 
     final counts = <String>[];
@@ -1047,7 +1020,7 @@ class _SrsDashboard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(srsStatsProvider);
     final theme = Theme.of(context);
-    
+
     final dueCount = stats['due'] as int? ?? 0;
     final totalCount = stats['total'] as int? ?? 0;
     final newCount = stats['new'] as int? ?? 0;
@@ -1078,7 +1051,10 @@ class _SrsDashboard extends ConsumerWidget {
               const Spacer(),
               if (dueCount > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -1098,10 +1074,14 @@ class _SrsDashboard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _SrsStatItem(label: 'Total', value: totalCount.toString()),
-              _SrsStatItem(label: 'New', value: newCount.toString(), color: AppColors.matcha),
               _SrsStatItem(
-                label: 'Due', 
-                value: dueCount.toString(), 
+                label: 'New',
+                value: newCount.toString(),
+                color: AppColors.matcha,
+              ),
+              _SrsStatItem(
+                label: 'Due',
+                value: dueCount.toString(),
                 color: dueCount > 0 ? AppColors.error : AppColors.textTertiary,
               ),
             ],
@@ -1110,13 +1090,15 @@ class _SrsDashboard extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: dueCount > 0 
-                ? () {
-                    context.pushNamed('review');
-                  }
-                : null,
+              onPressed: dueCount > 0
+                  ? () {
+                      context.pushNamed('review');
+                    }
+                  : null,
               icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(dueCount > 0 ? 'Start Review' : 'Nothing to review yet'),
+              label: Text(
+                dueCount > 0 ? 'Start Review' : 'Nothing to review yet',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.sakura,
                 foregroundColor: Colors.white,
@@ -1317,7 +1299,7 @@ class _HomeJlptLegend extends StatelessWidget {
       children: levels.map((level) {
         final count = distribution[level] ?? 0;
         final color = count > 0 ? _jlptColors[level]! : AppColors.surfaceLight;
-        
+
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1333,7 +1315,9 @@ class _HomeJlptLegend extends StatelessWidget {
             Text(
               level,
               style: theme.textTheme.labelSmall?.copyWith(
-                color: count > 0 ? AppColors.textSecondary : AppColors.textTertiary,
+                color: count > 0
+                    ? AppColors.textSecondary
+                    : AppColors.textTertiary,
                 fontWeight: count > 0 ? FontWeight.bold : FontWeight.normal,
                 fontSize: 10,
               ),

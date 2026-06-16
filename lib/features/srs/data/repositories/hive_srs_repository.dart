@@ -7,51 +7,32 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'hive_srs_repository.g.dart';
 
 class HiveSrsRepository implements SrsRepository {
+  HiveSrsRepository(this._box) {
+    _emitCurrent();
+  }
   static const String boxName = 'srs_cards_v1';
   final Box<SrsCard> _box;
-  
-  final _streamController = StreamController<List<SrsCard>>.broadcast();
 
-  HiveSrsRepository(this._box) {
-    try {
-      _emitCurrent();
-    } on Object catch (_) {
-      try {
-        _box.clear();
-      } on Object catch (_) {}
-      _emitCurrent();
-    }
-  }
+  final _streamController = StreamController<List<SrsCard>>.broadcast();
 
   @override
   Future<void> init() async {}
 
   void _emitCurrent() {
-    _streamController.add(getAllCards());
+    _streamController.add(_box.values.toList());
   }
 
   @override
   List<SrsCard> getAllCards() {
-    try {
-      return _box.values.toList();
-    } on Object catch (_) {
-      try {
-        _box.clear();
-      } on Object catch (_) {}
-      return [];
-    }
+    return _box.values.toList();
   }
 
   @override
   List<SrsCard> getDueCards() {
-    try {
-      final now = DateTime.now();
-      return _box.values.where((card) {
-        return !card.isSuspended && now.isAfter(card.nextReview);
-      }).toList();
-    } on Object catch (_) {
-      return [];
-    }
+    final now = DateTime.now();
+    return _box.values.where((card) {
+      return !card.isSuspended && now.isAfter(card.nextReview);
+    }).toList();
   }
 
   @override
@@ -70,7 +51,7 @@ class HiveSrsRepository implements SrsRepository {
   Map<String, dynamic> getStats() {
     final cards = getAllCards();
     final now = DateTime.now();
-    
+
     final uniqueSongs = cards
         .map((c) => c.songTitle)
         .where((title) => title != null)

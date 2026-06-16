@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/home/presentation/pages/home_page.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
@@ -106,22 +106,26 @@ class LyricsErrorView extends ConsumerWidget {
                         title: s.title,
                         artist: s.artist,
                         onTap: () {
-                          ref.read(
-                            clearHomeFormSignalProvider.notifier,
-                          ).increment();
+                          ref
+                              .read(
+                                clearHomeFormSignalProvider.notifier,
+                              )
+                              .increment();
                           ref.read(navIndexProvider.notifier).index = 0;
                           // Small delay to let home rebuild
                           Future.delayed(
                             const Duration(milliseconds: 100),
                             () {
                               if (context.mounted) {
-                          ref.read(
-                            lyricsProvider.notifier,
-                          ).analyzeSong(
-                            s.title,
-                            s.artist,
-                            'English',
-                          );
+                                ref
+                                    .read(
+                                      lyricsProvider.notifier,
+                                    )
+                                    .analyzeSong(
+                                      s.title,
+                                      s.artist,
+                                      'English',
+                                    );
                               }
                             },
                           );
@@ -267,7 +271,8 @@ class LyricsErrorView extends ConsumerWidget {
     final isNotJapanese = errorMsg.contains(
       'not appear to be primarily in Japanese',
     );
-    final isJsonError = errorMsg.contains('JSON Parse Error') ||
+    final isJsonError =
+        errorMsg.contains('JSON Parse Error') ||
         errorMsg.contains('FormatException');
     final isLyricsNotFound = errorMsg.contains(
       'LYRICS_NOT_FOUND',
@@ -284,8 +289,8 @@ class LyricsErrorView extends ConsumerWidget {
               isNotJapanese
                   ? Icons.translate_rounded
                   : isLyricsNotFound
-                      ? Icons.library_music_rounded
-                      : Icons.error_outline,
+                  ? Icons.library_music_rounded
+                  : Icons.error_outline,
               size: 48,
               color: AppColors.error,
             ),
@@ -294,8 +299,8 @@ class LyricsErrorView extends ConsumerWidget {
               isNotJapanese
                   ? 'Language Mismatch'
                   : isLyricsNotFound
-                      ? 'Lyrics Unavailable'
-                      : 'Analysis Failed',
+                  ? 'Lyrics Unavailable'
+                  : 'Analysis Failed',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.textSecondary,
@@ -305,18 +310,18 @@ class LyricsErrorView extends ConsumerWidget {
             Text(
               isJsonError
                   ? 'Sometimes AI makes a mistake.\n'
-                      'Please try again.'
+                        'Please try again.'
                   : isLyricsNotFound
-                      ? 'Could not find lyrics for this song.\n'
-                          'You can paste your own lyrics instead!'
-                      : errorMsg.replaceAll(
-                          'Exception: ',
-                          '',
-                        ),
+                  ? 'Could not find lyrics for this song.\n'
+                        'You can paste your own lyrics instead!'
+                  : errorMsg.replaceAll(
+                      'Exception: ',
+                      '',
+                    ),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
             ),
-          const SizedBox(height: 32),
+            const SizedBox(height: 32),
             // ─── Lyrics Not Found: Paste shortcut ───
             if (isLyricsNotFound) ...[
               const SizedBox(height: 16),
@@ -324,9 +329,11 @@ class LyricsErrorView extends ConsumerWidget {
                 onPressed: () {
                   _goBack(context, ref);
                   // Signal home to show paste field
-                  ref.read(
-                    showPasteLyricsProvider.notifier,
-                  ).show();
+                  ref
+                      .read(
+                        showPasteLyricsProvider.notifier,
+                      )
+                      .show();
                 },
                 icon: const Icon(Icons.content_paste_rounded),
                 label: const Text('Paste Your Own Lyrics'),
@@ -411,7 +418,6 @@ class LyricsErrorView extends ConsumerWidget {
   }
 }
 
-
 // ─────────────────────────────────────────────────────
 //  Song Suggestions for Error Recovery
 // ─────────────────────────────────────────────────────
@@ -482,16 +488,14 @@ class _SuggestionChip extends StatelessWidget {
                       children: [
                         TextSpan(
                           text: title,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
                           ),
                         ),
                         TextSpan(
                           text: ' — $artist',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.textTertiary,
                           ),
                         ),
