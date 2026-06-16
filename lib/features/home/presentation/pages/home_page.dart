@@ -14,6 +14,7 @@ import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/paste_lyrics_provider.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
@@ -58,6 +59,28 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _selectedLanguage = 'English';
   bool _showLyricsInput = false;
 
+  String _mapLocaleToTargetLanguage(Locale locale) {
+    final langCode = locale.languageCode;
+    final scriptCode = locale.scriptCode;
+    if (langCode == 'zh') {
+      if (scriptCode == 'Hant') {
+        return 'Chinese (Traditional)';
+      }
+      return 'Chinese (Simplified)';
+    }
+    return switch (langCode) {
+      'th' => 'Thai',
+      'ko' => 'Korean',
+      'vi' => 'Vietnamese',
+      'id' => 'Indonesian',
+      'my' => 'Myanmar',
+      'es' => 'Spanish',
+      'ru' => 'Russian',
+      'uz' => 'Uzbek',
+      _ => 'English',
+    };
+  }
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +90,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (saved != null && saved is String) {
         setState(() {
           _selectedLanguage = saved;
+        });
+      } else {
+        final currentLocale = ref.read(localeProvider);
+        setState(() {
+          _selectedLanguage = _mapLocaleToTargetLanguage(currentLocale);
         });
       }
     });
@@ -228,6 +256,16 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(localeProvider, (previous, next) {
+      final savedLang =
+          ref.read(settingsBoxProvider)?.get('target_language') as String?;
+      if (savedLang == null) {
+        setState(() {
+          _selectedLanguage = _mapLocaleToTargetLanguage(next);
+        });
+      }
+    });
+
     // Listen for clear signal
     ref.listen(clearHomeFormSignalProvider, (_, __) {
       _titleController.clear();
@@ -760,12 +798,16 @@ class LanguageData {
 
 const _kLanguageList = [
   LanguageData(englishName: 'English', nativeName: 'English'),
-  LanguageData(englishName: 'Thai', nativeName: 'ไทย'),
   LanguageData(englishName: 'Chinese (Simplified)', nativeName: '简体中文'),
+  LanguageData(englishName: 'Chinese (Traditional)', nativeName: '繁體中文'),
+  LanguageData(englishName: 'Indonesian', nativeName: 'Bahasa Indonesia'),
   LanguageData(englishName: 'Korean', nativeName: '한국어'),
-  LanguageData(englishName: 'Vietnamese', nativeName: 'Tiếng Việt'),
+  LanguageData(englishName: 'Myanmar', nativeName: 'မြန်မာ'),
+  LanguageData(englishName: 'Russian', nativeName: 'Русский'),
   LanguageData(englishName: 'Spanish', nativeName: 'Español'),
+  LanguageData(englishName: 'Thai', nativeName: 'ไทย'),
   LanguageData(englishName: 'Uzbek', nativeName: 'Oʻzbek'),
+  LanguageData(englishName: 'Vietnamese', nativeName: 'Tiếng Việt'),
 ];
 
 class _LanguageSearchDialog extends StatefulWidget {

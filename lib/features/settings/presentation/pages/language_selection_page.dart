@@ -36,13 +36,6 @@ class LanguageSelectionPage extends ConsumerWidget {
                 ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
-            label: 'ไทย (Thai)',
-            value: const Locale('th'),
-            groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
-          ),
-          _LanguageTile(
             label: '简体中文 (Chinese Simplified)',
             value: const Locale.fromSubtags(
               languageCode: 'zh',
@@ -63,15 +56,8 @@ class LanguageSelectionPage extends ConsumerWidget {
                 ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
-            label: 'Bahasa Indonesia',
+            label: 'Bahasa Indonesia (Indonesian)',
             value: const Locale('id'),
-            groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
-          ),
-          _LanguageTile(
-            label: 'ဗမာစာ (Burmese)',
-            value: const Locale('my'),
             groupValue: currentLocale,
             onChanged: (v) =>
                 ref.read(localeProvider.notifier).setLocale(v),
@@ -79,6 +65,41 @@ class LanguageSelectionPage extends ConsumerWidget {
           _LanguageTile(
             label: '日本語 (Japanese)',
             value: const Locale('ja'),
+            groupValue: currentLocale,
+            onChanged: (v) =>
+                ref.read(localeProvider.notifier).setLocale(v),
+          ),
+          _LanguageTile(
+            label: '한국어 (Korean)',
+            value: const Locale('ko'),
+            groupValue: currentLocale,
+            onChanged: (v) =>
+                ref.read(localeProvider.notifier).setLocale(v),
+          ),
+          _LanguageTile(
+            label: 'မြန်မာ (Myanmar)',
+            value: const Locale('my'),
+            groupValue: currentLocale,
+            onChanged: (v) =>
+                ref.read(localeProvider.notifier).setLocale(v),
+          ),
+          _LanguageTile(
+            label: 'Русский (Russian)',
+            value: const Locale('ru'),
+            groupValue: currentLocale,
+            onChanged: (v) =>
+                ref.read(localeProvider.notifier).setLocale(v),
+          ),
+          _LanguageTile(
+            label: 'Español (Spanish)',
+            value: const Locale('es'),
+            groupValue: currentLocale,
+            onChanged: (v) =>
+                ref.read(localeProvider.notifier).setLocale(v),
+          ),
+          _LanguageTile(
+            label: 'ไทย (Thai)',
+            value: const Locale('th'),
             groupValue: currentLocale,
             onChanged: (v) =>
                 ref.read(localeProvider.notifier).setLocale(v),
@@ -93,20 +114,6 @@ class LanguageSelectionPage extends ConsumerWidget {
           _LanguageTile(
             label: 'Tiếng Việt (Vietnamese)',
             value: const Locale('vi'),
-            groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
-          ),
-          _LanguageTile(
-            label: 'Русский (Russian)',
-            value: const Locale('ru'),
-            groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
-          ),
-          _LanguageTile(
-            label: '한국어 (Korean)',
-            value: const Locale('ko'),
             groupValue: currentLocale,
             onChanged: (v) =>
                 ref.read(localeProvider.notifier).setLocale(v),
