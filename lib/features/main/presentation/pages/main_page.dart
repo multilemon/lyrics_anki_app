@@ -20,15 +20,60 @@ class NavIndex extends _$NavIndex {
   set index(int value) => state = value;
 }
 
-class MainPage extends ConsumerWidget {
+class MainPage extends ConsumerStatefulWidget {
   const MainPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends ConsumerState<MainPage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fadeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    )..value = 1.0; // start fully visible
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  /// Morphing cross-fade: fade-out + scale-down → update tab → fade-in + scale-up.
+  Future<void> _switchTab(int index) async {
+    final current = ref.read(navIndexProvider);
+    if (current == index) return;
+
+    // Phase 1: fade out current tab (180 ms, ease-in)
+    await _fadeController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeIn,
+    );
+
+    // Switch underlying content
+    ref.read(navIndexProvider.notifier).index = index;
+
+    // Phase 2: fade in new tab (280 ms, ease-out)
+    await _fadeController.animateTo(
+      1,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentIndex = ref.watch(navIndexProvider);
     final l10n = context.l10n;
 
-    // List of pages
     final pages = [
       HomePage(
         onNavigateToAnalyze: (
@@ -36,14 +81,10 @@ class MainPage extends ConsumerWidget {
           artist,
           language, {
           customLyrics,
-        }) async {
-          // Switch to Lyrics Tab IMMEDIATELY
-          ref.read(navIndexProvider.notifier).index = 1;
+        }) {
+          unawaited(_switchTab(1));
           // Clear any previous selection state
           ref.read(selectionManagerProvider.notifier).clear();
-
-          // Trigger analysis (fire and forget for UI,
-          // but provider handles state)
           unawaited(
             ref.read(lyricsProvider.notifier).analyzeSong(
                   title,
@@ -53,14 +94,10 @@ class MainPage extends ConsumerWidget {
                 ),
           );
         },
-        onHistoryItemClick: (
-          item,
-        ) {
-          // Switch to Lyrics Tab IMMEDIATELY
-          ref.read(navIndexProvider.notifier).index = 1;
+        onHistoryItemClick: (item) {
+          unawaited(_switchTab(1));
           // Clear any previous selection state
           ref.read(selectionManagerProvider.notifier).clear();
-
           // Load from history
           ref.read(lyricsProvider.notifier).loadFromHistory(item);
         },
@@ -69,9 +106,23 @@ class MainPage extends ConsumerWidget {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: pages,
+      body: FadeTransition(
+        opacity: _fadeController,
+        child: ScaleTransition(
+          scale: Tween<double>(
+            begin: 0.97,
+            end: 1,
+          ).animate(
+            CurvedAnimation(
+              parent: _fadeController,
+              curve: Curves.easeOut,
+            ),
+          ),
+          child: IndexedStack(
+            index: currentIndex,
+            children: pages,
+          ),
+        ),
       ),
       extendBody: true,
       bottomNavigationBar: ClipRRect(
@@ -88,9 +139,7 @@ class MainPage extends ConsumerWidget {
             ),
             child: NavigationBar(
               selectedIndex: currentIndex,
-              onDestinationSelected: (index) {
-                ref.read(navIndexProvider.notifier).index = index;
-              },
+              onDestinationSelected: _switchTab,
               backgroundColor: Colors.transparent,
               elevation: 0,
               surfaceTintColor: Colors.transparent,

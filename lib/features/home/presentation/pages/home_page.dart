@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
+import 'package:lyrics_anki_app/core/widgets/animated_reveal_text.dart';
+import 'package:lyrics_anki_app/core/widgets/neural_background.dart';
+import 'package:lyrics_anki_app/core/widgets/neural_pulse_button.dart';
 import 'package:lyrics_anki_app/features/home/presentation/providers/history_notifier.dart';
 import 'package:lyrics_anki_app/features/home/presentation/widgets/song_suggestion_card.dart';
 import 'package:lyrics_anki_app/features/home/presentation/widgets/storage_warning_banner.dart';
@@ -53,16 +56,50 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomePageState extends ConsumerState<HomePage>
+    with SingleTickerProviderStateMixin {
   final _titleController = TextEditingController();
   final _artistController = TextEditingController();
   final _lyricsController = TextEditingController();
   String _selectedLanguage = 'English';
   bool _showLyricsInput = false;
 
+  // ── Neural Expressive UI: staggered entry animations ─────────────────────
+  late final AnimationController _entryController;
+  late final Animation<double> _section0; // header
+  late final Animation<double> _section1; // analyze card
+  late final Animation<double> _section2; // SRS dashboard
+  late final Animation<double> _section3; // history
+
   @override
   void initState() {
     super.initState();
+
+    // Single controller drives all four staggered section reveals.
+    _entryController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+
+    _section0 = CurvedAnimation(
+      parent: _entryController,
+      curve: const Interval(0, 0.55, curve: Curves.easeOutCubic),
+    );
+    _section1 = CurvedAnimation(
+      parent: _entryController,
+      curve: const Interval(0.18, 0.70, curve: Curves.easeOutCubic),
+    );
+    _section2 = CurvedAnimation(
+      parent: _entryController,
+      curve: const Interval(0.35, 0.85, curve: Curves.easeOutCubic),
+    );
+    _section3 = CurvedAnimation(
+      parent: _entryController,
+      curve: const Interval(0.5, 1, curve: Curves.easeOutCubic),
+    );
+
+    unawaited(_entryController.forward());
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final box = ref.read(settingsBoxProvider);
       final saved = box?.get('target_language');
@@ -76,6 +113,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   void dispose() {
+    _entryController.dispose();
     _titleController.dispose();
     _artistController.dispose();
     _lyricsController.dispose();
@@ -232,6 +270,24 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  // ─── Section reveal helper ──────────────────────────────────────────────────
+  /// Wraps [child] in a fade + upward slide driven by [animation].
+  Widget _buildSectionReveal({
+    required Animation<double> animation,
+    required Widget child,
+  }) {
+    return FadeTransition(
+      opacity: animation,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.05),
+          end: Offset.zero,
+        ).animate(animation),
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Listen for clear signal
@@ -270,495 +326,561 @@ class _HomePageState extends ConsumerState<HomePage> {
           const SizedBox(width: 16),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.background,
-              AppColors.matcha.withValues(alpha: 0.15),
-              AppColors.background,
-            ],
-            stops: const [0.0, 0.5, 1.0],
+      body: Stack(
+        children: [
+          // ── Gradient base ─────────────────────────────────────────────────
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.background,
+                  AppColors.matcha.withValues(alpha: 0.15),
+                  AppColors.background,
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
           ),
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: CustomScrollView(
-              slivers: [
-                // Header
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(32, 100, 32, 36),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.appTitle,
-                          style: theme.textTheme.displayLarge?.copyWith(
-                            color: AppColors.sakura,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          l10n.homeSubtitle,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
 
-                // Analysis Card
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(
-                          sigmaX: 12,
-                          sigmaY: 12,
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.surface.withValues(
-                              alpha: 0.85,
+          // ── Neural ambient background ─────────────────────────────────────
+          const NeuralNetworkBackground(),
+
+          // ── Scrollable content ────────────────────────────────────────────
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: CustomScrollView(
+                slivers: [
+                  // ─── Header ───────────────────────────────────────────────
+                  SliverToBoxAdapter(
+                    child: _buildSectionReveal(
+                      animation: _section0,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(32, 100, 32, 36),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AnimatedRevealText(
+                              text: l10n.appTitle,
+                              style: theme.textTheme.displayLarge?.copyWith(
+                                color: AppColors.sakura,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              duration: const Duration(milliseconds: 1100),
                             ),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: AppColors.sakura.withValues(
-                                alpha: 0.15,
-                              ),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.sakura.withValues(alpha: 0.06),
-                                blurRadius: 32,
-                                offset: const Offset(0, 12),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(28),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    l10n.analyzeNewSong,
-                                    style: theme.textTheme.headlineSmall
-                                        ?.copyWith(
-                                          color: AppColors.textSecondary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                  ),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(
-                                      Icons.more_horiz,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                    onSelected: (value) {
-                                      if (value == 'paste_lyrics') {
-                                        setState(() {
-                                          _showLyricsInput = !_showLyricsInput;
-                                          if (!_showLyricsInput) {
-                                            _lyricsController.clear();
-                                          }
-                                        });
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'paste_lyrics',
-                                        child: Text(
-                                          _showLyricsInput
-                                              ? 'Hide Paste Lyrics'
-                                              : 'Paste Lyrics (Optional)',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Song Title
-                              TextField(
-                                controller: _titleController,
-                                decoration: InputDecoration(
-                                  labelText: l10n.songTitleLabel,
-                                  hintText: l10n.songTitleHint,
-                                  prefixIcon: const Icon(Icons.music_note),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Artist Name
-                              TextField(
-                                controller: _artistController,
-                                decoration: InputDecoration(
-                                  labelText: l10n.artistNameLabel,
-                                  hintText: l10n.artistNameHint,
-                                  prefixIcon: const Icon(Icons.person),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-
-                              if (_showLyricsInput) ...[
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: _lyricsController,
-                                  maxLines: 5,
-                                  minLines: 3,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Custom Lyrics',
-                                    hintText: 'Paste lyrics here...',
-                                    alignLabelWithHint: true,
-                                  ),
-                                ),
-                              ],
-
-                              // Target Language Selector
-                              const SizedBox(height: 16),
-                              InkWell(
-                                onTap: () async {
-                                  final result = await showDialog<LanguageData>(
-                                    context: context,
-                                    builder: (context) =>
-                                        const _LanguageSearchDialog(),
-                                  );
-                                  if (result != null) {
-                                    setState(() {
-                                      _selectedLanguage = result.englishName;
-                                    });
-                                    await ref
-                                        .read(settingsBoxProvider)
-                                        ?.put(
-                                          'target_language',
-                                          result.englishName,
-                                        );
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 18,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceLight,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: AppColors.border,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.language,
-                                        color: AppColors.sakura,
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              l10n.targetLanguageLabel,
-                                              style: theme.textTheme.labelSmall
-                                                  ?.copyWith(
-                                                    color:
-                                                        AppColors.textTertiary,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              _selectedLanguage,
-                                              style: theme.textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                    color:
-                                                        AppColors.textPrimary,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const Icon(
-                                        Icons.arrow_drop_down,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 32),
-
-                              // Analyze Button
-                              Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      AppColors.sakura,
-                                      AppColors.accent,
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.sakura.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: _handleAnalyze,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                  ),
-                                  child: Text(l10n.analyzeButton),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // SRS Dashboard
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                    child: _SrsDashboard(),
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 56)),
-
-                // History Section — Title + List (or Suggestions if empty)
-                Consumer(
-                  builder: (context, ref, child) {
-                    final historyAsync = ref.watch(historyProvider);
-                    return historyAsync.when(
-                      data: (items) {
-                        if (items.isEmpty) {
-                          // ─── Empty State: Song Suggestions ───
-                          return SliverToBoxAdapter(
-                            child: SongSuggestionCard(
-                              onSuggestionTap: _handleSuggestionTap,
-                            ),
-                          );
-                        }
-
-                        // ─── Has History: Show header + list ───
-                        return SliverMainAxisGroup(
-                          slivers: [
-                            // Section title
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      l10n.recentAnalysisTitle,
-                                      style: theme.textTheme.headlineSmall
-                                          ?.copyWith(
-                                            fontFamily: 'Serif',
-                                            color: AppColors.textSecondary,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            // Storage warning (if applicable)
-                            SliverToBoxAdapter(
-                              child: Consumer(
-                                builder: (context, ref, _) {
-                                  final repo = ref.watch(
-                                    lyricsRepositoryProvider,
-                                  );
-                                  if (!repo.isReady) {
-                                    return const StorageWarningBanner();
-                                  }
-                                  return const SizedBox.shrink();
-                                },
-                              ),
-                            ),
-
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 16),
-                            ),
-
-                            // History list
-                            SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final item = items[index];
-                                  final artist = item.artist.isNotEmpty
-                                      ? item.artist
-                                      : l10n.unknownArtist;
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 8,
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.sakura.withValues(
-                                              alpha: 0.06,
-                                            ),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Material(
-                                        color: AppColors.surface,
-                                        borderRadius: BorderRadius.circular(20),
-                                        clipBehavior: Clip.antiAlias,
-                                        child: ListTile(
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                horizontal: 24,
-                                                vertical: 12,
-                                              ),
-                                          hoverColor: AppColors.sakura
-                                              .withValues(alpha: 0.1),
-                                          splashColor: AppColors.sakura
-                                              .withValues(alpha: 0.15),
-                                          title: Text(
-                                            item.songTitle,
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                          ),
-                                          subtitle: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '$artist · '
-                                                '${item.targetLanguage}',
-                                                style: theme
-                                                    .textTheme
-                                                    .bodyMedium
-                                                    ?.copyWith(
-                                                      color: AppColors.sakura,
-                                                    ),
-                                              ),
-                                              if (item.vocabs.isNotEmpty ||
-                                                  item.kanji.isNotEmpty) ...[
-                                                const SizedBox(height: 6),
-                                                _HistoryDifficultyChip(
-                                                  item: item,
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                          trailing: const Icon(
-                                            Icons.arrow_forward_ios_rounded,
-                                            size: 16,
-                                            color: AppColors.sakura,
-                                          ),
-                                          onTap: () => _onHistoryItemTap(item),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                childCount: items.length,
+                            const SizedBox(height: 8),
+                            Text(
+                              l10n.homeSubtitle,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontStyle: FontStyle.italic,
                               ),
                             ),
                           ],
-                        );
-                      },
-                      loading: () => SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Shimmer.fromColors(
-                            baseColor: AppColors.surfaceLight,
-                            highlightColor: AppColors.surface,
-                            child: Column(
-                              children: List.generate(
-                                3,
-                                (index) => Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ─── Analysis Card ────────────────────────────────────────
+                  SliverToBoxAdapter(
+                    child: _buildSectionReveal(
+                      animation: _section1,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: 12,
+                              sigmaY: 12,
+                            ),
+                            child: AnimatedBuilder(
+                              animation: _section1,
+                              builder: (context, child) {
+                                // Entry glow: bright on arrival, dims to rest.
+                                final glow = 1.0 - _section1.value;
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface.withValues(
+                                      alpha: 0.85,
+                                    ),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: AppColors.sakura.withValues(
+                                        alpha: 0.15 + 0.22 * glow,
+                                      ),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.sakura.withValues(
+                                          alpha: 0.06 + 0.20 * glow,
+                                        ),
+                                        blurRadius: 32 + 28 * glow,
+                                        offset: const Offset(0, 12),
+                                      ),
+                                    ],
                                   ),
-                                  child: Container(
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.surfaceLight,
-                                      borderRadius: BorderRadius.circular(15),
+                                  padding: const EdgeInsets.all(28),
+                                  child: child,
+                                );
+                              },
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        l10n.analyzeNewSong,
+                                        style: theme.textTheme.headlineSmall
+                                            ?.copyWith(
+                                              color: AppColors.textSecondary,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        icon: const Icon(
+                                          Icons.more_horiz,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        onSelected: (value) {
+                                          if (value == 'paste_lyrics') {
+                                            setState(() {
+                                              _showLyricsInput =
+                                                  !_showLyricsInput;
+                                              if (!_showLyricsInput) {
+                                                _lyricsController.clear();
+                                              }
+                                            });
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          PopupMenuItem(
+                                            value: 'paste_lyrics',
+                                            child: Text(
+                                              _showLyricsInput
+                                                  ? 'Hide Paste Lyrics'
+                                                  : 'Paste Lyrics (Optional)',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Song Title
+                                  TextField(
+                                    controller: _titleController,
+                                    decoration: InputDecoration(
+                                      labelText: l10n.songTitleLabel,
+                                      hintText: l10n.songTitleHint,
+                                      prefixIcon:
+                                          const Icon(Icons.music_note),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Artist Name
+                                  TextField(
+                                    controller: _artistController,
+                                    decoration: InputDecoration(
+                                      labelText: l10n.artistNameLabel,
+                                      hintText: l10n.artistNameHint,
+                                      prefixIcon: const Icon(Icons.person),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+
+                                  if (_showLyricsInput) ...[
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: _lyricsController,
+                                      maxLines: 5,
+                                      minLines: 3,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Custom Lyrics',
+                                        hintText: 'Paste lyrics here...',
+                                        alignLabelWithHint: true,
+                                      ),
+                                    ),
+                                  ],
+
+                                  // Target Language Selector
+                                  const SizedBox(height: 16),
+                                  InkWell(
+                                    onTap: () async {
+                                      final result =
+                                          await showDialog<LanguageData>(
+                                            context: context,
+                                            builder: (context) =>
+                                                const _LanguageSearchDialog(),
+                                          );
+                                      if (result != null) {
+                                        setState(() {
+                                          _selectedLanguage =
+                                              result.englishName;
+                                        });
+                                        await ref
+                                            .read(settingsBoxProvider)
+                                            ?.put(
+                                              'target_language',
+                                              result.englishName,
+                                            );
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 18,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surfaceLight,
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: AppColors.border,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.language,
+                                            color: AppColors.sakura,
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  l10n.targetLanguageLabel,
+                                                  style: theme
+                                                      .textTheme
+                                                      .labelSmall
+                                                      ?.copyWith(
+                                                        color: AppColors
+                                                            .textTertiary,
+                                                      ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  _selectedLanguage,
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyLarge
+                                                      ?.copyWith(
+                                                        color: AppColors
+                                                            .textPrimary,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const Icon(
+                                            Icons.arrow_drop_down,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 32),
+
+                                  // ─── Neural Pulse Analyze Button ───────────
+                                  NeuralPulseButton(
+                                    label: l10n.analyzeButton,
+                                    onPressed: _handleAnalyze,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ─── SRS Dashboard ─────────────────────────────────────────
+                  SliverToBoxAdapter(
+                    child: _buildSectionReveal(
+                      animation: _section2,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                        child: _SrsDashboard(),
+                      ),
+                    ),
+                  ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 56)),
+
+                  // ─── History Section ───────────────────────────────────────
+                  // SliverFadeTransition applies the section3 opacity to the
+                  // entire Consumer subtree (which returns sliver widgets).
+                  SliverFadeTransition(
+                    opacity: _section3,
+                    sliver: Consumer(
+                      builder: (context, ref, child) {
+                        final historyAsync = ref.watch(historyProvider);
+                        return historyAsync.when(
+                          data: (items) {
+                            if (items.isEmpty) {
+                              // ─── Empty State: Song Suggestions ───
+                              return SliverToBoxAdapter(
+                                child: SongSuggestionCard(
+                                  onSuggestionTap: _handleSuggestionTap,
+                                ),
+                              );
+                            }
+
+                            // ─── Has History: Show header + list ───
+                            return SliverMainAxisGroup(
+                              slivers: [
+                                // Section title
+                                SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          l10n.recentAnalysisTitle,
+                                          style: theme
+                                              .textTheme
+                                              .headlineSmall
+                                              ?.copyWith(
+                                                fontFamily: 'Serif',
+                                                color:
+                                                    AppColors.textSecondary,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                // Storage warning (if applicable)
+                                SliverToBoxAdapter(
+                                  child: Consumer(
+                                    builder: (context, ref, _) {
+                                      final repo = ref.watch(
+                                        lyricsRepositoryProvider,
+                                      );
+                                      if (!repo.isReady) {
+                                        return const StorageWarningBanner();
+                                      }
+                                      return const SizedBox.shrink();
+                                    },
+                                  ),
+                                ),
+
+                                const SliverToBoxAdapter(
+                                  child: SizedBox(height: 16),
+                                ),
+
+                                // History list — items slide in from the right.
+                                SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                      final item = items[index];
+                                      final artist = item.artist.isNotEmpty
+                                          ? item.artist
+                                          : l10n.unknownArtist;
+                                      return TweenAnimationBuilder<double>(
+                                        tween: Tween(begin: 0, end: 1),
+                                        duration: Duration(
+                                          milliseconds: 350 + index * 90,
+                                        ),
+                                        curve: Curves.easeOutCubic,
+                                        builder: (context, value, child) {
+                                          return Opacity(
+                                            opacity: value.clamp(0.0, 1.0),
+                                            child: Transform.translate(
+                                              offset: Offset(
+                                                22 * (1 - value),
+                                                0,
+                                              ),
+                                              child: child,
+                                            ),
+                                          );
+                                        },
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 24,
+                                                vertical: 8,
+                                              ),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: AppColors.sakura
+                                                      .withValues(
+                                                        alpha: 0.06,
+                                                      ),
+                                                  blurRadius: 10,
+                                                  offset:
+                                                      const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Material(
+                                              color: AppColors.surface,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              clipBehavior: Clip.antiAlias,
+                                              child: ListTile(
+                                                contentPadding:
+                                                    const EdgeInsets
+                                                        .symmetric(
+                                                          horizontal: 24,
+                                                          vertical: 12,
+                                                        ),
+                                                hoverColor: AppColors.sakura
+                                                    .withValues(alpha: 0.1),
+                                                splashColor: AppColors.sakura
+                                                    .withValues(alpha: 0.15),
+                                                title: Text(
+                                                  item.songTitle,
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyLarge
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                ),
+                                                subtitle: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .start,
+                                                  children: [
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      '$artist · '
+                                                      '${item.targetLanguage}',
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodyMedium
+                                                          ?.copyWith(
+                                                            color:
+                                                                AppColors
+                                                                    .sakura,
+                                                          ),
+                                                    ),
+                                                    if (item.vocabs
+                                                            .isNotEmpty ||
+                                                        item.kanji
+                                                            .isNotEmpty) ...[
+                                                      const SizedBox(
+                                                        height: 6,
+                                                      ),
+                                                      _HistoryDifficultyChip(
+                                                        item: item,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                                trailing: const Icon(
+                                                  Icons
+                                                      .arrow_forward_ios_rounded,
+                                                  size: 16,
+                                                  color: AppColors.sakura,
+                                                ),
+                                                onTap: () =>
+                                                    _onHistoryItemTap(item),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    childCount: items.length,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                          loading: () => SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              child: Shimmer.fromColors(
+                                baseColor: AppColors.surfaceLight,
+                                highlightColor: AppColors.surface,
+                                child: Column(
+                                  children: List.generate(
+                                    3,
+                                    (index) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 8,
+                                      ),
+                                      child: Container(
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceLight,
+                                          borderRadius:
+                                              BorderRadius.circular(15),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      error: (e, s) =>
-                          SliverToBoxAdapter(child: Text('Error: $e')),
-                    );
-                  },
-                ),
-
-                // UI Language Settings
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.language,
-                        color: AppColors.sakura,
-                      ),
-                      title: Text(l10n.uiLanguage),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        context.pushNamed('language');
+                          error: (e, s) => SliverToBoxAdapter(
+                            child: Text('Error: $e'),
+                          ),
+                        );
                       },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(color: AppColors.border),
+                    ),
+                  ),
+
+                  // UI Language Settings
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.language,
+                          color: AppColors.sakura,
+                        ),
+                        title: Text(l10n.uiLanguage),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          context.pushNamed('language');
+                        },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: AppColors.border),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ],
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
