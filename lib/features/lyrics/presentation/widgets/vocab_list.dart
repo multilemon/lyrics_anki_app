@@ -7,17 +7,23 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/result_card
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_list_item.dart';
 // Add more imports as needed
 
-class VocabList extends StatefulWidget {
-  const VocabList(
-      {required this.vocabList, required this.isLoading, super.key,});
+import 'package:lyrics_anki_app/core/utils/jlpt_utils.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/jlpt_level_notifier.dart';
+
+class VocabList extends ConsumerStatefulWidget {
+  const VocabList({
+    required this.vocabList,
+    required this.isLoading,
+    super.key,
+  });
   final List<Vocab> vocabList;
   final bool isLoading;
 
   @override
-  State<VocabList> createState() => VocabListState();
+  ConsumerState<VocabList> createState() => VocabListState();
 }
 
-class VocabListState extends State<VocabList>
+class VocabListState extends ConsumerState<VocabList>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -26,7 +32,17 @@ class VocabListState extends State<VocabList>
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
-    if (widget.vocabList.isEmpty) {
+    final jlptLevel = ref.watch(jlptLevelProvider);
+
+    final filteredItems = <MapEntry<int, Vocab>>[];
+    for (var i = 0; i < widget.vocabList.length; i++) {
+      final vocab = widget.vocabList[i];
+      if (shouldShowJlpt(vocab.jlptV, jlptLevel)) {
+        filteredItems.add(MapEntry(i, vocab));
+      }
+    }
+
+    if (filteredItems.isEmpty) {
       if (widget.isLoading) {
         return const Center(
           child: CircularProgressIndicator(color: AppColors.sakura),
@@ -35,8 +51,9 @@ class VocabListState extends State<VocabList>
       return Center(
         child: Text(
           'No vocabulary found.',
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(color: AppColors.textTertiary),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textTertiary,
+          ),
         ),
       );
     }
@@ -44,13 +61,14 @@ class VocabListState extends State<VocabList>
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
-      itemCount: widget.vocabList.length,
+      itemCount: filteredItems.length,
       itemBuilder: (context, index) {
+        final entry = filteredItems[index];
         return StaggeredListItem(
           index: index,
           child: VocabItem(
-            index: index,
-            vocab: widget.vocabList[index],
+            index: entry.key,
+            vocab: entry.value,
           ),
         );
       },

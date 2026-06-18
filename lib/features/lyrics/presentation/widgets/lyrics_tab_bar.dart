@@ -4,6 +4,9 @@ import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 
+import 'package:lyrics_anki_app/core/utils/jlpt_utils.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/jlpt_level_notifier.dart';
+
 class LyricsTabBar extends ConsumerWidget {
   const LyricsTabBar({super.key});
 
@@ -14,10 +17,18 @@ class LyricsTabBar extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    // Calculate counts based on learning mode
-    final vocabCount = analysis.vocabs.length;
-    final grammarCount = analysis.grammar.length;
-    final kanjiCount = analysis.kanji.length;
+    final jlptLevel = ref.watch(jlptLevelProvider);
+
+    // Calculate counts based on learning mode and JLPT filter
+    final vocabCount = analysis.vocabs
+        .where((v) => shouldShowJlpt(v.jlptV, jlptLevel))
+        .length;
+    final grammarCount = analysis.grammar
+        .where((g) => shouldShowJlpt(g.level, jlptLevel))
+        .length;
+    final kanjiCount = analysis.kanji
+        .where((k) => shouldShowJlpt(k.level, jlptLevel))
+        .length;
 
     // Prepare labels
     final vocabLabel = '${context.l10n.vocabTab} ($vocabCount)';

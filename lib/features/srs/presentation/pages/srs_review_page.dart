@@ -6,6 +6,8 @@ import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 import 'package:lyrics_anki_app/features/srs/domain/entities/srs_card.dart';
 import 'package:lyrics_anki_app/features/srs/domain/services/srs_service.dart';
 import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
+import 'package:lyrics_anki_app/core/services/tts_service.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/tts_autoplay_notifier.dart';
 
 class SrsReviewPage extends ConsumerStatefulWidget {
   const SrsReviewPage({super.key});
@@ -26,7 +28,16 @@ class _SrsReviewPageState extends ConsumerState<SrsReviewPage> {
   int _easyCount = 0;
   bool _initialized = false;
 
-  void _flip() => setState(() => _isFlipped = true);
+  void _flip() {
+    setState(() => _isFlipped = true);
+    final autoPlay = ref.read(ttsAutoplayProvider);
+    if (autoPlay) {
+      final dueCards = ref.read(srsReviewProvider);
+      if (dueCards.isNotEmpty) {
+        TtsService.speak(dueCards[0].word);
+      }
+    }
+  }
 
   Future<void> _next(SrsCard card, ReviewQuality quality) async {
     await ref.read(srsReviewProvider.notifier).rateCard(card, quality);
@@ -269,8 +280,8 @@ class _SessionSummary extends StatelessWidget {
                           color: accuracy >= 80
                               ? AppColors.matcha
                               : accuracy >= 50
-                                  ? Colors.orange
-                                  : AppColors.error,
+                              ? Colors.orange
+                              : AppColors.error,
                           fontSize: 48,
                         ),
                       ),
@@ -404,12 +415,23 @@ class _FlashcardContent extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
-            card.word,
-            style: AppTextStyles.display.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                card.word,
+                style: AppTextStyles.display.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.volume_up_rounded),
+                color: AppColors.sakura,
+                onPressed: () => TtsService.speak(card.word),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           if (card.context != null)

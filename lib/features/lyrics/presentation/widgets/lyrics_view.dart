@@ -1,13 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/services/analytics_service.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
+import 'package:lyrics_anki_app/core/utils/jlpt_utils.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/grammar_list.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/kanji_list.dart';
-import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/vocab_list.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/interactive_lookup_sheet.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/jlpt_level_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
-// Add more imports as needed
 
 class Match {
   Match(this.start, this.end, this.data, this.index, this.type);
@@ -18,7 +18,7 @@ class Match {
   final String type;
 }
 
-class LyricsView extends StatelessWidget {
+class LyricsView extends ConsumerWidget {
   const LyricsView({required this.analysis, super.key});
 
   final AnalysisResult analysis;
@@ -28,73 +28,54 @@ class LyricsView extends StatelessWidget {
       case 'vocab':
         return AppColors.sakura;
       case 'grammar':
-        return AppColors.accent; // Cherry pink for grammar
+        return AppColors.accent;
       case 'kanji':
-        return AppColors.peach; // Blue for kanji
+        return AppColors.peach;
       default:
         return AppColors.textPrimary;
     }
   }
 
   void _showPopup(BuildContext context, Match match) {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        Widget content;
-        String title;
-        if (match.type == 'vocab') {
-          title = context.l10n.vocabType;
-          final v = match.data as Vocab;
-          content = VocabItem(index: match.index, vocab: v);
-          analyticsService.logItemView(
-            type: 'vocab',
-            item: v.word,
-            source: 'lyrics_highlight',
-          );
-        } else if (match.type == 'grammar') {
-          title = context.l10n.grammarType;
-          final g = match.data as Grammar;
-          content = GrammarItem(index: match.index, grammar: g);
-          analyticsService.logItemView(
-            type: 'grammar',
-            item: g.point,
-            source: 'lyrics_highlight',
-          );
-        } else {
-          title = context.l10n.kanjiType;
-          final k = match.data as Kanji;
-          content = KanjiItem(index: match.index, kanji: k);
-          analyticsService.logItemView(
-            type: 'kanji',
-            item: k.char,
-            source: 'lyrics_highlight',
-          );
-        }
+    String word;
+    if (match.type == 'vocab') {
+      word = (match.data as Vocab).word;
+    } else if (match.type == 'grammar') {
+      word = (match.data as Grammar).point;
+    } else {
+      word = (match.data as Kanji).char;
+    }
+    analyticsService.logItemView(
+      type: match.type,
+      item: word,
+      source: 'lyrics_highlight',
+    );
 
-        return AlertDialog(
-          title: Text(title, style: Theme.of(context).textTheme.titleLarge),
-          content: SingleChildScrollView(child: content),
-          backgroundColor: AppColors.surface,
-          surfaceTintColor: Colors.transparent,
-          scrollable: true,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                context.l10n.closeButton,
-                style: const TextStyle(color: AppColors.sakura),
-              ),
-            ),
-          ],
-        );
-      },
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => InteractiveLookupSheet(
+        type: match.type,
+        data: match.data,
+        analysis: analysis,
+      ),
     );
   }
 
-  List<TextSpan> _buildSpans(BuildContext context) {
-    final lyrics = analysis.lyrics;
+  String _cleanLyrics(String rawLyrics) {
+    // Strip timestamps like [00:15.30] or [00:15.300]
+    return rawLyrics.replaceAll(RegExp(r'\[\d{2}:\d{2}\.\d{2,3}\]'), '');
+  }
+
+  List<TextSpan> _buildSpans(BuildContext context, WidgetRef ref) {
+    final jlptLevel = ref.watch(jlptLevelProvider);
+
+    bool shouldShow(String level) {
+      return shouldShowJlpt(level, jlptLevel);
+    }
+
+    final lyrics = _cleanLyrics(analysis.lyrics);
     final spans = <TextSpan>[];
     if (lyrics.isEmpty) return spans;
 
@@ -102,11 +83,10 @@ class LyricsView extends StatelessWidget {
 
     String cleanText(String input, String type) {
       if (type != 'grammar') return input.trim();
-      // Remove structural markers like "V.", "Adj.", "~", etc.
       return input
-          .replaceAll(RegExp(r'^[A-Za-z]+\.'), '') // Remove "V.", "N." prefix
-          .replaceAll('~', '') // Remove tilde
-          .replaceAll('～', '') // Remove full-width tilde
+          .replaceAll(RegExp(r'^[A-Za-z]+\.'), '')
+          .replaceAll('~', '')
+          .replaceAll('～', '')
           .trim();
     }
 
@@ -117,10 +97,8 @@ class LyricsView extends StatelessWidget {
     ) {
       for (var i = 0; i < items.length; i++) {
         final rawText = getText(items[i]);
-        // Try exact match first
         var text = rawText.trim();
 
-        // If it's grammar, try the cleaner version if exact match fails
         if (type == 'grammar' && !lyrics.contains(text)) {
           text = cleanText(rawText, type);
         }
@@ -137,9 +115,21 @@ class LyricsView extends StatelessWidget {
       }
     }
 
-    addMatches(analysis.vocabs, 'vocab', (d) => (d as Vocab).word);
-    addMatches(analysis.grammar, 'grammar', (d) => (d as Grammar).point);
-    addMatches(analysis.kanji, 'kanji', (d) => (d as Kanji).char);
+    addMatches(
+      analysis.vocabs.where((v) => shouldShow(v.jlptV)).toList(),
+      'vocab',
+      (d) => (d as Vocab).word,
+    );
+    addMatches(
+      analysis.grammar.where((g) => shouldShow(g.level)).toList(),
+      'grammar',
+      (d) => (d as Grammar).point,
+    );
+    addMatches(
+      analysis.kanji.where((k) => shouldShow(k.level)).toList(),
+      'kanji',
+      (d) => (d as Kanji).char,
+    );
 
     // Sort: Start Time asc, Length desc (Longest match wins)
     matches.sort((a, b) {
@@ -207,14 +197,14 @@ class LyricsView extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (analysis.lyrics.isEmpty) {
       return Center(
         child: Text(
           context.l10n.noLyricsAvailable,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textTertiary,
-              ),
+            color: AppColors.textTertiary,
+          ),
         ),
       );
     }
@@ -227,7 +217,9 @@ class LyricsView extends StatelessWidget {
         bottom: 88,
       ),
       child: SelectableText.rich(
-        TextSpan(children: _buildSpans(context)),
+        TextSpan(
+          children: _buildSpans(context, ref),
+        ),
         textAlign: TextAlign.center,
       ),
     );

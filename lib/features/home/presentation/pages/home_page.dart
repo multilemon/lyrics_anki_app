@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lyrics_anki_app/core/providers/hive_provider.dart';
+import 'package:lyrics_anki_app/core/services/backup_service.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 import 'package:lyrics_anki_app/core/widgets/animated_reveal_text.dart';
@@ -19,6 +20,8 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_no
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/paste_lyrics_provider.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/jlpt_level_notifier.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/tts_autoplay_notifier.dart';
 import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -212,6 +215,40 @@ class _HomePageState extends ConsumerState<HomePage>
     }
   }
 
+  Future<void> _showImportConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restore Backup?'),
+        content: const Text(
+          'This will completely overwrite your current settings, '
+          'search history, and SRS study list. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Overwrite & Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await BackupService.importBackup(context, ref);
+    }
+  }
+
   void _showSettingsSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -243,6 +280,111 @@ class _HomePageState extends ConsumerState<HomePage>
                   showDialog<void>(
                     context: context,
                     builder: (context) => const _ShareDialog(),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.cloud_upload_outlined,
+                  color: AppColors.sakura,
+                ),
+                title: const Text('Export Backup'),
+                subtitle: const Text(
+                  'Download a JSON backup of your study data',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  BackupService.exportBackup(context, ref);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.cloud_download_outlined,
+                  color: AppColors.sakura,
+                ),
+                title: const Text('Restore Backup'),
+                subtitle: const Text(
+                  'Restore study data from a JSON backup file',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showImportConfirmation(context, ref);
+                },
+              ),
+              const Divider(indent: 16, endIndent: 16),
+              Consumer(
+                builder: (context, ref, child) {
+                  final jlptLevel = ref.watch(jlptLevelProvider);
+                  return ListTile(
+                    leading: const Icon(
+                      Icons.filter_list_rounded,
+                      color: AppColors.sakura,
+                    ),
+                    title: const Text('JLPT Filter (Hide Known Words)'),
+                    subtitle: Text(
+                      jlptLevel == 'none'
+                          ? 'Showing all words'
+                          : 'Hiding words below $jlptLevel',
+                    ),
+                    trailing: DropdownButton<String>(
+                      value: jlptLevel,
+                      underline: const SizedBox.shrink(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref
+                              .read(jlptLevelProvider.notifier)
+                              .setLevel(value);
+                        }
+                      },
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'none',
+                          child: Text('Show All'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'N5',
+                          child: Text('N5 Level'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'N4',
+                          child: Text('N4 Level'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'N3',
+                          child: Text('N3 Level'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'N2',
+                          child: Text('N2 Level'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'N1',
+                          child: Text('N1 Level'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              Consumer(
+                builder: (context, ref, child) {
+                  final autoPlay = ref.watch(ttsAutoplayProvider);
+                  return SwitchListTile(
+                    secondary: const Icon(
+                      Icons.volume_up_rounded,
+                      color: AppColors.sakura,
+                    ),
+                    title: const Text('Auto-Play Pronunciation'),
+                    subtitle: const Text('Speak word when card is flipped'),
+                    activeColor: AppColors.sakura,
+                    value: autoPlay,
+                    onChanged: (value) {
+                      ref
+                          .read(ttsAutoplayProvider.notifier)
+                          .setAutoplay(value);
+                    },
                   );
                 },
               ),
@@ -428,8 +570,7 @@ class _HomePageState extends ConsumerState<HomePage>
                                 );
                               },
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Row(
                                     mainAxisAlignment:
@@ -480,8 +621,7 @@ class _HomePageState extends ConsumerState<HomePage>
                                     decoration: InputDecoration(
                                       labelText: l10n.songTitleLabel,
                                       hintText: l10n.songTitleHint,
-                                      prefixIcon:
-                                          const Icon(Icons.music_note),
+                                      prefixIcon: const Icon(Icons.music_note),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -542,8 +682,7 @@ class _HomePageState extends ConsumerState<HomePage>
                                       ),
                                       decoration: BoxDecoration(
                                         color: AppColors.surfaceLight,
-                                        borderRadius:
-                                            BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
                                           color: AppColors.border,
                                         ),
@@ -656,13 +795,10 @@ class _HomePageState extends ConsumerState<HomePage>
                                       children: [
                                         Text(
                                           l10n.recentAnalysisTitle,
-                                          style: theme
-                                              .textTheme
-                                              .headlineSmall
+                                          style: theme.textTheme.headlineSmall
                                               ?.copyWith(
                                                 fontFamily: 'Serif',
-                                                color:
-                                                    AppColors.textSecondary,
+                                                color: AppColors.textSecondary,
                                               ),
                                         ),
                                       ],
@@ -716,11 +852,10 @@ class _HomePageState extends ConsumerState<HomePage>
                                           );
                                         },
                                         child: Padding(
-                                          padding:
-                                              const EdgeInsets.symmetric(
-                                                horizontal: 24,
-                                                vertical: 8,
-                                              ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 8,
+                                          ),
                                           child: Container(
                                             decoration: BoxDecoration(
                                               borderRadius:
@@ -732,8 +867,7 @@ class _HomePageState extends ConsumerState<HomePage>
                                                         alpha: 0.06,
                                                       ),
                                                   blurRadius: 10,
-                                                  offset:
-                                                      const Offset(0, 4),
+                                                  offset: const Offset(0, 4),
                                                 ),
                                               ],
                                             ),
@@ -744,11 +878,10 @@ class _HomePageState extends ConsumerState<HomePage>
                                               clipBehavior: Clip.antiAlias,
                                               child: ListTile(
                                                 contentPadding:
-                                                    const EdgeInsets
-                                                        .symmetric(
-                                                          horizontal: 24,
-                                                          vertical: 12,
-                                                        ),
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 24,
+                                                      vertical: 12,
+                                                    ),
                                                 hoverColor: AppColors.sakura
                                                     .withValues(alpha: 0.1),
                                                 splashColor: AppColors.sakura
@@ -765,8 +898,7 @@ class _HomePageState extends ConsumerState<HomePage>
                                                 ),
                                                 subtitle: Column(
                                                   crossAxisAlignment:
-                                                      CrossAxisAlignment
-                                                          .start,
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     const SizedBox(height: 4),
                                                     Text(
@@ -776,14 +908,15 @@ class _HomePageState extends ConsumerState<HomePage>
                                                           .textTheme
                                                           .bodyMedium
                                                           ?.copyWith(
-                                                            color:
-                                                                AppColors
-                                                                    .sakura,
+                                                            color: AppColors
+                                                                .sakura,
                                                           ),
                                                     ),
-                                                    if (item.vocabs
+                                                    if (item
+                                                            .vocabs
                                                             .isNotEmpty ||
-                                                        item.kanji
+                                                        item
+                                                            .kanji
                                                             .isNotEmpty) ...[
                                                       const SizedBox(
                                                         height: 6,
@@ -833,8 +966,9 @@ class _HomePageState extends ConsumerState<HomePage>
                                         height: 80,
                                         decoration: BoxDecoration(
                                           color: AppColors.surfaceLight,
-                                          borderRadius:
-                                              BorderRadius.circular(15),
+                                          borderRadius: BorderRadius.circular(
+                                            15,
+                                          ),
                                         ),
                                       ),
                                     ),

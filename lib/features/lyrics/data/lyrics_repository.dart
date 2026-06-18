@@ -587,8 +587,7 @@ class LyricsRepository {
 
         final plainLyrics = match['plainLyrics'] as String?;
         final syncedLyrics = match['syncedLyrics'] as String?;
-
-        return (plainLyrics?.isNotEmpty ?? false) ? plainLyrics : syncedLyrics;
+        return (syncedLyrics?.isNotEmpty ?? false) ? syncedLyrics : plainLyrics;
       } else {
         debugPrint(
           '[LRCLIB] Error Response: ${response.statusCode} - ${response.body}',

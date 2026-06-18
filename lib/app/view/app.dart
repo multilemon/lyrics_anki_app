@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyrics_anki_app/app/view/splash_helper/splash_helper.dart';
 import 'package:lyrics_anki_app/core/routes/app_router.dart';
 import 'package:lyrics_anki_app/core/theme/app_theme.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
-import 'package:web/web.dart' as web;
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -21,14 +21,7 @@ class _AppState extends ConsumerState<App> {
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Remove skeleton loader and splash screen after the first frame
-        try {
-          web.document.getElementById('app_skeleton')?.remove();
-          web.document.getElementById('splash')?.remove();
-          web.document.getElementById('splash-branding')?.remove();
-          web.document.body?.style.background = 'transparent';
-        } catch (_) {
-          // Ignore
-        }
+        removeSplash();
       });
     }
   }

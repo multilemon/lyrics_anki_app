@@ -48,6 +48,12 @@ class HiveSrsRepository implements SrsRepository {
   }
 
   @override
+  Future<void> clearAll() async {
+    await _box.clear();
+    _emitCurrent();
+  }
+
+  @override
   Map<String, dynamic> getStats() {
     final cards = getAllCards();
     final now = DateTime.now();

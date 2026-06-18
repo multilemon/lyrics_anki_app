@@ -7,17 +7,23 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/result_card
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_list_item.dart';
 // Add more imports as needed
 
-class KanjiList extends StatefulWidget {
-  const KanjiList(
-      {required this.kanjiList, required this.isLoading, super.key,});
+import 'package:lyrics_anki_app/core/utils/jlpt_utils.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/jlpt_level_notifier.dart';
+
+class KanjiList extends ConsumerStatefulWidget {
+  const KanjiList({
+    required this.kanjiList,
+    required this.isLoading,
+    super.key,
+  });
   final List<Kanji> kanjiList;
   final bool isLoading;
 
   @override
-  State<KanjiList> createState() => KanjiListState();
+  ConsumerState<KanjiList> createState() => KanjiListState();
 }
 
-class KanjiListState extends State<KanjiList>
+class KanjiListState extends ConsumerState<KanjiList>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -26,8 +32,17 @@ class KanjiListState extends State<KanjiList>
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
+    final jlptLevel = ref.watch(jlptLevelProvider);
 
-    if (widget.kanjiList.isEmpty) {
+    final filteredItems = <MapEntry<int, Kanji>>[];
+    for (var i = 0; i < widget.kanjiList.length; i++) {
+      final kanji = widget.kanjiList[i];
+      if (shouldShowJlpt(kanji.level, jlptLevel)) {
+        filteredItems.add(MapEntry(i, kanji));
+      }
+    }
+
+    if (filteredItems.isEmpty) {
       if (widget.isLoading) {
         return const Center(
           child: CircularProgressIndicator(color: AppColors.textPrimary),
@@ -36,8 +51,9 @@ class KanjiListState extends State<KanjiList>
       return Center(
         child: Text(
           'No kanji found.',
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(color: AppColors.textTertiary),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textTertiary,
+          ),
         ),
       );
     }
@@ -45,13 +61,14 @@ class KanjiListState extends State<KanjiList>
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
-      itemCount: widget.kanjiList.length,
+      itemCount: filteredItems.length,
       itemBuilder: (context, index) {
+        final entry = filteredItems[index];
         return StaggeredListItem(
           index: index,
           child: KanjiItem(
-            index: index,
-            kanji: widget.kanjiList[index],
+            index: entry.key,
+            kanji: entry.value,
           ),
         );
       },

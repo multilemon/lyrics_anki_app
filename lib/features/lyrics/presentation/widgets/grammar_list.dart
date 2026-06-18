@@ -7,17 +7,23 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/result_card
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_list_item.dart';
 // Add more imports as needed
 
-class GrammarList extends StatefulWidget {
-  const GrammarList(
-      {required this.grammarList, required this.isLoading, super.key,});
+import 'package:lyrics_anki_app/core/utils/jlpt_utils.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/jlpt_level_notifier.dart';
+
+class GrammarList extends ConsumerStatefulWidget {
+  const GrammarList({
+    required this.grammarList,
+    required this.isLoading,
+    super.key,
+  });
   final List<Grammar> grammarList;
   final bool isLoading;
 
   @override
-  State<GrammarList> createState() => GrammarListState();
+  ConsumerState<GrammarList> createState() => GrammarListState();
 }
 
-class GrammarListState extends State<GrammarList>
+class GrammarListState extends ConsumerState<GrammarList>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -26,8 +32,17 @@ class GrammarListState extends State<GrammarList>
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
+    final jlptLevel = ref.watch(jlptLevelProvider);
 
-    if (widget.grammarList.isEmpty) {
+    final filteredItems = <MapEntry<int, Grammar>>[];
+    for (var i = 0; i < widget.grammarList.length; i++) {
+      final grammar = widget.grammarList[i];
+      if (shouldShowJlpt(grammar.level, jlptLevel)) {
+        filteredItems.add(MapEntry(i, grammar));
+      }
+    }
+
+    if (filteredItems.isEmpty) {
       if (widget.isLoading) {
         return const Center(
           child: CircularProgressIndicator(color: AppColors.matcha),
@@ -36,8 +51,9 @@ class GrammarListState extends State<GrammarList>
       return Center(
         child: Text(
           'No grammar points found.',
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(color: AppColors.textTertiary),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textTertiary,
+          ),
         ),
       );
     }
@@ -45,13 +61,14 @@ class GrammarListState extends State<GrammarList>
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16),
       cacheExtent: 100,
-      itemCount: widget.grammarList.length,
+      itemCount: filteredItems.length,
       itemBuilder: (context, index) {
+        final entry = filteredItems[index];
         return StaggeredListItem(
           index: index,
           child: GrammarItem(
-            index: index,
-            grammar: widget.grammarList[index],
+            index: entry.key,
+            grammar: entry.value,
           ),
         );
       },
