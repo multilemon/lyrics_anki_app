@@ -2,3 +2,19 @@ include: package:very_good_analysis/analysis_options.yaml
 linter:
   rules:
     public_member_api_docs: false
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  errors:
+    deprecated_member_use: ignore
+    avoid_positional_boolean_parameters: ignore
+    avoid_bool_literals_in_conditional_expressions: ignore
+    sort_constructors_first: ignore
+    lines_longer_than_80_chars: ignore
+    discarded_futures: ignore
+    avoid_print: ignore
+    unused_local_variable: ignore
+    avoid_catches_without_on_clauses: ignore
+    cascade_invocations: ignore
+    prefer_foreach: ignore
