@@ -70,35 +70,38 @@ void main() {
       expect(back, contains('<br>[Generic cat]'));
     });
 
-    test('shows furigana on front if level is higher than user level',
-        () async {
-      final vocabs = [
-        Vocab(
-          word: '難しい',
-          reading: 'むずかしい',
-          partOfSpeech: 'Adj-i',
-          meaning: 'Difficult',
-          jlptV: 'N3',
-          jlptK: 'N3',
-          context: '',
-          nuanceNote: '',
-        ),
-      ];
+    test(
+      'shows furigana on front if level is higher than user level',
+      () async {
+        final vocabs = [
+          Vocab(
+            word: '難しい',
+            reading: 'むずかしい',
+            partOfSpeech: 'Adj-i',
+            meaning: 'Difficult',
+            jlptV: 'N3',
+            jlptK: 'N3',
+            context: '',
+            nuanceNote: '',
+          ),
+        ];
 
-      final result = await service.generateCsv(
-        vocabs: vocabs,
-        songTitle: 'S',
-        artist: 'A',
-        userLevel: 'N5', // N3 > N5, so show reading
-      );
+        final result = await service.generateCsv(
+          vocabs: vocabs,
+          songTitle: 'S',
+          artist: 'A',
+          userLevel: 'N5', // N3 > N5, so show reading
+        );
 
-      final vocabLine =
-          result.split('\n').firstWhere((l) => l.contains('[Vocab]'));
-      final parts = vocabLine.split('\t');
+        final vocabLine = result
+            .split('\n')
+            .firstWhere((l) => l.contains('[Vocab]'));
+        final parts = vocabLine.split('\t');
 
-      // Front should have reading in small tag next to word
-      expect(parts[0], '<b>難しい</b> <small>むずかしい</small>');
-    });
+        // Front should have reading in small tag next to word
+        expect(parts[0], '<b>難しい</b> <small>むずかしい</small>');
+      },
+    );
 
     test('formats grammar correctly', () async {
       final grammar = [
@@ -116,8 +119,9 @@ void main() {
         artist: 'A',
       );
 
-      final line =
-          result.split('\n').firstWhere((l) => l.contains('[Grammar]'));
+      final line = result
+          .split('\n')
+          .firstWhere((l) => l.contains('[Grammar]'));
       final parts = line.split('\t');
 
       expect(parts[0], '<b>〜てはいけない</b>');

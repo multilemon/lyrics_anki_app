@@ -39,7 +39,8 @@ void main() {
     });
 
     test('parseAnalysisResult handles empty vocab list', () async {
-      const jsonString = '{"song":{"title":"T","artist":"A"},'
+      const jsonString =
+          '{"song":{"title":"T","artist":"A"},'
           '"vocab":[],"grammar":[],"kanji":[]}';
 
       final result = await repository.parseAnalysisResult(jsonString);

@@ -333,9 +333,7 @@ class _HomePageState extends ConsumerState<HomePage>
                       underline: const SizedBox.shrink(),
                       onChanged: (value) {
                         if (value != null) {
-                          ref
-                              .read(jlptLevelProvider.notifier)
-                              .setLevel(value);
+                          ref.read(jlptLevelProvider.notifier).setLevel(value);
                         }
                       },
                       items: const [
@@ -381,9 +379,7 @@ class _HomePageState extends ConsumerState<HomePage>
                     activeColor: AppColors.sakura,
                     value: autoPlay,
                     onChanged: (value) {
-                      ref
-                          .read(ttsAutoplayProvider.notifier)
-                          .setAutoplay(value);
+                      ref.read(ttsAutoplayProvider.notifier).setAutoplay(value);
                     },
                   );
                 },

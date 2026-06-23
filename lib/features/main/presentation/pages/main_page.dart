@@ -76,24 +76,27 @@ class _MainPageState extends ConsumerState<MainPage>
 
     final pages = [
       HomePage(
-        onNavigateToAnalyze: (
-          title,
-          artist,
-          language, {
-          customLyrics,
-        }) {
-          unawaited(_switchTab(1));
-          // Clear any previous selection state
-          ref.read(selectionManagerProvider.notifier).clear();
-          unawaited(
-            ref.read(lyricsProvider.notifier).analyzeSong(
-                  title,
-                  artist,
-                  language,
-                  customLyrics: customLyrics,
-                ),
-          );
-        },
+        onNavigateToAnalyze:
+            (
+              title,
+              artist,
+              language, {
+              customLyrics,
+            }) {
+              unawaited(_switchTab(1));
+              // Clear any previous selection state
+              ref.read(selectionManagerProvider.notifier).clear();
+              unawaited(
+                ref
+                    .read(lyricsProvider.notifier)
+                    .analyzeSong(
+                      title,
+                      artist,
+                      language,
+                      customLyrics: customLyrics,
+                    ),
+              );
+            },
         onHistoryItemClick: (item) {
           unawaited(_switchTab(1));
           // Clear any previous selection state
@@ -109,15 +112,16 @@ class _MainPageState extends ConsumerState<MainPage>
       body: FadeTransition(
         opacity: _fadeController,
         child: ScaleTransition(
-          scale: Tween<double>(
-            begin: 0.97,
-            end: 1,
-          ).animate(
-            CurvedAnimation(
-              parent: _fadeController,
-              curve: Curves.easeOut,
-            ),
-          ),
+          scale:
+              Tween<double>(
+                begin: 0.97,
+                end: 1,
+              ).animate(
+                CurvedAnimation(
+                  parent: _fadeController,
+                  curve: Curves.easeOut,
+                ),
+              ),
           child: IndexedStack(
             index: currentIndex,
             children: pages,

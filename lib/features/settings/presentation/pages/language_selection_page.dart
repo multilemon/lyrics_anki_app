@@ -32,8 +32,7 @@ class LanguageSelectionPage extends ConsumerWidget {
             label: 'English',
             value: const Locale('en'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: '简体中文 (Chinese Simplified)',
@@ -42,8 +41,7 @@ class LanguageSelectionPage extends ConsumerWidget {
               scriptCode: 'Hans',
             ),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: '繁體中文 (Chinese Traditional)',
@@ -52,71 +50,61 @@ class LanguageSelectionPage extends ConsumerWidget {
               scriptCode: 'Hant',
             ),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Bahasa Indonesia (Indonesian)',
             value: const Locale('id'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: '日本語 (Japanese)',
             value: const Locale('ja'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: '한국어 (Korean)',
             value: const Locale('ko'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'မြန်မာ (Myanmar)',
             value: const Locale('my'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Русский (Russian)',
             value: const Locale('ru'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Español (Spanish)',
             value: const Locale('es'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'ไทย (Thai)',
             value: const Locale('th'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Oʻzbek (Uzbek)',
             value: const Locale('uz'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
           _LanguageTile(
             label: 'Tiếng Việt (Vietnamese)',
             value: const Locale('vi'),
             groupValue: currentLocale,
-            onChanged: (v) =>
-                ref.read(localeProvider.notifier).setLocale(v),
+            onChanged: (v) => ref.read(localeProvider.notifier).setLocale(v),
           ),
         ],
       ),
@@ -140,7 +128,8 @@ class _LanguageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Compare logic: check scriptCode if present, else languageCode
-    final isSelected = value.languageCode == groupValue.languageCode &&
+    final isSelected =
+        value.languageCode == groupValue.languageCode &&
         value.scriptCode == groupValue.scriptCode;
 
     return RadioListTile<Locale>(

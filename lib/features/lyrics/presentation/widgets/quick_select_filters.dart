@@ -4,6 +4,7 @@ import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
+
 class QuickSelectFilters extends ConsumerWidget {
   const QuickSelectFilters({super.key});
 
@@ -15,106 +16,95 @@ class QuickSelectFilters extends ConsumerWidget {
     }
     final data = analysis;
 
-                          bool isLevelSelected(String level) {
-                            final selected =
-                                ref.watch(selectionManagerProvider);
+    bool isLevelSelected(String level) {
+      final selected = ref.watch(selectionManagerProvider);
 
-                            // JLPT Check
-                            final vocabIndices = <int>[];
-                            for (var i = 0; i < data.vocabs.length; i++) {
-                              if (data.vocabs[i].jlptV.trim().toUpperCase() ==
-                                  level.toUpperCase()) {
-                                vocabIndices.add(i);
-                              }
-                            }
+      // JLPT Check
+      final vocabIndices = <int>[];
+      for (var i = 0; i < data.vocabs.length; i++) {
+        if (data.vocabs[i].jlptV.trim().toUpperCase() == level.toUpperCase()) {
+          vocabIndices.add(i);
+        }
+      }
 
-                            final grammarIndices = <int>[];
-                            for (var i = 0; i < data.grammar.length; i++) {
-                              if (data.grammar[i].level.trim().toUpperCase() ==
-                                  level.toUpperCase()) {
-                                grammarIndices.add(i);
-                              }
-                            }
+      final grammarIndices = <int>[];
+      for (var i = 0; i < data.grammar.length; i++) {
+        if (data.grammar[i].level.trim().toUpperCase() == level.toUpperCase()) {
+          grammarIndices.add(i);
+        }
+      }
 
-                            final kanjiIndices = <int>[];
-                            for (var i = 0; i < data.kanji.length; i++) {
-                              if (data.kanji[i].level.trim().toUpperCase() ==
-                                  level.toUpperCase()) {
-                                kanjiIndices.add(i);
-                              }
-                            }
+      final kanjiIndices = <int>[];
+      for (var i = 0; i < data.kanji.length; i++) {
+        if (data.kanji[i].level.trim().toUpperCase() == level.toUpperCase()) {
+          kanjiIndices.add(i);
+        }
+      }
 
-                            if (vocabIndices.isEmpty &&
-                                grammarIndices.isEmpty &&
-                                kanjiIndices.isEmpty) {
-                              return false;
-                            }
+      if (vocabIndices.isEmpty &&
+          grammarIndices.isEmpty &&
+          kanjiIndices.isEmpty) {
+        return false;
+      }
 
-                            final vocabSelected = vocabIndices
-                                .every(selected.vocabIndices.contains);
-                            final grammarSelected = grammarIndices
-                                    .every(selected.grammarIndices.contains);
-                            final kanjiSelected = kanjiIndices
-                                .every(selected.kanjiIndices.contains);
+      final vocabSelected = vocabIndices.every(selected.vocabIndices.contains);
+      final grammarSelected = grammarIndices.every(
+        selected.grammarIndices.contains,
+      );
+      final kanjiSelected = kanjiIndices.every(selected.kanjiIndices.contains);
 
-                            return vocabSelected &&
-                                grammarSelected &&
-                                kanjiSelected;
-                          }
+      return vocabSelected && grammarSelected && kanjiSelected;
+    }
 
-                          bool isAllSelected() {
-                            final selected =
-                                ref.watch(selectionManagerProvider);
+    bool isAllSelected() {
+      final selected = ref.watch(selectionManagerProvider);
 
-                            final hasVocab = data.vocabs.isNotEmpty;
-                            final hasGrammar = data.grammar.isNotEmpty;
-                            final hasKanji = data.kanji.isNotEmpty;
+      final hasVocab = data.vocabs.isNotEmpty;
+      final hasGrammar = data.grammar.isNotEmpty;
+      final hasKanji = data.kanji.isNotEmpty;
 
-                            if (!hasVocab && !hasGrammar && !hasKanji) {
-                              return false;
-                            }
+      if (!hasVocab && !hasGrammar && !hasKanji) {
+        return false;
+      }
 
-                            final vocabAll = selected.vocabIndices.length ==
-                                data.vocabs.length;
-                            final grammarAll = selected.grammarIndices.length ==
-                                data.grammar.length;
-                            final kanjiAll = selected.kanjiIndices.length ==
-                                data.kanji.length;
+      final vocabAll = selected.vocabIndices.length == data.vocabs.length;
+      final grammarAll = selected.grammarIndices.length == data.grammar.length;
+      final kanjiAll = selected.kanjiIndices.length == data.kanji.length;
 
-                            return vocabAll && grammarAll && kanjiAll;
-                          }
+      return vocabAll && grammarAll && kanjiAll;
+    }
 
-                          final presentLevels = <String>{};
-                          var hasOther = false;
+    final presentLevels = <String>{};
+    var hasOther = false;
 
-                          final targetLevels = ['N1', 'N2', 'N3', 'N4', 'N5'];
+    final targetLevels = ['N1', 'N2', 'N3', 'N4', 'N5'];
 
-                          void checkLevels(
-                            List<dynamic> items,
-                            String Function(dynamic) getLevel,
-                          ) {
-                            for (final item in items) {
-                              final lvl = getLevel(item).trim().toUpperCase();
-                              if (targetLevels.contains(lvl)) {
-                                presentLevels.add(lvl);
-                              } else {
-                                hasOther = true;
-                              }
-                            }
-                          }
+    void checkLevels(
+      List<dynamic> items,
+      String Function(dynamic) getLevel,
+    ) {
+      for (final item in items) {
+        final lvl = getLevel(item).trim().toUpperCase();
+        if (targetLevels.contains(lvl)) {
+          presentLevels.add(lvl);
+        } else {
+          hasOther = true;
+        }
+      }
+    }
 
-                          checkLevels(
-                            data.vocabs,
-                            (d) => (d as Vocab).jlptV,
-                          );
-                          checkLevels(
-                            data.grammar,
-                            (d) => (d as Grammar).level,
-                          );
-                          checkLevels(
-                            data.kanji,
-                            (d) => (d as Kanji).level,
-                          );
+    checkLevels(
+      data.vocabs,
+      (d) => (d as Vocab).jlptV,
+    );
+    checkLevels(
+      data.grammar,
+      (d) => (d as Grammar).level,
+    );
+    checkLevels(
+      data.kanji,
+      (d) => (d as Kanji).level,
+    );
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -191,36 +181,36 @@ class QuickSelectFilters extends ConsumerWidget {
                 return vocabAll && grammarAll && kanjiAll;
               })(),
               onChanged: (val) {
-                  final targetIndices = <int>[];
-                  for (var i = 0; i < data.vocabs.length; i++) {
-                    final lvl = data.vocabs[i].jlptV.trim().toUpperCase();
-                    if (!targetLevels.contains(lvl)) {
-                      targetIndices.add(i);
-                    }
+                final targetIndices = <int>[];
+                for (var i = 0; i < data.vocabs.length; i++) {
+                  final lvl = data.vocabs[i].jlptV.trim().toUpperCase();
+                  if (!targetLevels.contains(lvl)) {
+                    targetIndices.add(i);
                   }
-                  for (final idx in targetIndices) {
+                }
+                for (final idx in targetIndices) {
+                  ref
+                      .read(selectionManagerProvider.notifier)
+                      .toggle(SelectionType.vocab, idx, force: val);
+                }
+
+                for (var i = 0; i < data.grammar.length; i++) {
+                  final lvl = data.grammar[i].level.trim().toUpperCase();
+                  if (!targetLevels.contains(lvl)) {
                     ref
                         .read(selectionManagerProvider.notifier)
-                        .toggle(SelectionType.vocab, idx, force: val);
+                        .toggle(SelectionType.grammar, i, force: val);
                   }
+                }
 
-                  for (var i = 0; i < data.grammar.length; i++) {
-                    final lvl = data.grammar[i].level.trim().toUpperCase();
-                    if (!targetLevels.contains(lvl)) {
-                      ref
-                          .read(selectionManagerProvider.notifier)
-                          .toggle(SelectionType.grammar, i, force: val);
-                    }
+                for (var i = 0; i < data.kanji.length; i++) {
+                  final lvl = data.kanji[i].level.trim().toUpperCase();
+                  if (!targetLevels.contains(lvl)) {
+                    ref
+                        .read(selectionManagerProvider.notifier)
+                        .toggle(SelectionType.kanji, i, force: val);
                   }
-
-                  for (var i = 0; i < data.kanji.length; i++) {
-                    final lvl = data.kanji[i].level.trim().toUpperCase();
-                    if (!targetLevels.contains(lvl)) {
-                      ref
-                          .read(selectionManagerProvider.notifier)
-                          .toggle(SelectionType.kanji, i, force: val);
-                    }
-                  }
+                }
               },
             ),
         ],
@@ -231,7 +221,10 @@ class QuickSelectFilters extends ConsumerWidget {
 
 class FilterChip extends StatelessWidget {
   const FilterChip({
-    required this.label, required this.value, required this.onChanged, super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    super.key,
   });
 
   final String label;

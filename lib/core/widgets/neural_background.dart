@@ -98,12 +98,16 @@ class _NeuralNode {
   final double speedMult;
 
   double getX(double t) =>
-      (baseX + sin(2 * pi * (t * speedMult * 0.4 + phaseX)) * amplitudeX)
-          .clamp(0.02, 0.98);
+      (baseX + sin(2 * pi * (t * speedMult * 0.4 + phaseX)) * amplitudeX).clamp(
+        0.02,
+        0.98,
+      );
 
   double getY(double t) =>
-      (baseY + cos(2 * pi * (t * speedMult * 0.3 + phaseY)) * amplitudeY)
-          .clamp(0.02, 0.98);
+      (baseY + cos(2 * pi * (t * speedMult * 0.3 + phaseY)) * amplitudeY).clamp(
+        0.02,
+        0.98,
+      );
 
   /// Smooth pulsation value in [0, 1].
   double getPulse(double t) =>
