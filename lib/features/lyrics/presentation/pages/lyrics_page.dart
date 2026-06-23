@@ -48,7 +48,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
 
   @override
   Widget build(BuildContext context) {
-    const tabCount = 4;
+    const tabCount = 5;
 
     return DefaultTabController(
       length: tabCount,

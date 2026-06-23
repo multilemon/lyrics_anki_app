@@ -66,6 +66,7 @@ class LyricsRepository {
           artist: cachedItem.artist,
           lyrics: cachedItem.lyrics ?? '',
           youtubeId: cachedItem.youtubeId,
+          verses: cachedItem.verses,
         );
         return;
       }
@@ -192,6 +193,7 @@ class LyricsRepository {
         artist: officialArtist ?? artist,
         lyrics: lyricsToAnalyze,
         youtubeId: refinedYoutubeId,
+        verses: parsedPart.verses,
       );
 
       unawaited(
@@ -253,7 +255,8 @@ class LyricsRepository {
           ..grammar = result.grammar
           ..kanji = result.kanji
           ..youtubeId = result.youtubeId
-          ..lyrics = result.lyrics;
+          ..lyrics = result.lyrics
+          ..verses = result.verses;
 
     await saveToHistory(item);
   }
@@ -357,6 +360,12 @@ class LyricsRepository {
         kanji.addAll(list.map((e) => _mapToKanji(e)));
       }
 
+      final verses = <LyricVerse>[];
+      if (parsed.containsKey('verses')) {
+        final list = parsed['verses'] as List<dynamic>;
+        verses.addAll(list.map((e) => _mapToLyricVerse(e)));
+      }
+
       var songTitle = '';
       var artistName = '';
 
@@ -375,6 +384,7 @@ class LyricsRepository {
         song: songTitle,
         artist: artistName,
         lyrics: parsed['lyrics']?.toString() ?? '',
+        verses: verses,
       );
     } on Exception catch (_) {
       throw const FormatException(
@@ -480,6 +490,23 @@ class LyricsRepository {
     if (index < 0 || index >= list.length) return '';
     final val = list[index];
     return val?.toString() ?? '';
+  }
+
+  static LyricVerse _mapToLyricVerse(dynamic data) {
+    if (data is List<dynamic>) {
+      return LyricVerse(
+        original: _safeString(data, 0),
+        translation: _safeString(data, 1),
+        nuance: _safeString(data, 2),
+      );
+    } else if (data is Map<String, dynamic>) {
+      return LyricVerse(
+        original: data['original']?.toString() ?? '',
+        translation: data['translation']?.toString() ?? '',
+        nuance: data['nuance']?.toString() ?? '',
+      );
+    }
+    return LyricVerse(original: '', translation: '', nuance: '');
   }
 
   String _extractJson(String text) {
@@ -607,6 +634,7 @@ JP Linguistic Data Engineer. Analyze lyrics→JSON.
 1. Verify lyrics are primarily Japanese. If NO: {"error":"NOT_JAPANESE"}
 1b. Verify song exists. If NO: {"error":"NOT_FOUND"}
 2. Extract atomic vocab, functional grammar, exhaustive kanji.
+3. Split lyrics into logical verses and translate each verse.
 
 Rules:
 - All meanings/explanations/context/nuance in $targetLanguage, formal linguistics (e.g. "Intransitive Verb").
@@ -615,10 +643,12 @@ Rules:
 - Kanji: 1 char/entry, no okurigana. level=JLPT(N5-N1). Meanings: all defs in $targetLanguage. Readings: On(カタカナ)|Kun(ひらがな) e.g. "コウ|のど". No transliterations.
 - JLPT kanji calibration (STRICT): N5=日,本,人,大. N4=広,写,病,死. N3=悲,届,相,湖. N2=涙,瞳,濡,溢. N1=輝,叶,儚,慟. Ref community-standard JLPT lists. Songs often contain N2/N1 kanji—do NOT default lower.
 - Every kanji in vocab/grammar must appear in kanji list. No duplicates.
-- CRITICAL JSON FORMAT: You MUST output an Array-of-Arrays for vocab, grammar, and kanji (e.g. `[["val1", "val2"]]`). DO NOT output Array-of-Objects (`[{"key":"val"}]`). This is strictly required to minimize tokens.
+- Verses: Split lyrics into logical verses (intro/verse/chorus/bridge/outro). For each verse provide: original Japanese text (preserve line breaks), natural translation in $targetLanguage, and a nuance note explaining metaphors, wordplay, cultural references, double meanings, poetic devices, or register shifts. Keep verse boundaries at natural musical phrase breaks.
+- CRITICAL JSON FORMAT: You MUST output an Array-of-Arrays for vocab, grammar, kanji, and verses (e.g. `[["val1", "val2"]]`). DO NOT output Array-of-Objects (`[{"key":"val"}]`). This is strictly required to minimize tokens.
 
 Schema:
-{"song":{"title":"","artist":"","target_language":""},"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],"grammar":[["point","level","explanation","usage"]],"kanji":[["char","level","meanings","readings"]]}
+{"song":{"title":"","artist":"","target_language":""},"vocab":[["word","reading","meaning","jlpt_v","jlpt_k","context","nuance_note"]],"grammar":[["point","level","explanation","usage"]],"kanji":[["char","level","meanings","readings"]],"verses":[["original_jp_verse","translation","nuance_explanation"]]}
 Example vocab entry: ["喉奥","のどおく","deep in the throat","Noun","N1","N2","Poetic compound of 喉+奥"]
+Example verse entry: ["誰もいない部屋で\n一人きりの夜","In an empty room\na night all alone","Sets a melancholic tone of solitude (孤独). '一人きり' emphasizes 'completely alone' — stronger than plain '一人'."]
 ''';
 }

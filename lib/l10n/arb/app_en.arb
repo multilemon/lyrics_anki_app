@@ -260,5 +260,17 @@
     "noWordsToExport": "No words to export. Please select at least one category.",
     "@noWordsToExport": {
         "description": "Message when no words are available for export"
+    },
+    "translationTab": "Translation",
+    "@translationTab": {
+        "description": "Label for the Translation tab in the analysis results"
+    },
+    "nuanceExplanation": "Nuance & Interpretation",
+    "@nuanceExplanation": {
+        "description": "Label for the expandable nuance section in translation view"
+    },
+    "noTranslationAvailable": "Translation not available for this song. Try re-analyzing to generate verse translations.",
+    "@noTranslationAvailable": {
+        "description": "Message when no verse translations are available"
     }
 }

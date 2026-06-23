@@ -501,6 +501,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No words to export. Please select at least one category.'**
   String get noWordsToExport;
+
+  /// Label for the Translation tab in the analysis results
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get translationTab;
+
+  /// Label for the expandable nuance section in translation view
+  ///
+  /// In en, this message translates to:
+  /// **'Nuance & Interpretation'**
+  String get nuanceExplanation;
+
+  /// Message when no verse translations are available
+  ///
+  /// In en, this message translates to:
+  /// **'Translation not available for this song. Try re-analyzing to generate verse translations.'**
+  String get noTranslationAvailable;
 }
 
 class _AppLocalizationsDelegate

@@ -30,6 +30,12 @@ class LyricsTabBar extends ConsumerWidget {
         .where((k) => shouldShowJlpt(k.level, jlptLevel))
         .length;
 
+    // Verse count for translation tab
+    final verseCount = analysis.verses.length;
+    final translationLabel = verseCount > 0
+        ? '${context.l10n.translationTab} ($verseCount)'
+        : context.l10n.translationTab;
+
     // Prepare labels
     final vocabLabel = '${context.l10n.vocabTab} ($vocabCount)';
     final grammarLabel = '${context.l10n.grammarTab} ($grammarCount)';
@@ -39,8 +45,11 @@ class LyricsTabBar extends ConsumerWidget {
       labelColor: AppColors.sakura,
       unselectedLabelColor: AppColors.textSecondary,
       indicatorColor: AppColors.sakura,
+      isScrollable: true,
+      tabAlignment: TabAlignment.center,
       tabs: [
         Tab(text: context.l10n.lyricsTab),
+        Tab(text: translationLabel),
         Tab(text: vocabLabel),
         Tab(text: grammarLabel),
         Tab(text: kanjiLabel),

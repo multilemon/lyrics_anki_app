@@ -205,4 +205,14 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get noWordsToExport =>
       'ไม่มีคำศัพท์ที่จะส่งออก กรุณาเลือกอย่างน้อยหนึ่งหมวดหมู่';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }

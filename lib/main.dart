@@ -37,6 +37,7 @@ void main() async {
       ..registerAdapter(VocabAdapter())
       ..registerAdapter(GrammarAdapter())
       ..registerAdapter(KanjiAdapter())
+      ..registerAdapter(LyricVerseAdapter())
       ..registerAdapter(SrsCardAdapter());
 
     try {

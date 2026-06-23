@@ -206,4 +206,14 @@ class AppLocalizationsMy extends AppLocalizations {
   @override
   String get noWordsToExport =>
       'ပို့ရန် စကားလုံးမရှိပါ။ အနည်းဆုံး အမျိုးအစားတစ်ခုကို ရွေးချယ်ပါ။';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }
