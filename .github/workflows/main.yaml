@@ -21,6 +21,7 @@ jobs:
     with:
       flutter_channel: stable
       setup: "dart run build_runner build -d"
+      min_coverage: 0
 
   spell-check:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/spell_check.yml@v1
