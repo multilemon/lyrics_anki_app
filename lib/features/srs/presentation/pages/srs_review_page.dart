@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lyrics_anki_app/core/services/tts_service.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/tts_autoplay_notifier.dart';
 import 'package:lyrics_anki_app/features/srs/domain/entities/srs_card.dart';
 import 'package:lyrics_anki_app/features/srs/domain/services/srs_service.dart';
 import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
-import 'package:lyrics_anki_app/core/services/tts_service.dart';
-import 'package:lyrics_anki_app/features/settings/presentation/providers/tts_autoplay_notifier.dart';
 
 class SrsReviewPage extends ConsumerStatefulWidget {
   const SrsReviewPage({super.key});

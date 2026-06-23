@@ -54,7 +54,7 @@ class TranslationView extends StatelessWidget {
         bottom: 88,
       ),
       itemCount: verses.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) => _VerseCard(
         verse: verses[index],
         index: index,
@@ -69,8 +69,8 @@ class TranslationView extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: 4,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => Container(
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (_, _) => Container(
           height: 140,
           decoration: BoxDecoration(
             color: AppColors.surface,

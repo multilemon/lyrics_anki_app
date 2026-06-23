@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
+// Add more imports as needed
+
+import 'package:lyrics_anki_app/core/utils/jlpt_utils.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/result_card.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/staggered_list_item.dart';
-// Add more imports as needed
-
-import 'package:lyrics_anki_app/core/utils/jlpt_utils.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/jlpt_level_notifier.dart';
 
 class KanjiList extends ConsumerStatefulWidget {

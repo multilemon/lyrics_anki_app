@@ -8,9 +8,9 @@ import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 /// scan-glow sweeps left-to-right across the frontier of revealed text.
 class AnimatedRevealText extends StatefulWidget {
   const AnimatedRevealText({
-    super.key,
     required this.text,
     required this.style,
+    super.key,
     this.delay = Duration.zero,
     this.duration = const Duration(milliseconds: 900),
     this.textAlign = TextAlign.start,

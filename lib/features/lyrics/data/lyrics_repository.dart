@@ -345,25 +345,25 @@ class LyricsRepository {
       final vocabs = <Vocab>[];
       if (parsed.containsKey('vocab')) {
         final list = parsed['vocab'] as List<dynamic>;
-        vocabs.addAll(list.map((e) => _mapToVocab(e)));
+        vocabs.addAll(list.map(_mapToVocab));
       }
 
       final grammar = <Grammar>[];
       if (parsed.containsKey('grammar')) {
         final list = parsed['grammar'] as List<dynamic>;
-        grammar.addAll(list.map((e) => _mapToGrammar(e)));
+        grammar.addAll(list.map(_mapToGrammar));
       }
 
       final kanji = <Kanji>[];
       if (parsed.containsKey('kanji')) {
         final list = parsed['kanji'] as List<dynamic>;
-        kanji.addAll(list.map((e) => _mapToKanji(e)));
+        kanji.addAll(list.map(_mapToKanji));
       }
 
       final verses = <LyricVerse>[];
       if (parsed.containsKey('verses')) {
         final list = parsed['verses'] as List<dynamic>;
-        verses.addAll(list.map((e) => _mapToLyricVerse(e)));
+        verses.addAll(list.map(_mapToLyricVerse));
       }
 
       var songTitle = '';

@@ -197,7 +197,7 @@ class BackupService {
     input.type = 'file';
     input.accept = '.json';
 
-    input.onChange.listen((web.Event event) {
+    input.onChange.listen((event) {
       final files = input.files;
       if (files == null || files.length == 0) {
         completer.complete(null);
@@ -210,7 +210,7 @@ class BackupService {
       }
       final reader = web.FileReader();
       reader.readAsText(file);
-      reader.onLoadEnd.listen((web.Event _) {
+      reader.onLoadEnd.listen((_) {
         completer.complete(reader.result.toString());
       });
     });

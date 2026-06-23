@@ -18,10 +18,9 @@ import 'package:lyrics_anki_app/features/lyrics/data/lyrics_repository.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/lyrics_notifier.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/providers/paste_lyrics_provider.dart';
-import 'package:lyrics_anki_app/features/settings/presentation/providers/locale_notifier.dart';
-import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/jlpt_level_notifier.dart';
 import 'package:lyrics_anki_app/features/settings/presentation/providers/tts_autoplay_notifier.dart';
+import 'package:lyrics_anki_app/features/settings/presentation/providers/version_provider.dart';
 import 'package:lyrics_anki_app/features/srs/presentation/providers/srs_review_notifier.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -244,7 +243,7 @@ class _HomePageState extends ConsumerState<HomePage>
       ),
     );
 
-    if (confirmed == true && context.mounted) {
+    if ((confirmed ?? false) && context.mounted) {
       await BackupService.importBackup(context, ref);
     }
   }
@@ -376,7 +375,7 @@ class _HomePageState extends ConsumerState<HomePage>
                     ),
                     title: const Text('Auto-Play Pronunciation'),
                     subtitle: const Text('Speak word when card is flipped'),
-                    activeColor: AppColors.sakura,
+                    activeThumbColor: AppColors.sakura,
                     value: autoPlay,
                     onChanged: (value) {
                       ref.read(ttsAutoplayProvider.notifier).setAutoplay(value);

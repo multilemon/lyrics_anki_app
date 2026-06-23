@@ -58,7 +58,7 @@ class _NeuralNetworkBackgroundState extends State<NeuralNetworkBackground>
     return IgnorePointer(
       child: AnimatedBuilder(
         animation: _controller,
-        builder: (_, __) => CustomPaint(
+        builder: (_, _) => CustomPaint(
           painter: _NeuralPainter(
             nodes: _nodes,
             t: _controller.value,
@@ -122,7 +122,7 @@ class _NeuralPainter extends CustomPainter {
   final List<_NeuralNode> nodes;
   final double t;
 
-  static const _nodeColors = [
+  static const List<Color> _nodeColors = [
     AppColors.sakura, // warm amber
     AppColors.accent, // cherry blossom pink
     AppColors.peach, // muted blue (peach alias)
