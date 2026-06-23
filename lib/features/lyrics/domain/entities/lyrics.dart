@@ -208,7 +208,7 @@ class AnalysisResult {
 enum SongDifficulty {
   beginner,
   intermediate,
-  advanced
+  advanced,
   ;
 
   /// Computes difficulty from a list of vocab and kanji items.

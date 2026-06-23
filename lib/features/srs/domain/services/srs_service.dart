@@ -4,7 +4,7 @@ enum ReviewQuality {
   again(0, 'Again'),
   hard(2, 'Hard'),
   good(3, 'Good'),
-  easy(5, 'Easy')
+  easy(5, 'Easy'),
   ;
 
   final int value;
