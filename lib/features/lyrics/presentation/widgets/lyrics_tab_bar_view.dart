@@ -7,6 +7,7 @@ import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/kanji_list.
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/lyrics_error_view.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/lyrics_view.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/musical_note_loading.dart';
+import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/translation_view.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/vocab_list.dart';
 import 'package:lyrics_anki_app/l10n/l10n.dart';
 
@@ -36,6 +37,10 @@ class LyricsTabBarView extends ConsumerWidget {
         return TabBarView(
           children: [
             LyricsView(analysis: analysis),
+            TranslationView(
+              verses: analysis.verses,
+              isLoading: isLoading,
+            ),
             VocabList(
               vocabList: analysis.vocabs,
               isLoading: isLoading,

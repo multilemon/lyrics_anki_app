@@ -13,52 +13,52 @@ class AppTextStyles {
   ];
 
   static TextStyle get display => const TextStyle(
-        fontFamily: 'Outfit',
-        fontFamilyFallback: _fontFallbacks,
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        color: AppColors.sakura,
-        letterSpacing: -0.5,
-      );
+    fontFamily: 'Outfit',
+    fontFamilyFallback: _fontFallbacks,
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    color: AppColors.sakura,
+    letterSpacing: -0.5,
+  );
 
   static TextStyle get heading1 => const TextStyle(
-        fontFamily: 'Outfit',
-        fontFamilyFallback: _fontFallbacks,
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        letterSpacing: -0.3,
-      );
+    fontFamily: 'Outfit',
+    fontFamilyFallback: _fontFallbacks,
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    letterSpacing: -0.3,
+  );
 
   static TextStyle get heading2 => const TextStyle(
-        fontFamily: 'Outfit',
-        fontFamilyFallback: _fontFallbacks,
-        fontSize: 20,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textPrimary,
-      );
+    fontFamily: 'Outfit',
+    fontFamilyFallback: _fontFallbacks,
+    fontSize: 20,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get bodyLarge => const TextStyle(
-        fontFamily: 'Noto Sans',
-        fontFamilyFallback: _fontFallbacks,
-        fontSize: 16,
-        fontWeight: FontWeight.normal,
-        color: AppColors.textPrimary,
-      );
+    fontFamily: 'Noto Sans',
+    fontFamilyFallback: _fontFallbacks,
+    fontSize: 16,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get bodyMedium => const TextStyle(
-        fontFamily: 'Noto Sans',
-        fontFamilyFallback: _fontFallbacks,
-        fontSize: 14,
-        fontWeight: FontWeight.normal,
-        color: AppColors.textSecondary,
-      );
+    fontFamily: 'Noto Sans',
+    fontFamilyFallback: _fontFallbacks,
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textSecondary,
+  );
 
   static TextStyle get label => const TextStyle(
-        fontFamily: 'Noto Sans',
-        fontFamilyFallback: _fontFallbacks,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textTertiary,
-      );
+    fontFamily: 'Noto Sans',
+    fontFamilyFallback: _fontFallbacks,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textTertiary,
+  );
 }

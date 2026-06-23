@@ -171,20 +171,20 @@ class _DifficultyBadge extends StatelessWidget {
 
     final (label, color, icon) = switch (difficulty) {
       SongDifficulty.beginner => (
-          'Beginner-friendly',
-          AppColors.success,
-          Icons.sentiment_satisfied_alt_rounded,
-        ),
+        'Beginner-friendly',
+        AppColors.success,
+        Icons.sentiment_satisfied_alt_rounded,
+      ),
       SongDifficulty.intermediate => (
-          'Intermediate',
-          AppColors.sakura,
-          Icons.trending_up_rounded,
-        ),
+        'Intermediate',
+        AppColors.sakura,
+        Icons.trending_up_rounded,
+      ),
       SongDifficulty.advanced => (
-          'Advanced',
-          AppColors.accent,
-          Icons.local_fire_department_rounded,
-        ),
+        'Advanced',
+        AppColors.accent,
+        Icons.local_fire_department_rounded,
+      ),
     };
 
     return Container(

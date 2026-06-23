@@ -201,6 +201,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noWordsToExport => '没有可导出的单词。请至少选择一个类别。';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

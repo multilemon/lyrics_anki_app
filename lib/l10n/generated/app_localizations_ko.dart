@@ -202,4 +202,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get noWordsToExport => '내보낼 단어가 없습니다. 최소 하나의 카테고리를 선택하세요.';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }

@@ -66,7 +66,8 @@ class AnkiExportServiceImpl implements IAnkiExportService {
     // Grammar
     for (final item in grammar) {
       final front = '<b>${_escape(item.point)}</b>';
-      final back = '${item.level.isNotEmpty ? "[${_escape(item.level)}] " : ""}'
+      final back =
+          '${item.level.isNotEmpty ? "[${_escape(item.level)}] " : ""}'
           '${_escape(item.explanation)}<br>'
           'Usage: ${_escape(item.usage)}';
       buffer.writeln('$front\t$back\t[Grammar]');
@@ -116,7 +117,8 @@ class AnkiExportServiceImpl implements IAnkiExportService {
     String? userLevel,
   }) async {
     final databaseService = AnkiDatabaseService();
-    final deckName = 'HanaUta::'
+    final deckName =
+        'HanaUta::'
         '${userLevel != null ? "[$userLevel] " : ""}'
         '${songTitle.replaceAll(':', ' ')} - $artist';
 

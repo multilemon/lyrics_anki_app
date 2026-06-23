@@ -207,4 +207,14 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get noWordsToExport =>
       'Không có từ nào để xuất. Vui lòng chọn ít nhất một danh mục.';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }

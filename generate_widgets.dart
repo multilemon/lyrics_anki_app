@@ -3,18 +3,23 @@ import 'dart:io';
 void main() {
   final file = File('lib/features/lyrics/presentation/pages/lyrics_page.dart');
   final lines = file.readAsLinesSync();
-  
+
   // 1. Extract Header
-  final headerStart = lines.indexWhere((l) => l.contains('// Song Title & Artist Header'));
-  var headerEnd = lines.indexWhere((l) => l.contains('// Filters (Quick Select)')) - 1;
-  while(lines[headerEnd].trim().isEmpty) {
+  final headerStart = lines.indexWhere(
+    (l) => l.contains('// Song Title & Artist Header'),
+  );
+  var headerEnd =
+      lines.indexWhere((l) => l.contains('// Filters (Quick Select)')) - 1;
+  while (lines[headerEnd].trim().isEmpty) {
     headerEnd--;
   }
 
   // 2. Extract Filters
-  final filterStart = lines.indexWhere((l) => l.contains('// Filters (Quick Select)'));
+  final filterStart = lines.indexWhere(
+    (l) => l.contains('// Filters (Quick Select)'),
+  );
   var filterEnd = lines.indexWhere((l) => l.contains('// Tabs')) - 1;
-  while(lines[filterEnd].trim().isEmpty) {
+  while (lines[filterEnd].trim().isEmpty) {
     filterEnd--;
   }
 
@@ -74,12 +79,15 @@ class LyricsHeader extends ConsumerWidget {
   }
 }
 ''';
-  File('lib/features/lyrics/presentation/widgets/lyrics_header.dart').writeAsStringSync(headerContent);
+  File(
+    'lib/features/lyrics/presentation/widgets/lyrics_header.dart',
+  ).writeAsStringSync(headerContent);
 
   // Quick Select Filters
   // We need to rewrite it slightly as a separate widget
   final filterLines = lines.sublist(filterStart + 1, filterEnd + 1).join('\n');
-  final filterContent = '''
+  final filterContent =
+      '''
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
@@ -133,8 +141,13 @@ class FilterChip extends StatelessWidget {
 }
 ''';
   // Note: the filter lines originally contain `_FilterChip`, so we must rename `_FilterChip` to `FilterChip` in filterLines
-  final finalFilterContent = filterContent.replaceAll('_FilterChip', 'FilterChip');
-  File('lib/features/lyrics/presentation/widgets/quick_select_filters.dart').writeAsStringSync(finalFilterContent);
+  final finalFilterContent = filterContent.replaceAll(
+    '_FilterChip',
+    'FilterChip',
+  );
+  File(
+    'lib/features/lyrics/presentation/widgets/quick_select_filters.dart',
+  ).writeAsStringSync(finalFilterContent);
 
   print(r'Generated header: ${headerStart} to ${headerEnd}');
   print(r'Generated filters: ${filterStart} to ${filterEnd}');

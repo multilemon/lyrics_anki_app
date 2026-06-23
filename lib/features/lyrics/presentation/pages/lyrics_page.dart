@@ -31,12 +31,16 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.title != null && widget.artist != null) {
         final currentAnalysis = ref.read(lyricsProvider).asData?.value;
-        final needsAnalysis = currentAnalysis == null ||
+        final needsAnalysis =
+            currentAnalysis == null ||
             currentAnalysis.song.toLowerCase() != widget.title!.toLowerCase() ||
-            currentAnalysis.artist.toLowerCase() != widget.artist!.toLowerCase();
+            currentAnalysis.artist.toLowerCase() !=
+                widget.artist!.toLowerCase();
 
         if (needsAnalysis) {
-          ref.read(lyricsProvider.notifier).analyzeSong(
+          ref
+              .read(lyricsProvider.notifier)
+              .analyzeSong(
                 widget.title!,
                 widget.artist!,
                 widget.language ?? 'English',
@@ -48,7 +52,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
 
   @override
   Widget build(BuildContext context) {
-    const tabCount = 4;
+    const tabCount = 5;
 
     return DefaultTabController(
       length: tabCount,
@@ -92,7 +96,8 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
                 builder: (context, ref, child) {
                   final analysis = ref.watch(lyricsProvider).asData?.value;
                   final selectedState = ref.watch(selectionManagerProvider);
-                  final hasSelection = selectedState.vocabIndices.isNotEmpty ||
+                  final hasSelection =
+                      selectedState.vocabIndices.isNotEmpty ||
                       selectedState.grammarIndices.isNotEmpty ||
                       selectedState.kanjiIndices.isNotEmpty;
 
@@ -127,6 +132,4 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
       ),
     );
   }
-
-
 }

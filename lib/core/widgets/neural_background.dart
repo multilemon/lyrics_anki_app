@@ -58,7 +58,7 @@ class _NeuralNetworkBackgroundState extends State<NeuralNetworkBackground>
     return IgnorePointer(
       child: AnimatedBuilder(
         animation: _controller,
-        builder: (_, __) => CustomPaint(
+        builder: (_, _) => CustomPaint(
           painter: _NeuralPainter(
             nodes: _nodes,
             t: _controller.value,
@@ -98,12 +98,16 @@ class _NeuralNode {
   final double speedMult;
 
   double getX(double t) =>
-      (baseX + sin(2 * pi * (t * speedMult * 0.4 + phaseX)) * amplitudeX)
-          .clamp(0.02, 0.98);
+      (baseX + sin(2 * pi * (t * speedMult * 0.4 + phaseX)) * amplitudeX).clamp(
+        0.02,
+        0.98,
+      );
 
   double getY(double t) =>
-      (baseY + cos(2 * pi * (t * speedMult * 0.3 + phaseY)) * amplitudeY)
-          .clamp(0.02, 0.98);
+      (baseY + cos(2 * pi * (t * speedMult * 0.3 + phaseY)) * amplitudeY).clamp(
+        0.02,
+        0.98,
+      );
 
   /// Smooth pulsation value in [0, 1].
   double getPulse(double t) =>
@@ -118,7 +122,7 @@ class _NeuralPainter extends CustomPainter {
   final List<_NeuralNode> nodes;
   final double t;
 
-  static const _nodeColors = [
+  static const List<Color> _nodeColors = [
     AppColors.sakura, // warm amber
     AppColors.accent, // cherry blossom pink
     AppColors.peach, // muted blue (peach alias)

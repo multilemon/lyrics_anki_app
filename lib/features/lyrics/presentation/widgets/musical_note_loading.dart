@@ -81,13 +81,14 @@ class _MusicalNoteLoadingState extends State<MusicalNoteLoading>
             child: Text(
               widget.message!,
               textAlign: TextAlign.center,
-              style: (widget.compact
-                      ? theme.textTheme.bodySmall
-                      : theme.textTheme.bodyMedium)
-                  ?.copyWith(
-                color: AppColors.textSecondary,
-                fontStyle: FontStyle.italic,
-              ),
+              style:
+                  (widget.compact
+                          ? theme.textTheme.bodySmall
+                          : theme.textTheme.bodyMedium)
+                      ?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
             ),
           ),
         ],

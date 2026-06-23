@@ -201,4 +201,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get noWordsToExport => 'エクスポートする単語がありません。少なくとも1つのカテゴリを選択してください。';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }

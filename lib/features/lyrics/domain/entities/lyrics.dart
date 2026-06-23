@@ -86,6 +86,26 @@ class Kanji {
   Map<String, dynamic> toJson() => _$KanjiToJson(this);
 }
 
+@HiveType(typeId: 5)
+@JsonSerializable()
+class LyricVerse {
+  LyricVerse({
+    required this.original,
+    required this.translation,
+    required this.nuance,
+  });
+
+  factory LyricVerse.fromJson(Map<String, dynamic> json) =>
+      _$LyricVerseFromJson(json);
+  @HiveField(0)
+  final String original;
+  @HiveField(1)
+  final String translation;
+  @HiveField(2)
+  final String nuance;
+  Map<String, dynamic> toJson() => _$LyricVerseToJson(this);
+}
+
 @HiveType(typeId: 0)
 class HistoryItem extends HiveObject {
   HistoryItem({
@@ -129,6 +149,9 @@ class HistoryItem extends HiveObject {
   @HiveField(10)
   String? lyrics;
 
+  @HiveField(11)
+  List<LyricVerse> verses = [];
+
   /// Computes difficulty from stored vocab/kanji JLPT data.
   SongDifficulty get difficulty =>
       SongDifficulty.fromVocabsAndKanji(vocabs, kanji);
@@ -162,6 +185,7 @@ class AnalysisResult {
     this.artist = '',
     this.youtubeId,
     this.lyrics = '',
+    this.verses = const [],
     this.isComplete = true,
   });
 
@@ -172,6 +196,7 @@ class AnalysisResult {
   final String artist;
   final String? youtubeId;
   final String lyrics;
+  final List<LyricVerse> verses;
   final bool isComplete;
 
   /// Human-readable difficulty label.
@@ -180,10 +205,12 @@ class AnalysisResult {
 }
 
 /// Song difficulty derived from JLPT distribution.
+// dart format off
 enum SongDifficulty {
   beginner,
   intermediate,
-  advanced;
+  advanced,
+  ;
 
   /// Computes difficulty from a list of vocab and kanji items.
   static SongDifficulty fromVocabsAndKanji(
@@ -238,3 +265,4 @@ enum SongDifficulty {
     return dist;
   }
 }
+// dart format on

@@ -3,7 +3,7 @@ import 'dart:io';
 void main() async {
   final file = File('lib/features/lyrics/presentation/pages/lyrics_page.dart');
   final lines = await file.readAsLines();
-  
+
   // We want to extract specific classes to other files
   // Instead of a complex regex, we'll just extract from known start to end line
   // Let's find the start of each section
@@ -13,7 +13,7 @@ void main() async {
     }
     return -1;
   }
-  
+
   int endOfClass(int startIdx) {
     if (startIdx == -1) return -1;
     var braceCount = 0;
@@ -50,10 +50,10 @@ void main() async {
       "import 'package:lyrics_anki_app/l10n/l10n.dart';",
       '// Add more imports as needed',
     ];
-    
+
     final content = <String>[...imports, ''];
     final linesToRemove = <int>[];
-    
+
     for (final c in classes) {
       var start = findClass(c);
       if (start == -1) {
@@ -65,15 +65,17 @@ void main() async {
           }
         }
       }
-      
+
       if (start == -1) continue;
-      
+
       // Look for comments before class
       var realStart = start;
-      while (realStart > 0 && (lines[realStart - 1].trim().startsWith('///') || lines[realStart - 1].trim().startsWith('//'))) {
+      while (realStart > 0 &&
+          (lines[realStart - 1].trim().startsWith('///') ||
+              lines[realStart - 1].trim().startsWith('//'))) {
         realStart--;
       }
-      
+
       final end = endOfClass(start);
       if (end != -1) {
         content.addAll(lines.sublist(realStart, end + 1));
@@ -83,7 +85,7 @@ void main() async {
         }
       }
     }
-    
+
     // Convert private classes to public in the extracted file
     var text = content.join('\n');
     for (final c in classes) {
@@ -93,9 +95,11 @@ void main() async {
         // Also fix the corresponding widget usages in lyrics_page later
       }
     }
-    
-    File('lib/features/lyrics/presentation/widgets/$path').writeAsStringSync(text);
-    
+
+    File(
+      'lib/features/lyrics/presentation/widgets/$path',
+    ).writeAsStringSync(text);
+
     // Remove from lines (bottom up)
     linesToRemove.sort((a, b) => b.compareTo(a));
     for (final i in linesToRemove) {
@@ -104,31 +108,58 @@ void main() async {
   }
 
   extract('vocab_list.dart', ['_VocabList', '_VocabListState', '_VocabItem']);
-  extract('grammar_list.dart', ['_GrammarList', '_GrammarListState', '_GrammarItem']);
+  extract('grammar_list.dart', [
+    '_GrammarList',
+    '_GrammarListState',
+    '_GrammarItem',
+  ]);
   extract('kanji_list.dart', ['_KanjiList', '_KanjiListState', '_KanjiItem']);
-  extract('en_vocab_list.dart', ['_EnVocabList', '_EnVocabListState', '_EnVocabItem']);
-  extract('en_grammar_list.dart', ['_EnGrammarList', '_EnGrammarListState', '_EnGrammarItem']);
+  extract('en_vocab_list.dart', [
+    '_EnVocabList',
+    '_EnVocabListState',
+    '_EnVocabItem',
+  ]);
+  extract('en_grammar_list.dart', [
+    '_EnGrammarList',
+    '_EnGrammarListState',
+    '_EnGrammarItem',
+  ]);
   extract('lyrics_view.dart', ['_Match', '_LyricsView']);
   extract('result_card.dart', ['_ResultCard', '_ResultCardState', '_Tag']);
-  extract('export_dialogs.dart', ['_ExportDialog', '_ExportDialogState', '_showAnkiExportDialog', '_PlainTextExportDialog', '_PlainTextExportDialogState']);
+  extract('export_dialogs.dart', [
+    '_ExportDialog',
+    '_ExportDialogState',
+    '_showAnkiExportDialog',
+    '_PlainTextExportDialog',
+    '_PlainTextExportDialogState',
+  ]);
 
   // We need to also rename the private classes in the original file
   var text = lines.join('\n');
   final classesToRename = [
-    '_VocabList', '_VocabItem', 
-    '_GrammarList', '_GrammarItem', 
-    '_KanjiList', '_KanjiItem', 
-    '_EnVocabList', '_EnVocabItem', 
-    '_EnGrammarList', '_EnGrammarItem', 
-    '_Match', '_LyricsView', 
-    '_ResultCard', '_Tag', 
-    '_ExportDialog', '_showAnkiExportDialog', '_PlainTextExportDialog',
+    '_VocabList',
+    '_VocabItem',
+    '_GrammarList',
+    '_GrammarItem',
+    '_KanjiList',
+    '_KanjiItem',
+    '_EnVocabList',
+    '_EnVocabItem',
+    '_EnGrammarList',
+    '_EnGrammarItem',
+    '_Match',
+    '_LyricsView',
+    '_ResultCard',
+    '_Tag',
+    '_ExportDialog',
+    '_showAnkiExportDialog',
+    '_PlainTextExportDialog',
   ];
   for (final c in classesToRename) {
     final publicName = c.startsWith('_') ? c.substring(1) : c;
     text = text.replaceAll(c, publicName);
   }
-  
+
   // Add imports to the original file
   final importsToAdd = [
     "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/vocab_list.dart';",
@@ -140,11 +171,14 @@ void main() async {
     "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/result_card.dart';",
     "import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/export_dialogs.dart';",
   ];
-  
+
   final importIdx = text.lastIndexOf("import '");
   final endOfImports = text.indexOf('\n', importIdx) + 1;
-  text = '${text.substring(0, endOfImports)}${importsToAdd.join('\n')}\n${text.substring(endOfImports)}';
-  
-  File('lib/features/lyrics/presentation/pages/lyrics_page.dart').writeAsStringSync(text);
+  text =
+      '${text.substring(0, endOfImports)}${importsToAdd.join('\n')}\n${text.substring(endOfImports)}';
+
+  File(
+    'lib/features/lyrics/presentation/pages/lyrics_page.dart',
+  ).writeAsStringSync(text);
   print('Done splitting!');
 }

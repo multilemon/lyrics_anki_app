@@ -148,6 +148,7 @@ class LyricsNotifier extends _$LyricsNotifier {
         artist: item.artist,
         youtubeId: item.youtubeId,
         lyrics: item.lyrics ?? '',
+        verses: item.verses,
       ),
     );
   }

@@ -27,8 +27,9 @@ Future<Uint8List> exportDatabase(CommonDatabase db) async {
 
   db.execute('VACUUM INTO ?', [path]);
 
-  final file =
-      _fs!.xOpen(Sqlite3Filename(path), SqlFlag.SQLITE_OPEN_READONLY).file;
+  final file = _fs!
+      .xOpen(Sqlite3Filename(path), SqlFlag.SQLITE_OPEN_READONLY)
+      .file;
   try {
     final size = file.xFileSize();
     final bytes = Uint8List(size);

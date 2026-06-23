@@ -206,4 +206,14 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get noWordsToExport =>
       'No hay palabras para exportar. Seleccione al menos una categoría.';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }

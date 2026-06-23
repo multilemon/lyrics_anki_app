@@ -380,10 +380,12 @@ class _FloatingIllustration extends StatelessWidget {
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.sakura.withValues(
-                          alpha: 0.06 +
+                          alpha:
+                              0.06 +
                               0.04 *
-                                  Curves.easeInOut
-                                      .transform(floatController.value),
+                                  Curves.easeInOut.transform(
+                                    floatController.value,
+                                  ),
                         ),
                         blurRadius: 60,
                         spreadRadius: 20,

@@ -28,8 +28,9 @@ class HistoryNotifier extends _$HistoryNotifier {
     final newItem = HistoryItem(
       songTitle: title,
       artist: artist,
-      lyricsSnippet:
-          snippet.length > 50 ? '${snippet.substring(0, 50)}...' : snippet,
+      lyricsSnippet: snippet.length > 50
+          ? '${snippet.substring(0, 50)}...'
+          : snippet,
       analyzedAt: DateTime.now(),
       tags: [],
       targetLanguage: language,

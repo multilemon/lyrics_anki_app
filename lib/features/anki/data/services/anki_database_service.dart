@@ -126,7 +126,7 @@ class AnkiDatabaseService {
             'bqfmt': '',
             'bafmt': '',
             'did': null,
-          }
+          },
         ],
         'flds': <Map<String, Object?>>[
           {
@@ -148,9 +148,11 @@ class AnkiDatabaseService {
             'media': [],
           },
         ],
-        'css': '.card { font-family: arial; font-size: 20px; '
+        'css':
+            '.card { font-family: arial; font-size: 20px; '
             'text-align: center; color: black; background-color: white; }',
-        'latexPre': '\\documentclass[12pt]{article}\n'
+        'latexPre':
+            '\\documentclass[12pt]{article}\n'
             '\\special{papersize=3in,5in}\n'
             '\\usepackage[utf8]{inputenc}\n'
             '\\usepackage{amssymb,amsmath}\n'
@@ -164,7 +166,7 @@ class AnkiDatabaseService {
             0,
             'all',
             [0],
-          ]
+          ],
         ],
       },
     };

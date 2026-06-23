@@ -207,4 +207,14 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get noWordsToExport =>
       'Eksport qilish uchun so\'z yo\'q. Kamida bitta toifani tanlang.';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }

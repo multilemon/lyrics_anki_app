@@ -21,7 +21,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
   Future<void> rateCard(SrsCard card, ReviewQuality quality) async {
     final updatedCard = _srsService.calculateNextReview(card, quality);
     await ref.read(srsRepositoryProvider).saveCard(updatedCard);
-    
+
     // Remove from current session list
     state = state.where((c) => c.word != card.word).toList();
   }

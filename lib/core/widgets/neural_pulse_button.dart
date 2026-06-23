@@ -9,9 +9,9 @@ import 'package:lyrics_anki_app/core/theme/app_colors.dart';
 /// the button bounds ([Stack.clipBehavior] is [Clip.none]).
 class NeuralPulseButton extends StatefulWidget {
   const NeuralPulseButton({
-    super.key,
     required this.label,
     required this.onPressed,
+    super.key,
     this.icon,
   });
 
@@ -87,7 +87,7 @@ class _NeuralPulseButtonState extends State<NeuralPulseButton>
                 scale: _pressed ? 0.96 : 1.0,
                 duration: const Duration(milliseconds: 110),
                 curve: Curves.easeOut,
-                child: child!,
+                child: child,
               ),
             ],
           );

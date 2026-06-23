@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyrics_anki_app/core/services/tts_service.dart';
 import 'package:lyrics_anki_app/core/theme/app_colors.dart';
-import 'package:lyrics_anki_app/core/theme/app_text_styles.dart';
 import 'package:lyrics_anki_app/features/lyrics/domain/entities/lyrics.dart';
 import 'package:lyrics_anki_app/features/lyrics/presentation/widgets/result_card.dart';
 import 'package:lyrics_anki_app/features/srs/data/repositories/hive_srs_repository.dart';
@@ -127,8 +126,8 @@ class _InteractiveLookupSheetState
 
     // Build contents depending on type
     Widget detailsWidget;
-    String typeLabel = '';
-    Color themeColor = AppColors.sakura;
+    var typeLabel = '';
+    var themeColor = AppColors.sakura;
 
     if (widget.type == 'vocab') {
       typeLabel = 'Vocabulary';
@@ -287,7 +286,7 @@ class _InteractiveLookupSheetState
       );
     }
 
-    String jlptLevel = '';
+    var jlptLevel = '';
     if (widget.type == 'vocab') jlptLevel = (widget.data as Vocab).jlptV;
     if (widget.type == 'grammar') jlptLevel = (widget.data as Grammar).level;
     if (widget.type == 'kanji') jlptLevel = (widget.data as Kanji).level;
@@ -371,7 +370,6 @@ class _InteractiveLookupSheetState
 
                   // Word & Action Buttons Row
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Text Word
                       Expanded(

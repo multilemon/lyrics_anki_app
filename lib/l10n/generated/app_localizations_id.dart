@@ -206,4 +206,14 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get noWordsToExport =>
       'Tidak ada kata untuk diekspor. Pilih setidaknya satu kategori.';
+
+  @override
+  String get translationTab => 'Translation';
+
+  @override
+  String get nuanceExplanation => 'Nuance & Interpretation';
+
+  @override
+  String get noTranslationAvailable =>
+      'Translation not available for this song. Try re-analyzing to generate verse translations.';
 }
