@@ -1,5 +1,6 @@
 import 'package:lyrics_anki_app/features/srs/domain/entities/srs_card.dart';
 
+// dart format off
 enum ReviewQuality {
   again(0, 'Again'),
   hard(2, 'Hard'),
@@ -11,6 +12,7 @@ enum ReviewQuality {
   final String label;
   const ReviewQuality(this.value, this.label);
 }
+// dart format on
 
 class SrsService {
   SrsService();

@@ -205,6 +205,7 @@ class AnalysisResult {
 }
 
 /// Song difficulty derived from JLPT distribution.
+// dart format off
 enum SongDifficulty {
   beginner,
   intermediate,
@@ -264,3 +265,4 @@ enum SongDifficulty {
     return dist;
   }
 }
+// dart format on
